@@ -1,0 +1,121 @@
+LGA,Land use zone,Asset ID,Site,Latitude,Longitude
+Dandenong,CBD,DC11,Dandenong CBD,145.2125339,-37.9851757
+Dandenong,CBD,DC12,Dandenong CBD,145.2137815,-37.9861771
+Dandenong,CBD,DC13,Dandenong CBD,145.2127568,-37.9895157
+Dandenong,CBD,DC14,Dandenong CBD,145.212731,-37.9892497
+Dandenong,CBD,DC15,Dandenong CBD,145.2137772,-37.9860666
+Dandenong,Industrial Precinct,DC16,Dandenong Industrial Area,145.1944388,-37.9944604
+Dandenong,Industrial Precinct,DC17,Dandenong Industrial Area,145.1942919,-37.9945927
+Dandenong,Industrial Precinct,DC18,Dandenong Industrial Area,145.1943229,-37.9944641
+Dandenong,Industrial Precinct,DC19,Dandenong Industrial Area,145.195208,-37.99605452
+Dandenong,Industrial Precinct,DC20,Dandenong Industrial Area,145.1956577,-37.99574024
+Dandenong,Public Transport Terminal,DC06,Springvale Railway Station,145.1539008,-37.950082
+Dandenong,Public Transport Terminal,DC07,Dandenong Plaza,145.2169045,-37.98735145
+Dandenong,Public Transport Terminal,DC08,Dandenong Plaza,145.2167774,-37.98722038
+Dandenong,Public Transport Terminal,DC09,Springvale Railway Station,145.1543178,-37.95041688
+Dandenong,Public Transport Terminal,DC10,Springvale Railway Station,145.1545239,-37.95050256
+Dandenong,Shopping Centre,DC01,Springvale CBD,145.1513829,-37.9503083
+Dandenong,Shopping Centre,DC02,Springvale CBD,145.151325,-37.950546
+Dandenong,Shopping Centre,DC03,Springvale CBD,145.151437,-37.950074
+Dandenong,Shopping Centre,DC04,Springvale CBD,145.1512083,-37.9511852
+Dandenong,Shopping Centre,DC05,Springvale CBD,145.1512487,-37.9494567
+Hobsons Bay,CBD,HB01,Williamstown CBD,144.8993383,-37.8589865
+Hobsons Bay,CBD,HB02,Williamstown CBD,144.8998417,-37.8590465
+Hobsons Bay,CBD,HB03,Williamstown CBD,144.8999464,-37.8589967
+Hobsons Bay,CBD,HB04,Williamstown CBD,144.9003979,-37.8590102
+Hobsons Bay,CBD,HB05,Williamstown CBD,144.9003713,-37.8593033
+Hobsons Bay,Industrial Precinct,HB16,"Industrial precinct, Altona North, East Side",144.8363185,-37.8417174
+Hobsons Bay,Industrial Precinct,HB17,"Industrial precinct, Altona North, East Side",144.8374076,-37.84188315
+Hobsons Bay,Industrial Precinct,HB18,"Industrial precinct, Altona North, East Side",144.8364035,-37.8418883
+Hobsons Bay,Industrial Precinct,HB19,"Industrial precinct, Altona North, East Side",144.8357045,-37.84178852
+Hobsons Bay,Industrial Precinct,HB20,"Industrial precinct, Altona North, East Side",144.837907,-37.842032
+Hobsons Bay,Public Transport Terminal,HB06,Williamstown CBD,144.9011826,-37.8592095
+Hobsons Bay,Public Transport Terminal,HB07,Williamstown CBD,144.897648,-37.857047
+Hobsons Bay,Public Transport Terminal,HB08,Williamstown CBD,144.8977737,-37.8579735
+Hobsons Bay,Public Transport Terminal,HB09,Williamstown CBD,144.8977247,-37.8575967
+Hobsons Bay,Public Transport Terminal,HB10,Williamstown CBD,144.8978865,-37.8577101
+Hobsons Bay,Shopping Centre,HB11,"Central Square Shopping Centre, Altona Meadows",144.776467,-37.8741376
+Hobsons Bay,Shopping Centre,HB12,"Central Square Shopping Centre, Altona Meadows",144.7771478,-37.8740028
+Hobsons Bay,Shopping Centre,HB13,"Central Square Shopping Centre, Altona Meadows",144.7772608,-37.8731768
+Hobsons Bay,Shopping Centre,HB14,"Central Square Shopping Centre, Altona Meadows",144.7774279,-37.8719151
+Hobsons Bay,Shopping Centre,HB15,"Central Square Shopping Centre, Altona Meadows",144.7773939,-37.8731745
+Kingston,CBD,KC11,Mordialoc CBD,145.0864167,-38.0061962
+Kingston,CBD,KC12,Mordialoc CBD,145.0872629,-38.0072425
+Kingston,CBD,KC13,Mordialoc CBD,145.0864793,-38.0071188
+Kingston,CBD,KC14,Mordialoc CBD,145.0863192,-38.0069683
+Kingston,CBD,KC15,Mordialoc CBD,145.086086,-38.00666349
+Kingston,Industrial Precinct,KC06,Braeside Industrial Area,145.1101121,-38.0007082
+Kingston,Industrial Precinct,KC07,Braeside Industrial Area,145.1102408,-38.0007249
+Kingston,Industrial Precinct,KC08,Braeside Industrial Area,145.1117533,-38.0009149
+Kingston,Industrial Precinct,KC09,Braeside Industrial Area,145.1120901,-37.9991814
+Kingston,Industrial Precinct,KC10,Braeside Industrial Area,145.1102263,-38.0001567
+Kingston,Public Transport Terminal,KC16,Mordialoc CBD,145.087543,-38.007406
+Kingston,Public Transport Terminal,KC17,Mordialoc CBD,145.0874807,-38.0073169
+Kingston,Public Transport Terminal,KC18,Mordialloc Railway Station Precinct,145.0879391,-38.0062734
+Kingston,Public Transport Terminal,KC19,Mordialoc CBD,145.0864776,-38.0054351
+Kingston,Public Transport Terminal,KC20,Mordialloc Railway Station Precinct,145.087162,-38.0053198
+Kingston,Shopping Centre,KC01,Westall Shopping Strip,145.13921,-37.9404898
+Kingston,Shopping Centre,KC02,Westall Shopping Strip,145.1398997,-37.9405188
+Kingston,Shopping Centre,KC03,Westall Shopping Strip,145.1382827,-37.9403706
+Kingston,Shopping Centre,KC04,Westall Shopping Strip,145.1382484,-37.9402122
+Kingston,Shopping Centre,KC05,Westall Shopping Strip,145.1388947,-37.9404519
+Maribyrnong,CBD,MB11,Footscray CBD,144.8974143,-37.7994466
+Maribyrnong,CBD,MB12,Footscray CBD,144.8981233,-37.7997083
+Maribyrnong,CBD,MB13,Footscray CBD,144.8981557,-37.8002652
+Maribyrnong,CBD,MB14,Footscray CBD,144.9010192,-37.79914431
+Maribyrnong,CBD,MB15,Footscray CBD,144.9012771,-37.79935266
+Maribyrnong,Industrial Precinct,MB01,Braybrook Commercial Precinct,144.8546223,-37.7797667
+Maribyrnong,Industrial Precinct,MB02,Braybrook Commercial Precinct,144.8535726,-37.7777756
+Maribyrnong,Industrial Precinct,MB03,Braybrook Commercial Precinct,144.8522397,-37.77869
+Maribyrnong,Industrial Precinct,MB04,Braybrook Commercial Precinct,144.8604746,-37.77873408
+Maribyrnong,Industrial Precinct,MB05,Braybrook Commercial Precinct,144.8630805,-37.77839884
+Maribyrnong,Public Transport Terminal,MB06,Footscray CBD,144.9010243,-37.8009859
+Maribyrnong,Public Transport Terminal,MB07,Footscray CBD,144.9005289,-37.8009145
+Maribyrnong,Public Transport Terminal,MB08,Footscray CBD,144.9003098,-37.8008854
+Maribyrnong,Public Transport Terminal,MB09,Footscray CBD,144.8999836,-37.80084351
+Maribyrnong,Public Transport Terminal,MB10,Footscray CBD,144.8986635,-37.800854
+Maribyrnong,Shopping Centre,MB16,Maribyrnong Aquatic Centre,144.8873853,-37.7760099
+Maribyrnong,Shopping Centre,MB17,Maribyrnong Aquatic Centre,144.8869914,-37.7760282
+Maribyrnong,Shopping Centre,MB18,Maribyrnong Aquatic Centre,144.8865099,-37.7759643
+Maribyrnong,Shopping Centre,MB19,Maribyrnong Aquatic Centre,144.886865,-37.776427
+Maribyrnong,Shopping Centre,MB20,Maribyrnong Aquatic Centre,144.8870002,-37.7763281
+Moreland,CBD,MC06,Brunswick CBD,144.9622259,-37.7669705
+Moreland,CBD,MC07,Brunswick CBD,144.9622041,-37.7671239
+Moreland,CBD,MC08,Brunswick CBD,144.9624911,-37.7653882
+Moreland,CBD,MC09,Brunswick CBD,144.9622796,-37.7670213
+Moreland,CBD,MC10,Brunswick CBD,144.9631026,-37.7609041
+Moreland,Industrial Precinct,MC16,Coburg North Industrial Area,144.9568903,-37.7314845
+Moreland,Industrial Precinct,MC17,Coburg North Industrial Area,144.9583353,-37.73084009
+Moreland,Industrial Precinct,MC18,Coburg North Industrial Area,144.960591,-37.731051
+Moreland,Industrial Precinct,MC19,Coburg North Industrial Area,144.9622006,-37.73291106
+Moreland,Industrial Precinct,MC20,Coburg North Industrial Area,144.9573022,-37.72968242
+Moreland,Public Transport Terminal,MC01,Coburg CBD,144.9650183,-37.7424901
+Moreland,Public Transport Terminal,MC02,Coburg CBD,144.9651075,-37.7419624
+Moreland,Public Transport Terminal,MC03,Oak Park Town Centre,144.9217539,-37.71758484
+Moreland,Public Transport Terminal,MC04,Oak Park Town Centre,144.9217539,-37.71776305
+Moreland,Public Transport Terminal,MC05,Coburg CBD,144.963875,-37.7428656
+Moreland,Shopping Centre,MC11,Coburg Hills Shopping Centre,144.9838413,-37.7300354
+Moreland,Shopping Centre,MC12,Coburg Hills Shopping Centre,144.9839477,-37.7300873
+Moreland,Shopping Centre,MC13,Coburg Hills Shopping Centre,144.9837218,-37.7302328
+Moreland,Shopping Centre,MC14,Coburg Hills Shopping Centre,144.9837276,-37.7301
+Moreland,Shopping Centre,MC15,Coburg North Shopping Centre,144.949928,-37.732471
+Wyndham,CBD,WC16,Werribee CBD,144.6618202,-37.9005766
+Wyndham,CBD,WC17,Werribee CBD,144.6615039,-37.9000795
+Wyndham,CBD,WC18,Werribee CBD,144.6613511,-37.90037971
+Wyndham,CBD,WC19,Werribee CBD,144.6617201,-37.90046876
+Wyndham,CBD,WC20,Werribee CBD,144.661357,-37.9005123
+Wyndham,Industrial Precinct,WC01,"Industrial Area, Laverton North",144.7858719,-37.8420624
+Wyndham,Industrial Precinct,WC02,"Industrial Area, Laverton North",144.7860368,-37.8420279
+Wyndham,Industrial Precinct,WC03,"Industrial Area, Laverton North",144.7916414,-37.8382132
+Wyndham,Industrial Precinct,WC04,"Industrial Area, Laverton North",144.7920236,-37.838722
+Wyndham,Industrial Precinct,WC05,"Industrial Area, Laverton North",144.7859782,-37.8421791
+Wyndham,Public Transport Terminal,WC06,Hoppers Crossing Railway Station Precinct,144.6999135,-37.8820854
+Wyndham,Public Transport Terminal,WC07,Hoppers Crossing Railway Station Precinct,144.6997481,-37.8820081
+Wyndham,Public Transport Terminal,WC08,Hoppers Crossing Railway Station Precinct,144.6999881,-37.8820162
+Wyndham,Public Transport Terminal,WC09,Hoppers Crossing Railway Station Precinct,144.7012716,-37.8818171
+Wyndham,Public Transport Terminal,WC10,Hoppers Crossing Railway Station Precinct,144.7006197,-37.8825942
+Wyndham,Shopping Centre,WC11,Pacific Werribee Shopping Centre,144.6777717,-37.8768685
+Wyndham,Shopping Centre,WC12,Pacific Werribee Shopping Centre,144.6829591,-37.8758503
+Wyndham,Shopping Centre,WC13,Pacific Werribee Shopping Centre,144.683031,-37.8754893
+Wyndham,Shopping Centre,WC14,Pacific Werribee Shopping Centre,144.6764753,-37.8737651
+Wyndham,Shopping Centre,WC15,Pacific Werribee Shopping Centre,144.6760786,-37.875848

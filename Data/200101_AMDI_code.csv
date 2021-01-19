@@ -1,0 +1,135 @@
+item_code_id,mat,item.type,item.ex,Dispersive.capacity,LS,Activity.group,Mode
+593,Expanded plastics,Buoy/float,"Marine safety, survival & boating equipment",Discarded at Sea,Sea,Dumping (at sea),Abandonment
+602,Metal,Metal large,Metal marine engine & boat parts & fittings,Discarded at Sea,Sea,Dumping (at sea),Dumping
+694,Other,Metal large,"Boat parts, wreckage & remnants",Discarded at Sea,Sea,Dumping (at sea),Abandonment
+654,Cloth,Rope (natural),Rope natural (estimated length in metres),Discarded at Sea,Sea,Fishing (Commercial),Dumping
+56,Expanded plastics,Buoy/float,Drift net floats,Discarded at Sea,Sea,Fishing (Commercial),Fishing
+576,Expanded plastics,Foam,Foam buoys,Discarded at Sea,Sea,Fishing (Commercial),Fishing
+600,Metal,Buoy/float,Metal buoys & Floats,Discarded at Sea,Sea,Fishing (Commercial),Fishing
+156,Hard & soft plastic,Strapping band,Strapping band scraps,Discarded at Sea,Sea,Fishing (Commercial),Indwaste
+542,Hard & soft plastic,Fishing (Plastic),"Bait containers & lids, bait savers",Discarded at Sea,Sea,Fishing (Commercial),Fishing
+561,Hard & soft plastic,Buoy/float,"Commercial fishing remnants (float, pot, crate bits)",Discarded at Sea,Sea,Fishing (Commercial),Fishing
+562,Hard & soft plastic,Fishing (Plastic),"Commercial fishing traps, pots & intact parts",Discarded at Sea,Sea,Fishing (Commercial),Fishing
+566,Hard & soft plastic,Cyalume,Cyalume glow sticks,Discarded at Sea,Sea,Fishing (Commercial),Litter
+571,Hard & soft plastic,Fishing (Plastic),Fishing line in metres commercial (monofilament),Discarded at Sea,Sea,Fishing (Commercial),Fishing
+572,Hard & soft plastic,Fishing net,Fishing net over 1 metre in metres,Discarded at Sea,Sea,Fishing (Commercial),Fishing
+625,Hard & soft plastic,Buoy/float,Plastic buoys and floats,Discarded at Sea,Sea,Fishing (Commercial),Fishing
+655,Hard & soft plastic,Rope (Plastic),Rope & net scraps less than 1 metre,Discarded at Sea,Sea,Fishing (Commercial),Dumping
+656,Hard & soft plastic,Rope (Plastic),Rope (estimated length in metres),Discarded at Sea,Sea,Fishing (Commercial),Dumping
+670,Hard & soft plastic,Plastic strap,Strapping band whole (record as single item),Discarded at Sea,Sea,Fishing (Commercial),Indwaste
+696,Wood,Wood,Wooden Fishing Items,Discarded at Sea,Sea,Fishing (Commercial),Fishing
+653,Hard & soft plastic,Plastic scrap,Research items oceanic,Discarded at Sea,Sea,Research Activities,Abandonment
+574,Glass & ceramic,Light bulbs,Fluorescent light tubes and bulbs,Discarded at Sea,Land,Unknown,Dumping
+564,Glass & ceramic,Construction (ceramic),"Construction material (brick, cement, pipe)",Does Not Disperse,Land,Building & Construction,Dumping
+599,Metal,Construction (metal),"Metal building & trades materials, fixings & fittings",Does Not Disperse,Land,Building & Construction,Dumping
+606,Metal,Metal scrap,Metal signs and sheeting,Does Not Disperse,Land,Building & Construction,Dumping
+392,Glass & ceramic,Glass/Ceramic scrap,Glassware & ceramic items,Does Not Disperse,Land,Dumping (Land),Dumping
+176,Metal,Large,White goods,Does Not Disperse,Land,Dumping (Land),Dumping
+596,Metal,Large,"Metal bicycle, shopping trolley and similar",Does Not Disperse,Land,Dumping (Land),Dumping
+603,Metal,Metal large,Metal motor vehicle parts & batteries,Does Not Disperse,Land,Dumping (Land),Dumping
+604,Metal,Metal large,"Metal outdoor equipment, implements, furniture",Does Not Disperse,Land,Dumping (Land),Dumping
+608,Metal,Metal scrap,Metal tools,Does Not Disperse,Land,Dumping (Land),Dumping
+609,Metal,Metal scrap,Metal unspecified,Does Not Disperse,Land,Dumping (Land),Dumping
+667,Metal,Metal large,Small machinery & electric motors,Does Not Disperse,Land,Dumping (Land),Dumping
+688,Wood,Wood,Wooden furniture,Does Not Disperse,Land,Dumping (Land),Dumping
+584,Glass & ceramic,Glass bottle,Glass beer stubbies & pre-mixed alcohol bottles,Does Not Disperse,Land,Littering (Public),Litter
+597,Metal,Metal lids,"Metal bottle caps, lids & pull tabs",Does Not Disperse,Land,Littering (Public),Litter
+620,Other,Other,"Personal effects (wallets, money, keys, jewellery)",Does Not Disperse,Land,Littering (Public),Litter
+664,Other,Sanitary,"Sanitary (tissues, nappies, condoms, cotton buds)",Does Not Disperse,Land,Medical waste,Litter
+685,Metal,Metal scrap,"Wire, metal stakes & pipes",Does Not Disperse,Land,Municipal & Public Works,Dumping
+586,Glass & ceramic,Glass/Ceramic scrap,Glass or ceramic broken,Does Not Disperse,Land,Unknown,Litter
+545,Hard & soft plastic,Dangerous,Blasting items,Encumbered Drift,Land,Building & Construction,Indwaste
+631,Hard & soft plastic,Plastic cables,"Plastic electrical cable, connectors & fittings",Encumbered Drift,Land,Building & Construction,Dumping
+642,Hard & soft plastic,PVC pipe,"Plastic pipe PVC, irrigation & reticulation",Encumbered Drift,Land,Building & Construction,Dumping
+673,Hard & soft plastic,Plastic cardboard,Synthetic cardboard (corflute) signs & packaging,Encumbered Drift,Land,Building & Construction,Dumping
+677,Hard & soft plastic,Plastic tape,"Tape adhesive, electrical, duct, hazard marker & rolls",Encumbered Drift,Land,Building & Construction,Litter
+662,Rubber,Rubber scrap,Rubber sheeting,Encumbered Drift,Land,Building & Construction,Dumping
+550,Wood,Wood,"Brooms, brushes & paint brushes",Encumbered Drift,Land,Building & Construction,Dumping
+649,Wood,Wood,"Processed timber, pallets & other wood",Encumbered Drift,Land,Building & Construction,Dumping
+553,Cloth,Canvas,"Canvas, sailcloth & hessian materials",Encumbered Drift,Sea,Dumping (at sea),Dumping
+234,Hard & soft plastic,Plastic packaging,Tags,Encumbered Drift,Sea,Dumping (at sea),Dumping
+595,Hard & soft plastic,Mesh bag,"Mesh bags (vegetable, oyster & mussel bags)",Encumbered Drift,Sea,Dumping (at sea),Litter
+645,Hard & soft plastic,Plastic scrap,Plastic tubes & hoses,Encumbered Drift,Sea,Dumping (at sea),Dumping
+560,Cloth,Clothing ,"Cloth, clothing, hats & towels",Encumbered Drift,Land,Dumping (Land),Dumping
+579,Expanded plastics,Foam,Foam sponge sheeting (mattress & similar),Encumbered Drift,Land,Dumping (Land),Dumping
+647,Hard & soft plastic,Large,Plastic vehicle parts,Encumbered Drift,Land,Dumping (Land),Dumping
+650,Hard & soft plastic,Plastic recreational,Recreation & outdoor equipment,Encumbered Drift,Land,Dumping (Land),Litter
+680,Hard & soft plastic,Plastic scrap,"Toys, party poppers, ribbons, clips & similar",Encumbered Drift,Land,Dumping (Land),Dumping
+626,Hard & soft plastic,Plastic scrap,"Plastic ceremonial & festive (wreaths, flowers)",Encumbered Drift,Land,"Events, Festivals & Ceremonies",Litter
+543,Hard & soft plastic,Plastic basket,"Baskets, crates & trays",Encumbered Drift,Sea,Fishing (Commercial),Dumping
+552,Hard & soft plastic,Strapping band,Cable ties & plastic fasteners,Encumbered Drift,Sea,Fishing (Commercial),Dumping
+589,Large,Large,Large item,Encumbered Drift,Sea,Fishing (Commercial),Abandonment
+541,Hard & soft plastic,Plastic packaging,Bait & tackle bags & packaging,Encumbered Drift,Sea,Fishing (Recreational),Fishing
+580,Metal,Metal wrapper,"Foil wrappers, packets, bladders & alfoil",Encumbered Drift,Land,Littering (Public),Litter
+455,Other,Organic,Food scraps,Encumbered Drift,Land,Littering (Public),Litter
+682,Other,Wax,"Wax (surf wax, candles, paraffin and similar)",Encumbered Drift,Land,Littering (Public),Litter
+557,Hard & soft plastic,Plastic childcare,Childcare items,Encumbered Drift,Land,Littering (Public),Litter
+618,Hard & soft plastic,Stationary,"Pens, markers & other plastic stationary",Encumbered Drift,Land,Littering (Public),Litter
+630,Hard & soft plastic,Plastic drink rings,"Plastic drink package rings, six pack rings, ring carriers",Encumbered Drift,Land,Littering (Public),Litter
+641,Hard & soft plastic,Plastic container,"Plastic packaging food (wrap, packets, containers)",Encumbered drift,Land,Littering (Public),Litter
+648,Hard & soft plastic,Plastic wrap,Plastic wrap non food (bubble wrap etc),Encumbered Drift,Land,Littering (Public),Litter
+594,Hard & soft plastic,Medical waste,Medical waste,Encumbered Drift,Land,Medical waste,Dumping
+544,Cloth,Rope (natural),"Binding, thread, string & cord (natural fibre)",Encumbered Drift,Land,Municipal & Public Works,Litter
+610,Hard & soft plastic,Plastic scrap,"Municipal activities (tree guard, barrier fence etc)",Encumbered Drift,Land,Municipal & Public Works,Abandonment
+556,Hard & soft plastic,Plastic carpet,"Carpet & lino household, boat deck & padding",Encumbered Drift,Land,Unknown,Dumping
+611,Hard & soft plastic,OH&S items,Occupational health & safety items,Encumbered Drift,Land,Unknown,Litter
+643,Hard & soft plastic,Plastic sheeting,"Plastic sheeting (tarpaulin, woven bags, pallet wrap)",Encumbered Drift,Land,Unknown,Dumping
+598,Metal,Metal large,"Metal drums, cans & buckets over 4 litres",Encumbered Drift,Land,Unknown,Dumping
+665,Cloth,Other,Shoes leather & fabric,Encumbered Drift,Land,Unknown,Litter
+633,Hard & soft plastic,Plastic scrap,"Plastic film remnants (bits of plastic bag, wrap etc)",Encumbered Drift,Land,Unknown,Litter
+687,Wood,Wood,"Wooden confection sticks, pencils, matches etc",Encumbered Drift,Land,Unknown,Litter
+632,Hard & soft plastic,Plastic (agriculture),"Plastic farming implements, devices & fittings",Limited Dispersion,Sea,Dumping (at sea),Dumping
+659,Rubber,Rubber scrap,"Rubber buffers, tyres, seals & similar",Limited Dispersion,Sea,Dumping (at sea),Dumping
+636,Hard & soft plastic,Plastic scrap,"Plastic gardening items, implements & fittings",Limited Dispersion,Land,Dumping (Land),Dumping
+637,Hard & soft plastic,Large plastic,"Plastic housewares, tablewares, house fittings",Limited Dispersion,Land,Dumping (Land),Dumping
+635,Hard & soft plastic,Plastic recreational,Plastic furniture outdoor & camping,Limited Dispersion,Land,Dumping (Land),Dumping
+570,Hard & soft plastic,Fishing (Plastic),Fishing line in metres (Recreation),Limited Dispersion,Sea,Fishing (Recreational),Fishing
+573,Metal,Fishing (Metal),"Metal Fishing Items (Sinkers, lures, hooks, traps, pots)",Limited Dispersion,Sea,Fishing (Recreational),Fishing
+5,Metal,Metal Can,Aluminium cans,Limited Dispersion,Land,Littering (Public),Litter
+678,Metal,Metal Can,"Tins under 4 litres (food, drink tins and similar)",Limited Dispersion,Land,Littering (Public),Litter
+615,Paper,Newspaper,"Newspaper, magazines & brochures",Limited Dispersion,Land,Littering (Public),Litter
+616,Paper,Paper packaging,Paper & cardboard packaging,Limited Dispersion,Land,Littering (Public),Litter
+617,Paper,Paper scrap,"Miscellaneous paper, labels & tickets",Limited Dispersion,Land,Littering (Public),Litter
+58,Hard & soft plastic,Drug paraphernalia,Drug paraphernalia,Limited Dispersion,Land,Littering (Public),Litter
+559,Hard & soft plastic,Cigarette,Cigarette butts & filters,Limited Dispersion,Land,Littering (Public),Litter
+623,Hard & soft plastic,Plastic bag,"Plastic bags supermarket, garbage, dog poo, ice",Limited Dispersion,Land,Littering (Public),Litter
+634,Hard & soft plastic,Medical waste,Plastic first aid materials & equipment (band aids),Limited Dispersion,Land,Medical waste,Litter
+605,Metal,Metal scrap,Metal scrap & remnants,Limited Dispersion,Land,Unknown,Dumping
+668,Other,Other,"Soap, dry lubricant & glue",Limited Dispersion,Land,Unknown,Litter
+540,Hard & soft plastic,Aquaculture items,Aquaculture items,Unencumbered Drift,Sea,Dumping (at sea),Abandonment
+583,Metal,Gas bottles,Gas bottles,Unencumbered Drift,Sea,Dumping (at sea),Dumping
+640,Hard & soft plastic,Plastic container,Plastic oddments,Unencumbered Drift,Land,Dumping (Land),Dumping
+679,Hard & soft plastic,Plastic brush,"Toothbrushes, brushes & combs, hair ties etc",Unencumbered Drift,Land,Dumping (Land),Dumping
+666,Hard & soft plastic,Plastic cartridge,Shotgun cartridges and wadding,Unencumbered Drift,Sea,Fishing (Commercial),Litter
+651,Hard & soft plastic,Fishing (Plastic),"Recreation fishing items (lures, floats, rods, reels)",Unencumbered Drift,Sea,Fishing (Recreational),Fishing
+585,Glass & ceramic,Glass bottle,Glass jars & sauce bottles,Unencumbered Drift,Land,Littering (Public),Litter
+587,Glass & ceramic,Glass bottle,"Glass wine, spirit and similar bottles",Unencumbered Drift,Land,Littering (Public),Litter
+554,Paper,Drink carton,Tetra packs & drink cartons,Unencumbered Drift,Land,Littering (Public),Litter
+592,Hard & soft plastic,Plastic lids,"Lids & tops, pump spray, flow restrictor & similar",Unencumbered Drift,Land,Littering (Public),Litter
+614,Hard & soft plastic,Plastic scrap,"Packaging accessories (seals, reels, spools, handles)",Unencumbered Drift,Land,Littering (Public),Litter
+660,Rubber,Rubber footwear,Rubber footwear & thongs,Unencumbered Drift,Land,Littering (Public),Litter
+674,Hard & soft plastic,Medical waste,Syringes medical,Unencumbered Drift,Land,Medical waste,Litter
+675,Hard & soft plastic,Medical waste,Syringes veterinary,Unencumbered Drift,Land,Medical waste,Dumping
+569,Hard & soft plastic,Fibreglass,Fibreglass fragments,Unencumbered Drift,Land,Unknown,Dumping
+624,Hard & soft plastic,Plastic scrap,Plastic bits & pieces hard & solid,Unencumbered Drift,Unknown,Unknown,Litter
+652,Hard & soft plastic,Plastic scrap,Remnants burnt plastic,Unencumbered Drift,Land,Unknown,Indwaste
+658,Rubber,Rubber scrap,"Rubber balloons, balls & toys, elastic straps & bands",Unencumbered Drift,Land,Unknown,Litter
+661,Rubber,Rubber scrap,Rubber remnants,Unencumbered Drift,Unknown,Unknown,Dumping
+627,Hard & soft plastic,Plastic container,"Plastic containers non food (oil, sealant, chemical)",Very Mobile,Land,Building & Construction,Dumping
+4,Metal,Metal Can,Aerosol cans,Very Mobile,Sea,Dumping (at sea),Litter
+546,Hard & soft plastic,Plastic bottle,Bleach & cleaner bottles,Very Mobile,Sea,Dumping (at sea),Litter
+689,Hard & soft plastic,Plastic bottles,"Plastic bottles, drums, jerrycans & buckets over 4 litres",Very Mobile,Sea,Dumping (at sea),Dumping
+522,Hard & soft plastic,Plastic bottle,Bleach bottle KKK type,Very Mobile,Sea,Fishing (Commercial),Litter
+577,Expanded plastics,Foam,"Foam cups, food packs & trays",Very Mobile,Land,Littering (Public),Litter
+582,Metal,Metal Can,Gas & volatile liquid capsules & cans,Very Mobile,Land,Littering (Public),Litter
+38,Hard & soft plastic,Cigarette lighters,Cigarette lighters,Very Mobile,Land,Littering (Public),Litter
+619,Hard & soft plastic,Plastic packaging,Personal care & pharmaceutical packaging,Very Mobile,Land,Littering (Public),Litter
+628,Hard & soft plastic,Plastic bottle,"Plastic drink bottles (water, juice, milk, soft drink)",Very Mobile,Land,Littering (Public),Litter
+671,Hard & soft plastic,Single-use,"Straws, confection sticks, cups, plates & cutlery",Very Mobile,Land,Littering (Public),Litter
+690,Expanded plastics,Weather balloon,Weather balloon parts,Very Mobile,Sea,Research Activities,Abandonment
+578,Expanded plastics,Foam,Foam insulation & packaging (whole and remnants),Very Mobile,Unknown,Unknown,Indwaste
+LSTD1,Hard & soft plastic,Microplastic,Pollution Rating,,,,
+LSTD2,Glass & ceramic,Construction (ceramic),"Building & trades materials, fixings & fittings",Does Not Disperse,Land,Building & Construction,Dumping
+LSTD3,Metal,Misc,"Appliances, electronics & batteries",Encumbered Drift,Land,Dumping (Land),Dumping
+LSTD4,Other,Organic,Organic materials,Encumbered Drift,Land,Littering (Public),Litter
+LSTD5,Hard & soft plastic,Plastic container,Container contents intact & spilt content,Very Mobile,Land,Building & Construction,Dumping

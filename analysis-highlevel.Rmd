@@ -1,0 +1,346 @@
+---
+title: "Analysis High Level"
+author: "Brie Sherow"
+date: "19/01/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    toc: yes
+---
+# Project:        'Strain the drains' 
+# Author:         Gacutan, Jordan (z5238824)
+
+# Created at:     E26, UNSW, Sydney, Australia
+# Purpose:        Data exploration, data analysis
+# St / End Date:  13 April, 2020 to XX, 2021
+
+### TOC ###
+
+# 0.1  Load libraries / dependencies
+# 0.2  Load data
+# 1.0  Prepare for graphing
+# 1.1  Add pseudo-zeros
+# 2.0  Graphing
+
+##### CODE #####
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-libraries}
+# 0.1 Library load
+lib.load = c("tidyverse","here", "ggplot2", "ggthemes", "treemap") 
+lapply(lib.load, require, character.only = TRUE) 
+```
+```{r function-setup}
+# Check wd
+here::here()
+
+# Subfolders for project
+# Data (holds .csv data) // # Original (holds original .xlxs)
+# Output (holds output)
+
+# Function -  Outersect
+outersect <- function(x, y) {
+  sort(c(setdiff(x, y),
+         setdiff(y, x)))
+}
+```
+```{r load-data}
+# 0.2 Load data
+load_codes = c("site", # contains site data 
+               "event", # events per site
+               "item",  # items per event
+               "code")  # AMDI item codes
+
+for(i in 1:length(load_codes)){
+  
+  fp = list.files(path = here::here("Data"), 
+                  pattern = paste0(load_codes[i],".csv$"),
+                  full.names = T)
+  
+  assign(paste0("df.",load_codes[i]), as.data.frame(read.csv(fp)))
+  
+}
+```
+```{r graphing-prep}
+# 1.0 Prep for graphing ---------------------------------------------------
+
+# 1.1 Pseudo-zero
+
+# Summarise per item per event (remove item duplicates)
+df.item = df.item %>% group_by(event_id,item) %>%
+          summarise(total = sum(total)) %>%
+          ungroup
+
+# Split into list
+ls.temp = split(df.item,f = df.item$event_id)
+
+# Loop, id missing and add zero
+ls.zeros = list()
+for(i in 1:length(ls.temp)){
+  
+  #  (1)  Check which items are NOT presentand create (2) df_absent
+  item_absent = Reduce(outersect, list(df.code$item.ex, ls.temp[[i]]$item)) # (1)
+  df.absent = data.frame(event_id = unique(ls.temp[[i]]$event_id),
+                         item = item_absent,
+                         total = 0) # (2)
+  
+  # c-bind w/ original   
+  ls.zeros[[i]] = rbind(ls.temp[[i]],df.absent)
+  
+}
+names(ls.zeros) = names(ls.temp)
+df.item_zeros = bind_rows(ls.zeros)
+
+# Remove items with all zeros or rare (less than 10)
+item.keep = df.item_zeros %>% group_by(item)%>%
+            summarise(total = sum(total)) %>%
+            filter(total > 10)
+
+# Final 'zeros' df
+df.item_zeros = subset(df.item_zeros, df.item_zeros$item %in% item.keep$item)
+
+# Clean
+rm(df.absent, df.item, item.keep, ls.temp, ls.zeros, i, fp, item_absent)
+```
+
+```{r merge}
+# Sub :: Merge -------------------------------------------------------------
+
+    # 1.2 merge event per site
+    df.final = left_join(df.site,df.event, by = "Asset.ID")
+    
+    # 1.3 merge item per event
+    df.final = left_join(df.final,df.item_zeros, by = "event_id")
+    
+    # 1.4 Add material and item type to df.final
+    col.ind = grep("item.ex", names(df.code))
+    df.final = left_join(df.final,df.code[,2:col.ind], by = c("item" = "item.ex"))
+    
+    # Remove 2 S.D.
+    # df.Qfinal = df.final %>% group_by(item) %>%
+    #            summarise(Q3 = quantile(total,0.75), Q9 = quantile(total,0.9), 
+    #                      avg = mean(total), sd = sd(total), max = max(total))
+    # 
+    # df.Qfinal$sd2 = df.Qfinal$avg + 2*df.Qfinal$sd
+    #   
+    # # Split by type
+    # ls.Qfinal = split(df.final, f = df.final$item) 
+    # item_name = unique(df.final$item) %>% sort() #ensure alphabetical
+    # 
+    # ls.Qfilt = list()
+    # for(x in 1:length(item_name)){
+    #   
+    #   df.filt = df.final %>% filter(item == item_name[x]) %>% 
+    #             filter(total < df.Qfinal$sd2[x])
+    #   
+    #   ls.Qfilt[[x]] = df.filt
+    #   
+    # }
+    # 
+    # names(ls.Qfilt) = item_name
+    # df.Qfilt = bind_rows(ls.Qfilt)
+    # 
+    # rm(df.filt, df.item_zeros, df.final, ls.Qfilt, ls.Qfinal, item_name)
+    
+    df.Qfilt = df.final
+    
+    # Remove items with all zeros [again]
+    item.keep = df.Qfilt %>% group_by(item)%>%
+                summarise(total = sum(total)) %>%
+                filter(total != 0)
+    
+    # Final 'zeros' df
+    df.Qfilt = subset(df.Qfilt, df.Qfilt$item %in% item.keep$item)
+    
+    #Reclassifying material levels
+    var_change <- c("Rubber", "Wood", "Cloth", "Glass & ceramic")
+    df.Qfilt$mat[df.Qfilt$mat %in% var_change] ="Other"
+    
+    # library(plyr)
+    # test <- plyr::mapvalues(df.Qfilt$mat, from ="Hard plastic", to ="Hard & soft plastics")
+    
+    #written into spreadsheet
+    #levels(df.Qfilt$mat) <- gsub("Hard plastic", "Hard & soft plastic", levels(df.Qfilt$mat))
+    
+```
+
+```{r rename-for-graph}
+# Rename for graph --------------------------------------------------------
+    
+    from = c("Plastic film remnants (bits of plastic bag, wrap etc)", "Miscellaneous paper, labels & tickets",
+             "Foam insulation & packaging (whole and remnants)", "Plastic bits & pieces hard & solid",
+             "Plastic packaging food (wrap, packets, containers)", "Plastic wrap non food (bubble wrap etc)")
+    
+    to = c("Plastic film remnants", "Paper (Misc)","Foam insulation & packaging","Plastic pieces (solid)", "Plastic packaging (food)", "Plastic wrap (non-food)")
+    
+    for(z in 1:length(from)){
+      
+      df.Qfilt$item = plyr::mapvalues(df.Qfilt$item, from = from[z], to = to[z])
+      
+    }
+```
+#Graphing
+```{r round-totals}
+
+#2 Round totals and top items
+    
+    df.sum <- df.Qfilt %>% group_by(Cycle, item) %>% 
+      dplyr::summarise(sum = sum(total), avg = mean(total), sd = sd(total)) 
+    
+    # Order by amount
+    # df.sum$item <- as.factor(df.sum$item) %>% droplevels()
+    # df.sum$item <- df.sum$item %>% factor(levels = df.sum$item[order(df.sum$sum)])
+    
+    labs <- c("Oct 2019","Dec 2019","Jan 2020","Mar 2020", "Apr 2020", "May 2020", "July 2020")
+    levels(df.sum$Cycle) <- labs
+    
+    top_Round <- df.sum %>%
+      group_by(Cycle) %>%
+      top_n(5, sum) 
+    
+
+    p_item_Round <- ggplot(top_Round, aes(x = item, y = sum, fill = item)) +
+      geom_bar(stat="identity") +
+      scale_y_continuous() +
+      facet_wrap(~Cycle) +
+      geom_text(aes(label = sum), vjust = -.5, color = "black", size = 2) +
+      theme(axis.text.x = element_blank()) +
+      ylim(0,5000) +
+      ggtitle("Top items by Survey Round", subtitle="") +
+      labs(y="Sum of item counts", x="Item Type") +
+      guides(fill=guide_legend("Item type"))
+    p_item_Round
+    
+    ggsave(filename = paste0(here::here("Output"),"/","Round_count.png"),
+           plot = p_item_Round, dpi = 600)
+    
+    line_item_Round <- ggplot(top_Round, aes(x = Cycle, y = sum, group = item, colour=item)) +
+      geom_line() +
+      geom_point() +
+      ggtitle("Item count per Round") +
+      guides(colour=guide_legend("Item type")) +
+      ylab("Total item count")
+    line_item_Round
+    
+    ggsave(filename = paste0(here::here("Output"),"/","Round_count_line.png"),
+           plot = line_item_Round, dpi = 600)
+```
+
+```{r top-items}
+  #2.1 Top items in Melbourne
+    
+    df.sum.tot = df.Qfilt %>%
+      group_by(item, mat) %>%
+      dplyr::summarise(sum = sum(total), avg = mean(total), sd = sd(total))  
+    
+    top_item <- df.sum.tot %>%
+      group_by(item) %>%
+      filter(sum>1100)
+      
+      
+    
+    #why is top n not working now?  used filter instead.
+      # top_n(10, sum)
+    
+    p_item_tot <- ggplot(top_item, aes(x = reorder(item, -sum), y = sum, fill=item, density=mat)) +
+      geom_bar(stat="identity") +
+      scale_y_continuous() +
+      geom_text(aes(label = sum, vjust = -0.5), color = "black", size = 2) +
+      theme(axis.text.x = element_blank()) +
+      ggtitle("Top 10 items across Melbourne") +
+      labs(y="Sum per material type (Counts)", x="Item Type") +
+      guides(fill=guide_legend("Item type"))
+    
+    p_item_tot
+    
+    ggsave(filename = paste0(here("Output"),"/","Top_items.png"),
+           plot = p_item_tot, dpi = 600)
+```
+
+```{r treemap-total}
+ #Treemap total 
+    df.sum.item.mat = df.Qfilt %>% 
+      group_by(mat,item) %>% 
+      dplyr::summarise(sum = sum(total), avg = mean(total), sd = sd(total))
+    
+    levels(df.sum.item.mat$mat) <- gsub("Hard plastic", "Hard & soft plastic", levels(df.sum.item.mat$mat))
+    
+    png(filename = "Output/total_tree.png",width=800, height=800)
+    
+    tm_Melb_sum <- treemap(df.sum.item.mat,
+                           index=c("mat","item"),  vSize="sum", type="index",
+                           palette="Set3",
+                           title= sprintf("Debris types in Melbourne"),
+                           fontsize.title = 12,
+                           fontsize.labels = c(12,10), 
+                           fontcolor.labels = c("black", "white"), 
+                           fontface.labels=c(2,1),
+                           lowerbound.cex.labels = 1,
+                           bg.labels=c("transparent"),
+                           overlap.labels=0.1,
+                           border.col=c("black", "white"),
+                           border.lwds=c(7,2)
+    )
+    tm_Melb_sum
+    dev.off()
+```
+
+```{r facet-land-use}
+#Facet Land Use
+   
+   df.sum = df.Qfilt %>%
+      group_by(Land.use.zone, mat) %>% # CHANGE HERE
+      dplyr::summarise(sum = sum(total), avg = mean(total), sd = sd(total))
+   
+   levels(df.sum$mat) <- gsub("Hard plastic", "Hard & soft plastic", levels(df.sum$mat))
+    
+    lu.facet <- ggplot(df.sum, aes(fill=mat, y=sum, x=reorder(mat, -sum))) + 
+      geom_bar(position="dodge", stat="identity") +
+      ylim(0,22000) +
+      geom_text(aes(label = sum),vjust = -0.1, color = "black", size = 3) +
+      theme(axis.text.x = element_text(angle = 90)) +
+      facet_wrap(~Land.use.zone) +
+      ggtitle("Total Item Count by Land Use", subtitle="") +
+      labs(y="Total Debris Items", x="Material") +
+      guides(fill=guide_legend("Material"))
+    
+    lu.facet
+  
+    
+    ggsave(filename = paste0(here("Output"),"/","Mat_by_land_use.png"),
+           plot = lu.facet, dpi = 600)
+```
+
+```{r facet-lga}
+  #Facet LGA
+    
+    df.sum = df.Qfilt %>%
+      group_by(LGA, mat) %>% # CHANGE HERE
+      dplyr::summarise(sum = sum(total), avg = mean(total), sd = sd(total))
+    
+    levels(df.sum$mat) <- gsub("Hard plastic", "Hard & soft plastic", levels(df.sum$mat))
+    
+    lga.facet <- ggplot(df.sum, aes(fill=mat, y=sum, x=reorder(mat, -sum))) + 
+      geom_bar(position="dodge", stat="identity") +
+      geom_text(aes(label = sum), vjust = 0.1, color = "black", size = 3) +
+      theme(axis.text.x = element_text(angle = 90)) +
+      facet_wrap(~LGA) +
+      ggtitle("Total count by Material and Suburb", subtitle="") +
+      labs(y="Total item count", x="Material types") +
+      guides(fill=guide_legend("Material"))
+    
+    lga.facet
+    
+    ggsave(filename = paste0(here("Output"),"/","Mat_by_suburb.png"),
+           plot = lga.facet, dpi = 600)
+    
+```
+
+
+

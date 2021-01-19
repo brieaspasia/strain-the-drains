@@ -1,0 +1,108 @@
+---
+title: "micro"
+author: "Brie Sherow"
+date: "19/01/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading-data}
+# 0.1 Library load
+lib.load = c("tidyverse","here", "ggplot2", "ggthemes", "RColorBrewer") 
+lapply(lib.load, require, character.only = TRUE) 
+
+# Check wd
+here::here()
+
+# Subfolders for project
+# Data (holds .csv data) // # Original (holds original .xlxs)
+# Output (holds output)
+
+# Function -  Outersect
+outersect <- function(x, y) {
+  sort(c(setdiff(x, y),
+         setdiff(y, x)))
+}
+
+# 0.2 Load data
+load_codes = c("site",  # contains site data 
+               "event", # events per site
+               "item",  # AMDI items codes
+               "code",  # AMDI item codes
+               "micro",
+               "polystyrene") # microplastics  
+
+ls.df = lapply(load_codes, function(x){
+  
+  fp = list.files(path = here("Data"), 
+                  pattern = paste0(x,".csv$"),
+                  full.names = T)
+  
+  return(as.data.frame(read.csv(fp)))
+  
+})
+names(ls.df) = load_codes
+```
+
+```{r data-prep}
+# merge micro w/ event (Asset.Id and Cycle)
+df = left_join(ls.df$micro, ls.df$event[,1:3], by = "event_id")
+
+# merge w/ site details (LGA and LU)
+df = left_join(df, ls.df$site[,1:3], by = "Asset.ID")
+
+# By LGA / Land-use & LGA / Type 
+df.LU = df %>% group_by(LGA, Land.use.zone) %>% summarise(sum = sum(tot), sd = sd(tot))
+df.Type = df %>% group_by(Land.use.zone, Type) %>% summarise(sum = sum(tot), sd = sd(tot))
+
+# Rush job ----------------------------------------------------------------
+
+df.macro = left_join(ls.df$site[1:3], ls.df$event, by = "Asset.ID") 
+df.macro = left_join(df.macro, ls.df$item, by = "event_id") 
+
+df.macro = df.macro %>% group_by(LGA) %>% summarise(event.tot = sum(total),
+                                                    event.wt = sum(event.wt))
+
+df.poly = left_join(ls.df$polystyrene, ls.df$event[,1:3], by = "event_id")
+df.poly = left_join(df.poly, ls.df$site[,1:3], by = "Asset.ID")
+
+df.poly = df.poly %>% group_by(LGA) %>% summarise(total = sum(Totals))
+```
+
+```{r ggplot}
+df.plot = df.LU %>% ungroup()
+#df.plot = df.Type %>% ungroup()
+
+df.plot = df.plot %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
+
+
+p_sum = ggplot(df.plot, aes(x = Land.use.zone, y = sum, fill = LGA)) +
+        geom_bar(stat="identity", position="dodge") +
+        geom_text(aes(y = sum + sd, label = round(sum,2)), position = position_dodge(width =0.9), vjust = -0.5, color = "black", size = 3) +
+        geom_errorbar(aes(ymin = sum - sd, ymax = sum + sd), width = .2,
+                        position = position_dodge(.9)) +
+        theme_hc() + 
+        scale_fill_brewer(
+          type = "qual", palette = 8,
+          direction = 2, aesthetics = "fill"
+        ) + 
+        # theme(axis.text.x = element_text(angle = 70)) +
+        ggtitle("Counts of microplastics (< 5mm) by Land Use") +
+        labs(y = "Microplastic counts (thousands)", x="")
+
+p_sum
+
+ggsave(filename = paste0(here("Output"),"/", "LU_micro.png"), plot = p_sum, dpi = 600)
+
+```
+

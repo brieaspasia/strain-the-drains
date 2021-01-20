@@ -11,30 +11,23 @@ output:
   pdf_document:
     toc: yes
 ---
+# Original:
 # Project:        'Strain the drains' 
 # Author:         Gacutan, Jordan (z5238824)
-
 # Created at:     E26, UNSW, Sydney, Australia
 # Purpose:        Data exploration, data analysis
-# St / End Date:  13 April, 2020 to XX, 2021
-
-### TOC ###
-
-# 0.1  Load libraries / dependencies
-# 0.2  Load data
-# 1.0  Prepare for graphing
-# 1.1  Add pseudo-zeros
-# 2.0  Graphing
-
-##### CODE #####
+# Start Date:  13 April, 2020
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r load-libraries}
 # 0.1 Library load
-lib.load = c("tidyverse","here", "ggplot2", "ggthemes", "treemap") 
-lapply(lib.load, require, character.only = TRUE) 
+library(tidyverse)
+library(here)
+library(ggplot2)
+library(ggthemes)
+library(treemap)
 ```
 ```{r function-setup}
 # Check wd
@@ -67,6 +60,7 @@ for(i in 1:length(load_codes)){
   
 }
 ```
+
 ```{r graphing-prep}
 # 1.0 Prep for graphing ---------------------------------------------------
 

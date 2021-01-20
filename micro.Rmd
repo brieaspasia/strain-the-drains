@@ -11,6 +11,7 @@ output:
   pdf_document:
     toc: yes
 ---
+# Originally created by Jordan Gacutan
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -86,7 +87,7 @@ df.plot = df.LU %>% ungroup()
 df.plot = df.plot %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
 
 
-p_sum = ggplot(df.plot, aes(x = Land.use.zone, y = sum, fill = LGA)) +
+p_sum = ggplot(df.plot, aes(x = LGA, y = sum, fill = LGA)) +
         geom_bar(stat="identity", position="dodge") +
         geom_text(aes(y = sum + sd, label = round(sum,2)), position = position_dodge(width =0.9), vjust = -0.5, color = "black", size = 3) +
         geom_errorbar(aes(ymin = sum - sd, ymax = sum + sd), width = .2,
@@ -98,7 +99,11 @@ p_sum = ggplot(df.plot, aes(x = Land.use.zone, y = sum, fill = LGA)) +
         ) + 
         # theme(axis.text.x = element_text(angle = 70)) +
         ggtitle("Counts of microplastics (< 5mm) by Land Use") +
-        labs(y = "Microplastic counts (thousands)", x="")
+        labs(y = "Microplastic counts (thousands)", x="") +
+        theme(axis.text.x=element_text(color = "black", size=11, 
+                                 vjust=.8, angle=30, hjust=0.8)) +
+        facet_wrap(~Land.use.zone, scales="free_y")
+  
 
 p_sum
 

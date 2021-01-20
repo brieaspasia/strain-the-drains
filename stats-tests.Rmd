@@ -1,0 +1,107 @@
+---
+title: "stats-tests"
+author: "Brie Sherow"
+date: "20/01/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load-libraries}
+library(ggplot2) #graphing
+library(ggthemes) #graphing templates
+library(hrbrthemes) #graphing templates
+library(lubridate) #date manipulation
+library(forcats) #working with factors
+library(tidyverse) #manipulating data
+library(knitr) #rmarkdown functions
+library(kableExtra) #table layouts
+library(magick) #image processing
+library(stats) #R stats functions
+library(broom) #create summaries from stats objects
+library(car) #lm regression
+library(MASS) #stats
+library(lme4) #glmer function
+library(DHARMa) #testing model diagnostics
+library(glmmTMB) #fit zero-inflated negative binomial
+library(lattice) #fourth corner heatmap
+library(corrplot) #co-occurrence matrix
+library(gclus) #co-occurrence matrix
+library(broom.mixed) #regression tables
+
+library(sjPlot) #regression models as HTML table
+library(sjmisc) #regression models as HTML table
+library(sjlabelled) #regression models as HTML table
+```
+
+
+```{r create-abundance-data}
+# 0.2 Load data
+load_codes = c("site", # contains site data 
+               "event", # events per site
+               "item",  # items per event
+               "code")  # AMDI item codes
+
+for(i in 1:length(load_codes)){
+  
+  fp = list.files(path = here::here("Data"), 
+                  pattern = paste0(load_codes[i],".csv$"),
+                  full.names = T)
+  
+  assign(paste0("df.",load_codes[i]), as.data.frame(read.csv(fp)))
+  
+}
+
+
+    # 1.2 merge event per site
+    df = left_join(df.site,df.event, by = "Asset.ID")
+    
+    # 1.3 merge item per event
+    df = left_join(df,df.item, by = "event_id")
+    
+    # 1.4 Add material and item type to df.final
+    col.ind = grep("item.ex", names(df.code))
+    df.final = left_join(df,df.code[,2:col.ind], by = c("item" = "item.ex"))
+    
+    df.final <- df.final %>%
+      filter(item!="Pollution Rating") %>% #recording this in micro
+      dplyr::select(LGA, Land.use.zone, Asset.ID, event_id, item, total) %>%
+      unique() 
+    
+      #convert to data wide
+    df.wide <- unite(df.final, "event", c("LGA", "Land.use.zone", "Asset.ID", "event_id"), sep=" ")
+    df.test <- spread(df.wide, item, total) 
+  
+  #replace na values with 0
+  abund[is.na(abund)] <- 0
+```
+
+```{r data-prep}
+mod <- df.final %>%
+  group_by(event_id, LGA, Land.use.zone, item) %>%
+  summarise(total =sum(total)) %>%
+  ungroup() %>%
+  mutate(LGA=as.factor(LGA),
+         Land.use.zone=as.factor(Land.use.zone),
+         event_id=as.factor(event_id),
+         item=as.factor(item))
+
+m <- glmmTMB(total~
+              Land.use.zone +
+               event_id +
+               item +
+               (LGA),
+             family=poisson(),
+             data=mod)
+```
+

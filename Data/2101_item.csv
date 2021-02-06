@@ -11515,7 +11515,6 @@ event_id,item,total,note
 24694,Cigarette butts & filters,8,
 24535,"Plastic film remnants (bits of plastic bag, wrap etc)",8,
 24537,"Plastic film remnants (bits of plastic bag, wrap etc)",8,
-,,,
 24550,"Construction material (brick, cement, pipe)",8,8 x tiles
 24551,"Plastic packaging food (wrap, packets, containers)",8,"4 x confectionery, 3 x Mentos, 1 x takeaway"
 24654,Plastic wrap non food (bubble wrap etc),8,7 x plastic cigarette pack wrap
@@ -11580,7 +11579,6 @@ event_id,item,total,note
 24530,Plastic bits & pieces hard & solid,6,
 24533,"Miscellaneous paper, labels & tickets",6,6 x paper remnants
 24534,Cigarette butts & filters,6,
-,,,
 24546,"Plastic film remnants (bits of plastic bag, wrap etc)",6,
 24548,Plastic wrap non food (bubble wrap etc),6,5 x plastic cigarette pack wrap
 24553,Plastic wrap non food (bubble wrap etc),6,5 x plastic cigarette pack wrap
@@ -11592,10 +11590,8 @@ event_id,item,total,note
 24667,"Plastic film remnants (bits of plastic bag, wrap etc)",6,
 24669,Foam insulation & packaging (whole and remnants),6,
 24670,"Plastic packaging food (wrap, packets, containers)",6,"4 x confectionery, 2 x straw wrapper"
-,,,
 24636,Cigarette butts & filters,6,
 24637,"Plastic drink bottles (water, juice, milk, soft drink)",6,6 x unknown
-,,,
 24643,Cigarette butts & filters,6,
 24644,Paper & cardboard packaging,6,"1 x McDonalds coffee cup, 1 x McDonalds takeaway, 1 x takeaway"
 24646,Plastic wrap non food (bubble wrap etc),6,6 x plastic cigarette pack wrap
@@ -11613,7 +11609,6 @@ event_id,item,total,note
 24723,Paper & cardboard packaging,5,
 24723,Foam insulation & packaging (whole and remnants),5,
 24726,"Plastic packaging food (wrap, packets, containers)",5,"4 x confectionery, 1 x takeaway"
-,,,
 24727,"Foil wrappers, packets, bladders & alfoil",5,
 24731,Plastic wrap non food (bubble wrap etc),5,4 x plastic cigarette pack wrap
 24732,Cigarette butts & filters,5,
@@ -11630,7 +11625,6 @@ event_id,item,total,note
 24528,Plastic wrap non food (bubble wrap etc),5,5 x plastic cigarette pack wrap
 24530,"Plastic packaging food (wrap, packets, containers)",5,"4 x confectionery, 1 x straw wrapper"
 24530,"Plastic film remnants (bits of plastic bag, wrap etc)",5,
-,,,
 24549,Cigarette butts & filters,5,
 24550,"Plastic packaging food (wrap, packets, containers)",5,"2 x confectionery, 2 x takeaway, 1 x Eat With Tommy takeaway"
 24553,"Plastic film remnants (bits of plastic bag, wrap etc)",5,
@@ -11655,7 +11649,6 @@ event_id,item,total,note
 24646,Cigarette butts & filters,5,
 24647,"Lids & tops, pump spray, flow restrictor & similar",5,
 24699,Paper & cardboard packaging,5,"1 x Seven Eleven coffee cup, 2 x paper coffee cup, 1 x takeaway"
-,,,
 24708,Cigarette butts & filters,5,
 24712,Rubber remnants,5,
 24713,Plastic wrap non food (bubble wrap etc),5,3 x plastic cigarette pack wrap
@@ -11688,7 +11681,6 @@ event_id,item,total,note
 24688,"Foil wrappers, packets, bladders & alfoil",4,
 24690,"Miscellaneous paper, labels & tickets",4,"3 x paper receipts, 1 x miscellaneous paper"
 24691,Paper & cardboard packaging,4,"1 x KFC, 1 x Hungry Jacks, 2 x takeaway"
-,,,
 24691,"Miscellaneous paper, labels & tickets",4,"2 x paper receipts, 2 x paper remnants"
 24526,"Plastic film remnants (bits of plastic bag, wrap etc)",4,
 24526,Glass beer stubbies & pre-mixed alcohol bottles,4,4 x Vodka Cruiser
@@ -11701,7 +11693,6 @@ event_id,item,total,note
 24537,"Plastic packaging food (wrap, packets, containers)",4,"2 x McDonalds takeaway, 1 x Seven Eleven coffee cup lid, 1 x coffee cup lid"
 24543,"Plastic packaging food (wrap, packets, containers)",4,"2 x confectionery, 1 x coffee cup lid, 1 x other food package"
 24544,Cigarette butts & filters,4,
-,,,
 24546,"Sanitary (tissues, nappies, condoms, cotton buds)",4,
 24549,"Plastic packaging food (wrap, packets, containers)",4,"2 x confectionery, 2 x takeaway"
 24550,Cigarette butts & filters,4,
@@ -11764,7 +11755,6 @@ event_id,item,total,note
 24687,"Metal outdoor equipment, implements, furniture",3,3 x metal spoons
 24689,Plastic wrap non food (bubble wrap etc),3,3 x plastic cigarette pack wrap
 24689,"Plastic film remnants (bits of plastic bag, wrap etc)",3,
-,,,
 24690,"Plastic packaging food (wrap, packets, containers)",3,"2 x confectionery, 1 x other food package"
 24692,Cigarette butts & filters,3,
 24692,"Plastic film remnants (bits of plastic bag, wrap etc)",3,
@@ -11776,7 +11766,6 @@ event_id,item,total,note
 24526,"Metal bottle caps, lids & pull tabs",3,
 24526,"Plastic packaging food (wrap, packets, containers)",3,"2 x confectionery, 1 x Mentos"
 24526,"Lids & tops, pump spray, flow restrictor & similar",3,
-,,,
 24527,Paper & cardboard packaging,3,"1 x paper coffee cup, 1 x McDonalds takeaway"
 24529,Cigarette butts & filters,3,
 24534,"Miscellaneous paper, labels & tickets",3,3 x paper remnants
@@ -11805,7 +11794,6 @@ event_id,item,total,note
 24659,"Foil wrappers, packets, bladders & alfoil",3,
 24660,"Pens, markers & other plastic stationary",3,
 24660,"Plastic film remnants (bits of plastic bag, wrap etc)",3,
-,,,
 24660,"Foil wrappers, packets, bladders & alfoil",3,
 24661,"Plastic drink bottles (water, juice, milk, soft drink)",3,"1 x Woolworths water, 1 x Coles water, 1 x Coke"
 24663,"Plastic packaging food (wrap, packets, containers)",3,3 x confectionery
@@ -11826,7 +11814,6 @@ event_id,item,total,note
 24640,"Plastic film remnants (bits of plastic bag, wrap etc)",3,
 24641,Plastic bits & pieces hard & solid,3,
 24647,"Sanitary (tissues, nappies, condoms, cotton buds)",3,
-,,,
 24648,Paper & cardboard packaging,3,"1 x Seven Eleven coffee cup, 1 x Subway takeaway, 1 x cigarette packet"
 24651,"Plastic packaging food (wrap, packets, containers)",3,"2 x confectionery, 1 x coffee cup lid"
 24652,Cigarette butts & filters,3,
@@ -11894,7 +11881,6 @@ event_id,item,total,note
 24739,"Plastic film remnants (bits of plastic bag, wrap etc)",2,
 24748,Strapping band whole (record as single item),2,
 24748,"Lids & tops, pump spray, flow restrictor & similar",2,
-,,,
 24676,Paper & cardboard packaging,2,1 x takeaway
 24676,"Tape adhesive, electrical, duct, hazard marker & rolls",2,
 24676,"Miscellaneous paper, labels & tickets",2,2 x paper remnants
@@ -11970,7 +11956,6 @@ event_id,item,total,note
 24662,"Toys, party poppers, ribbons, clips & similar",2,
 24666,"Plastic film remnants (bits of plastic bag, wrap etc)",2,
 24666,Paper & cardboard packaging,2,2 x chewing gum wrapper
-,,,
 24666,"Plastic bags supermarket, garbage, dog poo, ice",2,2 x other plastic bags
 24667,Gas & volatile liquid capsules & cans,2,
 24667,Foam insulation & packaging (whole and remnants),2,
@@ -12014,7 +11999,6 @@ event_id,item,total,note
 24647,"Plastic bags supermarket, garbage, dog poo, ice",2,"1 x fruit and veg bag, 1 x other plastic bag"
 24648,Cigarette butts & filters,2,
 24648,Plastic first aid materials & equipment (band aids),2,
-,,,
 24650,"Plastic packaging food (wrap, packets, containers)",2,"1 x confectionery, 1 x takeaway"
 24651,Plastic wrap non food (bubble wrap etc),2,2 x plastic cigarette pack wrap
 24651,"Plastic film remnants (bits of plastic bag, wrap etc)",2,
@@ -12194,7 +12178,6 @@ event_id,item,total,note
 24682,"Plastic packaging food (wrap, packets, containers)",1,1 x fruit and veg bag
 24683,Paper & cardboard packaging,1,1 x chewing gum wrapper
 24683,Plastic wrap non food (bubble wrap etc),1,1 x plastic cigarette pack wrap
-,,,
 24684,"Plastic film remnants (bits of plastic bag, wrap etc)",1,
 24684,"Toys, party poppers, ribbons, clips & similar",1,
 24684,"Straws, confection sticks, cups, plates & cutlery",1,1 x cutlery
@@ -12442,7 +12425,6 @@ event_id,item,total,note
 24636,"Sanitary (tissues, nappies, condoms, cotton buds)",1,1 x cotton bud stick
 24636,"Metal bottle caps, lids & pull tabs",1,
 24636,"Foil wrappers, packets, bladders & alfoil",1,
-,,,
 24636,Plastic bits & pieces hard & solid,1,
 24636,"Plastic film remnants (bits of plastic bag, wrap etc)",1,
 24637,"Plastic bags supermarket, garbage, dog poo, ice",1,1 x ziplock bag
@@ -12654,3 +12636,190 @@ event_id,item,total,note
 24648,Foam insulation & packaging (whole and remnants),1,
 24676,Foam insulation & packaging (whole and remnants),1,
 24650,Foam insulation & packaging (whole and remnants),1,
+27195,Cigarette butts & filters,60,
+27195,Plastic wrap non food (bubble wrap etc),21,19 x plastic cigarette package
+27195,"Plastic packaging food (wrap, packets, containers)",18,"11 x confectionery, 1 x Boost takeaway, 1 x takeaway, 2 x straw wrapper, 3 x other food package"
+27195,"Miscellaneous paper, labels & tickets",8,"1 x paper receipt, 7 x paper remnants"
+27195,Paper & cardboard packaging,7,"2 x cardboard package, 5 x takeaway"
+27195,"Foil wrappers, packets, bladders & alfoil",5,
+27195,Aluminium cans,4,"1 x Mercury, 3 x Bundaberg Rum"
+27195,"Plastic film remnants (bits of plastic bag, wrap etc)",3,
+27195,"Packaging accessories (seals, reels, spools, handles)",3,3 x plastic labels
+27195,"Metal bottle caps, lids & pull tabs",2,
+27195,Foam insulation & packaging (whole and remnants),2,1 x polystyrene ball
+27195,Occupational health & safety items,1,1 x face mask
+27195,"Toothbrushes, brushes & combs, hair ties etc",1,1 x hair tie
+27195,"Straws, confection sticks, cups, plates & cutlery",1,1 x straw
+27195,"Sanitary (tissues, nappies, condoms, cotton buds)",1,
+27195,"Plastic bags supermarket, garbage, dog poo, ice",1,1 x fruit and veg bag
+27199,Foam insulation & packaging (whole and remnants),50,40 x polystyrene balls
+27199,Cigarette butts & filters,9,
+27199,Plastic bits & pieces hard & solid,5,
+27199,"Plastic packaging food (wrap, packets, containers)",5,"1 x confectionery, 3 x McDonalds takeaway, 1 x takeaway"
+27199,Paper & cardboard packaging,3,"1 x paper coffee cup, 2 x McDonalds takeaway"
+27199,"Foil wrappers, packets, bladders & alfoil",2,
+27199,"Miscellaneous paper, labels & tickets",1,1 x paper remnant
+27199,"Pens, markers & other plastic stationary",1,
+27199,Cigarette lighters,1,
+27199,"Tape adhesive, electrical, duct, hazard marker & rolls",1,
+27199,"Straws, confection sticks, cups, plates & cutlery",1,1 x McDonalds straw
+27199,Glass or ceramic broken,1,
+27199,"Plastic film remnants (bits of plastic bag, wrap etc)",1,
+27199,Pollution Rating,0,1688 x plastic resin pellets removed from trap
+27199,Pollution Rating,0,104 x plastic chips and shards removed from trap
+27196,Cigarette butts & filters,18,
+27196,Plastic wrap non food (bubble wrap etc),11,11 x plastic cigarette package
+27196,"Plastic packaging food (wrap, packets, containers)",6,"5 x confectionery, 1 x coffee cup lid"
+27196,Foam insulation & packaging (whole and remnants),4,2 x polystyrene balls
+27196,"Plastic film remnants (bits of plastic bag, wrap etc)",3,
+27196,"Foil wrappers, packets, bladders & alfoil",1,
+27196,"Toys, party poppers, ribbons, clips & similar",1,1 x ribbon
+27196,"Lids & tops, pump spray, flow restrictor & similar",1,
+27196,Plastic bits & pieces hard & solid,1,
+27196,Aluminium cans,1,1 x Mount Franklin sparkling water
+27196,Cable ties & plastic fasteners,1,
+27196,"Tape adhesive, electrical, duct, hazard marker & rolls",1,
+27196,"Plastic bags supermarket, garbage, dog poo, ice",1,1 x dog poo bag
+27197,Cigarette butts & filters,7,
+27197,"Plastic film remnants (bits of plastic bag, wrap etc)",4,
+27197,Plastic wrap non food (bubble wrap etc),3,3 x plastic cigarette package
+27197,"Plastic packaging food (wrap, packets, containers)",2,2 x confectionery
+27197,"Foil wrappers, packets, bladders & alfoil",2,
+27197,Plastic bits & pieces hard & solid,1,
+27197,"Toys, party poppers, ribbons, clips & similar",1,1 x confetti/glitter
+27197,Aluminium cans,1,1 x V Energy
+27198,Cigarette butts & filters,23,
+27198,Plastic bits & pieces hard & solid,9,
+27198,"Miscellaneous paper, labels & tickets",3,3 x paper remnants
+27198,"Rubber balloons, balls & toys, elastic straps & bands",3,3 x rubber band
+27198,"Tape adhesive, electrical, duct, hazard marker & rolls",2,
+27198,"Plastic bags supermarket, garbage, dog poo, ice",2,"1 x grey shopping bag, 1 x other plastic bag"
+27198,Foam insulation & packaging (whole and remnants),2,
+27198,"Metal bottle caps, lids & pull tabs",1,
+27198,Plastic wrap non food (bubble wrap etc),1,1 x plastic cigarette package
+27198,"Plastic film remnants (bits of plastic bag, wrap etc)",1,
+27198,"Plastic packaging food (wrap, packets, containers)",1,1 x confectionery
+27198,"Foil wrappers, packets, bladders & alfoil",1,
+27198,"Toothbrushes, brushes & combs, hair ties etc",1,1 x hair tie
+27198,Rubber remnants,1,
+27198,"Metal building & trades materials, fixings & fittings",1,
+27185,Cigarette butts & filters,92,
+27185,"Plastic film remnants (bits of plastic bag, wrap etc)",35,
+27185,"Foil wrappers, packets, bladders & alfoil",32,
+27185,Plastic wrap non food (bubble wrap etc),31,30 x plastic cigarette package
+27185,"Plastic packaging food (wrap, packets, containers)",19,"4 x Share Bubble Tea straw wrapper, 1 x Coco Bubble Tea straw wrapper, 14 x straw wrapper"
+27185,"Plastic packaging food (wrap, packets, containers)",8,"5 x confectionery, 1 x red bubble tea straw stopper, 1 x coffee cup lid, 1 x drink bottle label"
+27185,"Sanitary (tissues, nappies, condoms, cotton buds)",7,
+27185,"Plastic ceremonial & festive (wreaths, flowers)",6,6 x Christmas decorations
+27185,"Straws, confection sticks, cups, plates & cutlery",6,"1 x Share Bubble Tea straw, 2 x bubble tea straws, 3 x straw"
+27185,"Metal bottle caps, lids & pull tabs",2,
+27185,Plastic bits & pieces hard & solid,2,
+27185,Rubber remnants,2,
+27185,"Packaging accessories (seals, reels, spools, handles)",2,1 x plastic label
+27185,"Binding, thread, string & cord (natural fibre)",2,
+27185,"Personal effects (wallets, money, keys, jewellery)",2,
+27185,"Cloth, clothing, hats & towels",1,
+27185,Metal scrap & remnants,1,
+27185,"Plastic bags supermarket, garbage, dog poo, ice",1,1 x other plastic bag
+27190,Plastic wrap non food (bubble wrap etc),28,26 x plastic cigarette package
+27190,"Plastic packaging food (wrap, packets, containers)",27,"3 x confectionery, 21 x takeaway sauce containers, 1 x coffee cup lid, 2 x Gotcha Bubble Tea straw wrapper"
+27190,"Plastic packaging food (wrap, packets, containers)",19,"5 x Share Bubble Tea straw wrapper, 11 x straw wrapper, 3 x other food package"
+27190,Cigarette butts & filters,13,
+27190,Occupational health & safety items,12,12 x glove
+27190,Foam insulation & packaging (whole and remnants),6,1 x polystyrene ball
+27190,"Plastic bags supermarket, garbage, dog poo, ice",6,"1 x Woolworths shopping bag, 5 x fruit and veg bag"
+27190,"Plastic film remnants (bits of plastic bag, wrap etc)",5,
+27190,"Foil wrappers, packets, bladders & alfoil",4,
+27190,"Straws, confection sticks, cups, plates & cutlery",2,"1 x bubble tea straw, 1 x straw"
+27190,"Sanitary (tissues, nappies, condoms, cotton buds)",2,1 x cotton bud stick
+27190,"Tape adhesive, electrical, duct, hazard marker & rolls",2,
+27190,"Wooden confection sticks, pencils, matches etc",1,
+27190,"Appliances, electronics & batteries",1,
+27190,Glass beer stubbies & pre-mixed alcohol bottles,1,1 x Heineken
+27190,"Newspaper, magazines & brochures",1,
+27194,Plastic wrap non food (bubble wrap etc),29,29 x plastic cigarette package
+27194,"Plastic packaging food (wrap, packets, containers)",21,"4 x confectionery, 1 x takeaway, 11 x straw wrapper, 5 x Share Bubble Tea straw wrapper"
+27194,Cigarette butts & filters,18,
+27194,"Plastic film remnants (bits of plastic bag, wrap etc)",6,
+27194,"Miscellaneous paper, labels & tickets",2,"1 x paper receipt, 1 x paper remnant"
+27194,"Straws, confection sticks, cups, plates & cutlery",2,2 x straw
+27194,"Sanitary (tissues, nappies, condoms, cotton buds)",1,1 x cotton bud stick
+27194,Aluminium cans,1,1 x Coke
+27194,"Foil wrappers, packets, bladders & alfoil",1,
+27194,"Plastic bags supermarket, garbage, dog poo, ice",1,1 x fruit and veg bag
+27194,"Plastic drink bottles (water, juice, milk, soft drink)",1,1 x Milo drink pouch
+27194,Rubber footwear & thongs,1,
+27194,"Tape adhesive, electrical, duct, hazard marker & rolls",1,
+27189,Cigarette butts & filters,41,
+27189,Plastic wrap non food (bubble wrap etc),30,22 x plastic cigarette package
+27189,"Plastic packaging food (wrap, packets, containers)",17,"11 x confectionery, 2 x takeaway, 3 x Share Bubble Tea straw wrapper, 1 x Panda label bubble tea straw wrapper"
+27189,"Plastic bags supermarket, garbage, dog poo, ice",7,"1 x blue shopping bag, 1 x ziplock bag, 3 x fruit and veg bags, 2 x other plastic bags"
+27189,Occupational health & safety items,6,"5 x face mask, 1 x glove"
+27189,"Plastic film remnants (bits of plastic bag, wrap etc)",6,
+27189,"Miscellaneous paper, labels & tickets",5,5 x paper remnants
+27189,"Plastic packaging food (wrap, packets, containers)",5,"1 x Orchis straw wrapper, 1 x Iconic in Beverage straw wrapper, 3 x straw wrapper"
+27189,"Foil wrappers, packets, bladders & alfoil",4,
+27189,Foam insulation & packaging (whole and remnants),4,
+27189,Strapping band whole (record as single item),2,
+27189,"Tape adhesive, electrical, duct, hazard marker & rolls",2,
+27189,Rubber remnants,1,
+27189,"Rubber balloons, balls & toys, elastic straps & bands",1,1 x rubber band
+27189,Strapping band scraps,1,
+27189,Plastic bits & pieces hard & solid,1,
+27193,Plastic wrap non food (bubble wrap etc),15,15 x plastic cigarette package
+27193,"Plastic packaging food (wrap, packets, containers)",7,7 x confectionery
+27193,"Miscellaneous paper, labels & tickets",6,6 x paper remnants
+27193,Cigarette butts & filters,5,
+27193,"Foil wrappers, packets, bladders & alfoil",3,
+27193,"Metal bottle caps, lids & pull tabs",2,
+27193,Foam insulation & packaging (whole and remnants),1,1 x polystyrene ball
+27193,"Plastic film remnants (bits of plastic bag, wrap etc)",1,
+27193,Pollution Rating,0,"An estimated 10,000 plus pieces of confetti/glitter removed from trap"
+27187,Plastic wrap non food (bubble wrap etc),36,33 x plastic cigarette package
+27187,"Plastic packaging food (wrap, packets, containers)",11,"8 x confectionery, 1 x Chatime Bubble Tea straw wrapper, 2 x other food package"
+27187,"Foil wrappers, packets, bladders & alfoil",3,
+27187,Cigarette butts & filters,2,
+27187,Foam insulation & packaging (whole and remnants),2,
+27187,"Plastic bags supermarket, garbage, dog poo, ice",2,"1 x ziplock bag, 1 x fruit and veg bag"
+27187,Plastic bits & pieces hard & solid,2,
+27187,Metal motor vehicle parts & batteries,1,
+27187,"Plastic film remnants (bits of plastic bag, wrap etc)",1,
+27187,Paper & cardboard packaging,1,1 x McDonalds takeaway
+27187,Strapping band whole (record as single item),1,
+27187,Aluminium cans,1,1 x Sunkist
+27191,Cigarette butts & filters,101,
+27191,Plastic bits & pieces hard & solid,34,
+27191,"Plastic packaging food (wrap, packets, containers)",8,"4 x confectionery, 1 x Iconic in Beverage straw wrapper, 1 x Mount Franklin waterbottle label, 2 x other food package"
+27191,"Plastic film remnants (bits of plastic bag, wrap etc)",5,
+27191,Foam insulation & packaging (whole and remnants),5,
+27191,Plastic wrap non food (bubble wrap etc),4,2 x plastic cigarette package
+27191,"Lids & tops, pump spray, flow restrictor & similar",3,
+27191,"Tape adhesive, electrical, duct, hazard marker & rolls",2,
+27191,"Foil wrappers, packets, bladders & alfoil",1,
+27191,Recreation & outdoor equipment,1,1 x swimming goggles
+27191,"Plastic bags supermarket, garbage, dog poo, ice",1,1 x other plastic bag
+27191,"Plastic drink bottles (water, juice, milk, soft drink)",1,
+27186,Cigarette butts & filters,21,
+27186,"Plastic packaging food (wrap, packets, containers)",5,"3 x confectionery, 2 x other food package"
+27186,Plastic wrap non food (bubble wrap etc),3,2 x plastic cigarette package
+27186,"Foil wrappers, packets, bladders & alfoil",2,
+27186,"Lids & tops, pump spray, flow restrictor & similar",2,
+27186,"Plastic film remnants (bits of plastic bag, wrap etc)",2,
+27186,Food scraps,1,
+27186,Occupational health & safety items,1,1 x glove
+27186,Glass beer stubbies & pre-mixed alcohol bottles,1,1 x Culcha Kombucha
+27186,Plastic bits & pieces hard & solid,1,
+27192,Cigarette butts & filters,10,
+27192,Plastic wrap non food (bubble wrap etc),9,7 x plastic cigarette package
+27192,"Plastic packaging food (wrap, packets, containers)",6,"4 x confectionery, 2 x other food package"
+27192,"Plastic film remnants (bits of plastic bag, wrap etc)",5,
+27192,"Foil wrappers, packets, bladders & alfoil",3,
+27192,"Tape adhesive, electrical, duct, hazard marker & rolls",3,
+27192,Medical waste,1,
+27192,Personal care & pharmaceutical packaging,1,
+27192,Occupational health & safety items,1,1 x glove
+27192,"Foam cups, food packs & trays",1,
+27192,"Packaging accessories (seals, reels, spools, handles)",1,
+27192,Drug paraphernalia,1,1 x small drug ziplock bag
+27192,"Miscellaneous paper, labels & tickets",1,1 x paper remnant
+27192,"Lids & tops, pump spray, flow restrictor & similar",1,

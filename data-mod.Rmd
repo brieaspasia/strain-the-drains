@@ -1,0 +1,68 @@
+---
+title: "drains-data-mod"
+author: "Brie Sherow"
+date: "06/02/2021"
+output: html_document
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+getwd()
+```
+
+```{r libraries}
+library(ggplot2) #graphing
+library(ggthemes) #graphing templates
+library(hrbrthemes) #graphing templates
+library(lubridate) #date manipulation
+library(forcats) #working with factors
+library(tidyverse) #manipulating data
+library(knitr) #rmarkdown functions
+library(kableExtra) #table layouts
+library(tidyr) #long & wide formats
+```
+
+```{r}
+#load item counts
+item <- read.csv(file="Data/2101_item.csv", 
+                 header=T, sep=",") 
+
+#load events
+event <- read.csv(file="Data/2101_event.csv", 
+                 header=T, sep=",") 
+
+#join event info to item count
+survey_count <- left_join(item, event, by="event_id")
+
+survey_count <- survey_count %>%
+  dplyr::select(-event.tot, -event.wt, -vol, -hr) %>%
+  filter(item!="Pollution Rating")
+
+str(survey_count)
+
+#count of items per unique event ID
+event_count <- survey_count %>%
+  group_by(event_id, item) %>%
+  summarise(sum=sum(total))
+
+#load AMDI code\
+AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
+                 header=T, sep=",") 
+
+#create full list of possible items
+AMDI <- AMDI_code %>%
+  filter(item_code_id != "LSTD1") %>%
+  dplyr::select(item.ex)
+
+
+#trying to create a df of all possible items at all survey events, complete with zeros
+t <- full_join(AMDI, event_count, by=c("item.ex" = "item"))
+```
+

@@ -95,7 +95,7 @@ rm(df.absent, df.item, item.keep, ls.temp, ls.zeros, i, fp, item_absent)
 # Sub :: Merge -------------------------------------------------------------
 
     # 1.2 merge event per site
-    df.event = df.event %>% select(-event.wt,-event.tot) # Remove weight and total per event
+    df.event = df.event %>% dplyr::select(-event.wt,-event.tot) # Remove weight and total per event
     df.final = left_join(df.site,df.event, by = "Asset.ID")
     
     # 1.3 merge item per event

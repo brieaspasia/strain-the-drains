@@ -30,39 +30,71 @@ library(tidyr) #long & wide formats
 ```
 
 ```{r}
-#load item counts
-item <- read.csv(file="Data/2101_item.csv", 
-                 header=T, sep=",") 
 
-#load events
-event <- read.csv(file="Data/2101_event.csv", 
-                 header=T, sep=",") 
+#create survey count
 
-#join event info to item count
-survey_count <- left_join(item, event, by="event_id")
+        #load item counts
+        item <- read.csv(file="Data/2101_item.csv", 
+                         header=T, sep=",") 
+        
+        #load events
+        event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        survey_count <- left_join(item, event, by="event_id")
+        
+        survey_count <- survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr) %>%
+          filter(item!="Pollution Rating") %>%
+          mutate(event_item = paste(event_id, item, sep=" "))
 
-survey_count <- survey_count %>%
-  dplyr::select(-event.tot, -event.wt, -vol, -hr) %>%
-  filter(item!="Pollution Rating")
+#create abundance data with all possible debris items and zero values
 
-str(survey_count)
+      #count of items per unique event ID
+      event_count <- survey_count %>%
+        group_by(event_id, item) %>%
+        summarise(sum=sum(total))
+      
+      #load AMDI code\
+      AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
+                       header=T, sep=",") 
+      
+      #create full list of possible items
+      AMDI <- AMDI_code %>%
+        filter(item_code_id != "LSTD1") %>% #remove pollution rating / microplastics
+        dplyr::select(item.ex) #column of all possible item types
+      
+      
+      #create a df of all possible items at all survey events, complete with zeros
+      abund <- full_join(AMDI, event_count, by=c("item.ex" = "item"))
+      
+      #remove empty row
+      abund <- abund[-11073, ]
+      
+      #data long to wide
+      abund_wide <- spread(abund, item.ex, sum)
+      
+      #replace na values with 0
+      abund_wide[is.na(abund_wide)] <- 0
+        
+      #transform back to long but now with the full items list and zero data
+      abund_long <- melt(abund_wide, id.vars="event_id")
+      
+      #remove the zero event ID (how did that get there?)
+      abund_long <- abund_long[abund_long$event_id != 0, ]
+      
+      #create event_item column for joining
+      abund_long <- abund_long %>%
+      mutate(event_item = paste(event_id, variable, sep=" "))
 
-#count of items per unique event ID
-event_count <- survey_count %>%
-  group_by(event_id, item) %>%
-  summarise(sum=sum(total))
+#join abundance data to survey notes and other columns
+t <- left_join(abund_long, survey_count, by="event_item")
 
-#load AMDI code\
-AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
-                 header=T, sep=",") 
-
-#create full list of possible items
-AMDI <- AMDI_code %>%
-  filter(item_code_id != "LSTD1") %>%
-  dplyr::select(item.ex)
-
-
-#trying to create a df of all possible items at all survey events, complete with zeros
-t <- full_join(AMDI, event_count, by=c("item.ex" = "item"))
+t <- t %>%
+  dplyr::select(-event_item, -event_id.y, -item, -total) %>%
+  rename(event_id=event_id.x,
+         item=variable,
+         total=value)
 ```
 

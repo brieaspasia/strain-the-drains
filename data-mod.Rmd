@@ -27,11 +27,12 @@ library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
 library(kableExtra) #table layouts
 library(tidyr) #long & wide formats
+library(reshape2) #melt function for wide and long formats
 ```
 
-```{r}
+```{r create-df}
 
-#create survey count
+#create survey count  ****Why is this not picking up cycle 9****
 
         #load item counts
         item <- read.csv(file="Data/2101_item.csv", 
@@ -45,17 +46,29 @@ library(tidyr) #long & wide formats
         survey_count <- left_join(item, event, by="event_id")
         
         survey_count <- survey_count %>%
-          dplyr::select(-event.tot, -event.wt, -vol, -hr) %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -note) %>%
           filter(item!="Pollution Rating") %>%
           mutate(event_item = paste(event_id, item, sep=" "))
 
+        #summarise duplicate survey entries (this will lose one set of notes....)
+        item_merge <- survey_count %>%
+          group_by(event_item) %>%
+          summarise(sum=sum(total)) %>%
+         ungroup()
+
+        #join survey count to the merged summaries
+        survey_count <- item_merge %>%
+          left_join(survey_count, by="event_item") %>%
+          dplyr::select(-total) %>%
+          unique()
+        
 #create abundance data with all possible debris items and zero values
 
       #count of items per unique event ID
       event_count <- survey_count %>%
         group_by(event_id, item) %>%
-        summarise(sum=sum(total))
-      
+        summarise(sum=sum(sum))
+
       #load AMDI code\
       AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
                        header=T, sep=",") 
@@ -89,12 +102,61 @@ library(tidyr) #long & wide formats
       mutate(event_item = paste(event_id, variable, sep=" "))
 
 #join abundance data to survey notes and other columns
-t <- left_join(abund_long, survey_count, by="event_item")
+  df <- left_join(abund_long, survey_count, by="event_item") 
+  
+  df <- df %>%
+    dplyr::select(-event_item, -event_id.y, -item, -sum) %>% #remove duplicate columns
+    rename(event_id=event_id.x,
+           item=variable,
+           sum=value) %>% #rename columns
+    arrange(event_id, Asset.ID) %>% #arrange by event so that missing values are aligned
+    fill(Asset.ID, Cycle, date, covid) #fill in missing values to match survey data
 
-t <- t %>%
-  dplyr::select(-event_item, -event_id.y, -item, -total) %>%
-  rename(event_id=event_id.x,
-         item=variable,
-         total=value)
+#clean up column classifications
+  
+  #reclassify columns to factor
+    names <- c("event_id", "Asset.ID", "Cycle")
+  
+    df[,names] <- lapply(df[,names], factor)
+  
+  #reclassify date
+    df$date <- dmy(df$date)
+
+#join land use zone and LGA
+    
+    #load sites
+        site <- read.csv(file="Data/200619_site.csv", 
+                         header=T, sep=",") 
+        
+    #join LGA and luz to df
+        df <- left_join(df, site, by = "Asset.ID")
+        
+    #remove unecessary columns
+        df <- df %>%
+          dplyr::select(-Site, -Latitude, -Longitude)
+```
+
+
+```{r day-diff}
+
+#find days since last survey at each asset (need to fix duplicate entries issue)
+
+t <- df %>%
+  group_by(Asset.ID, item) %>% #looking at each item at each drain
+  mutate(Days = date - lag(date)) %>% #days since last survey event
+  ungroup()
+
+
+t2 <- df %>%
+  group_by(Asset.ID, item) %>% #looking at each item at each drain
+  mutate(Days = date - lag(date)) %>% #days since last survey event
+  filter(Days != "NA") %>% #remove first survey date
+  ungroup()
+
+difference <- setdiff(t, t2)
+
+cig <- t %>%
+  filter(item == "Cigarette butts & filters")
+  
 ```
 

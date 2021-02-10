@@ -83,7 +83,7 @@ library(reshape2) #melt function for wide and long formats
       abund <- full_join(AMDI, event_count, by=c("item.ex" = "item"))
       
       #remove empty row
-      abund <- abund[-11073, ]
+      abund <- abund[-11613, ]
       
       #data long to wide
       abund_wide <- spread(abund, item.ex, sum)
@@ -139,24 +139,14 @@ library(reshape2) #melt function for wide and long formats
 
 ```{r day-diff}
 
-#find days since last survey at each asset (need to fix duplicate entries issue)
-
+#find days since last survey at each asset
 t <- df %>%
-  group_by(Asset.ID, item) %>% #looking at each item at each drain
-  mutate(Days = date - lag(date)) %>% #days since last survey event
-  ungroup()
-
-
-t2 <- df %>%
   group_by(Asset.ID, item) %>% #looking at each item at each drain
   mutate(Days = date - lag(date)) %>% #days since last survey event
   filter(Days != "NA") %>% #remove first survey date
   ungroup()
 
-difference <- setdiff(t, t2)
+#some assets are showing negative days in C8 - ex. DC13
 
-cig <- t %>%
-  filter(item == "Cigarette butts & filters")
-  
 ```
 

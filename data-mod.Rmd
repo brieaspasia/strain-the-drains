@@ -149,8 +149,18 @@ t <- df %>%
   filter(Days != "NA") %>% #remove first survey date
   ungroup()
 
+# #events 23095 and 23097 have the same date and asset - not likely that 2 teams were recording as this was covid level 3...  need to combine these
+# dups <- c("23095", "23097")
+# 
+# dupsDF <- df %>%
+#   filter(event_id %in% dups) %>%
+#   arrange(item, sum)
+
 t_red <- t %>% select(event_id, Asset.ID, Days)
-#some assets are showing negative days in C8 - ex. DC13
+
+df_t <- left_join(df, t_red, by="event_id")
+
+#calculate diff since last event, then factor in the sum per item
 
 ```
 

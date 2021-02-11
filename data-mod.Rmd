@@ -141,11 +141,15 @@ library(reshape2) #melt function for wide and long formats
 
 #find days since last survey at each asset
 t <- df %>%
-  group_by(Asset.ID, item) %>% #looking at each item at each drain
+  distinct(event_id, .keep_all = T) %>%
+  select(-item,-sum) %>%
+  group_by(Asset.ID) %>% #looking at each event
+  arrange(date) %>%
   mutate(Days = date - lag(date)) %>% #days since last survey event
   filter(Days != "NA") %>% #remove first survey date
   ungroup()
 
+t_red <- t %>% select(event_id, Asset.ID, Days)
 #some assets are showing negative days in C8 - ex. DC13
 
 ```

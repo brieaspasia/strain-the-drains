@@ -1,8 +1,8 @@
 ---
-title: "drains-data-mod"
+title: "drains-gllvm"
 author: "Brie Sherow"
-date: "06/02/2021"
-output: html_document
+date: "12/02/2021"
+output: 
   html_document:
     toc: yes
     toc_float: yes
@@ -14,10 +14,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-getwd()
 ```
 
-```{r libraries}
+
+```{r load-libraries}
 library(ggplot2) #graphing
 library(ggthemes) #graphing templates
 library(hrbrthemes) #graphing templates
@@ -25,25 +25,16 @@ library(lubridate) #date manipulation
 library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
-library(kableExtra) #table layouts
-library(tidyr) #long & wide formats
-library(reshape2) #melt function for wide and long formats
-library(stats) #R stats functions
-library(broom) #create summaries from stats objects
-library(car) #lm regression
-library(MASS) #stats
-library(lme4) #glmer function
-library(DHARMa) #testing model diagnostics
-library(glmmTMB) #fit zero-inflated negative binomial
+library(mvabund) #for multivariate stats
+library(gllvm) #for multivariate abundance
 library(lattice) #fourth corner heatmap
 library(corrplot) #co-occurrence matrix
 library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
-library(vegan) #ordination
+library(grDevices) #colour palattes for ordiplot
 ```
 
 ```{r create-df}
-
 #create survey count  
 
         #load item counts
@@ -176,72 +167,22 @@ library(vegan) #ordination
           LUZ = Land.use.zone,
       ) %>%
       distinct()
-        
+    
+    rm(abund, abund_long, abund_wide, dup, event_count, item_merge, survey_count)
 ```
 
+```{r attributes}
 
-```{r day-diff}
+#create debris traits
 
-#find days since last survey at each asset
-diff <- df %>%
-  distinct(event_id, .keep_all = T) %>%
-  select(-item,-sum) %>%
-  group_by(asset_id) %>% #looking at each event
-  arrange(date) %>%
-  mutate(days = date - lag(date)) %>% #days since last survey event
-  filter(days != "NA") %>% #remove first survey date
-  ungroup()
+    traits <- left_join(AMDI, AMDI_code, by="item.ex")
 
-diff_red <- diff %>% select(event_id, asset_id, days)
+#create environmental attributes
 
-df <- df %>%
-  left_join(diff_red, by="event_id") %>%
-  dplyr::select(-asset_id.y) %>%
-  rename(asset_id = asset_id.x)
-
-#calculate diff since last event, then factor in the sum per item
-
-str(df)
-
-df$days <- as.numeric(df$days)
-
-t <- df %>%
-  mutate(change = (sum/days))
-
-# https://rdrr.io/cran/DataCombine/man/PercChange.html
-```
-
-```{r stats-mod}
-
-#create df to use for models
-mod <- df %>%
-  group_by(event_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-  summarise(sum=sum(sum)) %>%
-  ungroup() %>%
-  mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(LUZ),
-         cycle = as.factor(cycle))
-
-#model
-m  <- glmmTMB(sum ~ #Debris count per survey event
-                LUZ +
-                covid + #predicted by Habitat
-                 (1|LGA), #date random effect
-               family=nbinom1(), #negative binomial to deal with count data and zeros
-               data = mod)
-
-summary(m)
-coef(m)
-```
-```{r dharma}
-
-simulationOutput <- simulateResiduals(fittedModel = m, plot=T)
+    env <- site %>%
+          dplyr::select(-Site, -Latitude, -Longitude) 
+    
+#create  
   
-plotResiduals(simulationOutput)
-testUniformity(simulationOutput) #tests if the overall distribution conforms to expectations
-# testOutliers(simulationOutput) #tests if there are more simulation outliers than expected
-testDispersion(simulationOutput) #tests if the simulated dispersion is equal to the observed dispersion
-#testQuantiles(simulationOutput) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
-testZeroInflation(simulationOutput) #tests if there are more zeros than expected
 ```
 

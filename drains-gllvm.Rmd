@@ -22,6 +22,7 @@ library(ggplot2) #graphing
 library(ggthemes) #graphing templates
 library(hrbrthemes) #graphing templates
 library(lubridate) #date manipulation
+library(reshape2) #melt function for wide and long formats
 library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
@@ -31,6 +32,8 @@ library(lattice) #fourth corner heatmap
 library(corrplot) #co-occurrence matrix
 library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
+library(grDevices) #colour palattes for ordiplot
+library(stats) #reshape for heatmap long data
 library(grDevices) #colour palattes for ordiplot
 ```
 
@@ -168,6 +171,20 @@ library(grDevices) #colour palattes for ordiplot
       ) %>%
       distinct()
     
+#find top 20 items
+top20 <- df %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(20, sum)
+
+#create vector from top 20 items
+top20 <- top20$item 
+top20 <- unlist(top20)
+
+df <- df %>%
+  filter(item %in% top20)
+    
     rm(abund, abund_long, abund_wide, dup, event_count, item_merge, survey_count)
 ```
 
@@ -187,7 +204,7 @@ library(grDevices) #colour palattes for ordiplot
       length(unique(abund$event_id)) == nrow(abund) #checking for duplicates
       abund <- column_to_rownames(abund, var="event_id") #create rownames from survey event
       
-      com <- abund[2:136]
+      com <- abund[2:21]
       
       #removing debris items that are zero across all surveys
       com <- com[, which(colSums(com) != 0)]
@@ -236,13 +253,45 @@ library(grDevices) #colour palattes for ordiplot
   TR <- TR
   
 ```
+```{r wide-to-long}
+fit_wide <- gllvm(y, X, TR, family = "negative.binomial")
+```
 
-```{r wide-format}
+```{r corrplot}
 gllvm(y, family = "negative.binomial")
 
 #model with environmental variables as predictors
 fit_env <- gllvm(y, X, family="negative.binomial", 
                  formula = y ~ (covid + LUZ))
 coefplot(fit_env)
+
+cr <- getResidualCor(fit_env) #residual correlation matrix
+
+#correlation matrix for debris types
+corrplot(cr[order.single(cr),
+            order.single(cr)],
+         diag=FALSE, #whether display coefs on the principal diagonal
+         type="lower", #displays lower triangle matrix
+         method="circle", #visualization method
+         tl.cex = 0.5, tl.srt=45, tl.col="red")
+```
+```{r ord-plot}
+#biplot - clusters of debris items with numbers representing sites
+ftNULL <- gllvm(y, family = "negative.binomial", row.eff = "random", num.lv = 2)
+
+#define symbols for different land use zones
+pchr = NULL
+pchr[env$LUZ == "1"] = 1 #circle CBD
+pchr[env$LUZ == "2"] = 2 #triangle industrial precinct
+pchr[env$LUZ == "3"] = 3 # public transport terminal
+pchr[env$LUZ == "4"] = 4 # shopping centre
+
+cov <- env$covid
+rbPal <- colorRampPalette(c('mediumspringgreen', 'blue')) 
+Colorsph <- rbPal(3)[as.numeric(cut(cov, breaks=3))]
+breaks <- seq(min(cov), max(cov), length.out = 3)
+ordiplot(fit_env, biplot=TRUE, symbols=TRUE, pch=pchr, s.colors = Colorsph)
+legend("topleft", legend = c("CBD", "Industrial", "Transport Terminal", "Shopping Centre"), pch = c(1, 2, 3, 4), bty = "n") #not working like in the vignette
+
 ```
 

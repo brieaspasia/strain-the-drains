@@ -171,18 +171,78 @@ library(grDevices) #colour palattes for ordiplot
     rm(abund, abund_long, abund_wide, dup, event_count, item_merge, survey_count)
 ```
 
-```{r attributes}
+```{r 4th-corner}
 
-#create debris traits
-
-    traits <- left_join(AMDI, AMDI_code, by="item.ex")
-
-#create environmental attributes
-
-    env <- site %>%
-          dplyr::select(-Site, -Latitude, -Longitude) 
+#Abundance
+    #create abundance long format
+     abund_long <- df %>%
+        group_by(event_id, LUZ, item) %>% 
+        summarise(sum=sum(sum)) %>% #total of each item type per survey event
+      ungroup()
     
-#create  
+    #convert to data wide
+      abund <- spread(abund_long, item, sum) 
+    
+      #convert survey event to rowname  
+      length(unique(abund$event_id)) == nrow(abund) #checking for duplicates
+      abund <- column_to_rownames(abund, var="event_id") #create rownames from survey event
+      
+      com <- abund[2:136]
+      
+      #removing debris items that are zero across all surveys
+      com <- com[, which(colSums(com) != 0)]
+      
+#Environment
+  #create survey event and filter zero sum surveys, 
+    env <- df %>%
+      group_by(event_id) %>%
+      mutate(sum=sum(sum)) %>%
+      filter(sum>0) %>%
+      dplyr::select(event_id, covid, LUZ) %>%
+      distinct()
+    
+    
+    #convert survey event to rowname
+  length(unique(env$event_id)) == nrow(env) #checking for duplicates
+  env <- column_to_rownames(env, var="event_id") #create rownames from survey event
+  #convert covid to numeric
+  env$covid <- as.numeric(env$covid) #convert to numeric
+  # #convert LUZ to numeric
+  env$LUZ <- as.factor(env$LUZ) #convert character to factor with 4 levels
+  env$LUZ <- as.numeric(env$LUZ) #convert factor to numeric
+    
+#Traits
   
+  #create column of usable IDs to join
+  items <- com %>%
+    gather(item, sum) %>%
+    dplyr::select(item) %>%
+    unique()
+  
+  #create trait df with ID type as row and columns are fishing and dispersiveness
+  TR <- df %>%
+    group_by(item) %>%
+    summarise(sum=sum(sum)) %>%
+    left_join(AMDI_code, by=c("item"="item.ex")) %>%
+    dplyr::select(mat, item) %>%
+    inner_join(items, by="item") %>% #remove items with 0 count
+    column_to_rownames(var="item") #create rownames from ID
+  
+  TR$mat <- as.factor(TR$mat)
+
+#final variables
+  y <- as.matrix(com)
+  X <- scale(as.matrix(env))
+  TR <- TR
+  
+```
+
+```{r wide-format}
+gllvm(y, family = "negative.binomial")
+
+#model with environmental variables as predictors
+fit_env <- gllvm(y, X, family="negative.binomial", 
+                 formula = y ~ (covid + LUZ))
+coefplot(fit_env)
 ```
 

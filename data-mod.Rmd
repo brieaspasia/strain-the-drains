@@ -186,14 +186,14 @@ library(emmeans)
 #find days since last survey at each asset
 diff <- df %>%
   distinct(event_id, .keep_all = T) %>%
-  select(-item,-sum) %>%
+  dplyr::select(-item,-sum) %>%
   group_by(asset_id) %>% #looking at each event
   arrange(date) %>%
   mutate(days = date - lag(date)) %>% #days since last survey event
   filter(days != "NA") %>% #remove first survey date
   ungroup()
 
-diff_red <- diff %>% select(event_id, asset_id, days)
+diff_red <- diff %>% dplyr::select(event_id, asset_id, days)
 
 df <- df %>%
   left_join(diff_red, by="event_id") %>%
@@ -212,41 +212,8 @@ t <- df %>%
 # https://rdrr.io/cran/DataCombine/man/PercChange.html
 ```
 
-```{r LUZ-plus-Covid}
 
-#create df to use for models
-mod <- df %>%
-  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-  summarise(sum=sum(sum)) %>%
-  ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
-  mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(LUZ),
-         cycle = as.factor(cycle))
-
-#model
-m  <- glmmTMB(sum ~ #Debris count per survey event
-                LUZ + #predicted by land use zone
-                covid + #predicted by covid lockdown
-                 (1|LGA) + (1|cycle), #suburb random effect
-               family=nbinom1(), #negative binomial to deal with count data and zeros
-               data = mod)
-
-summary(m)
-coef(m)
-```
-```{r dharma-add}
-
-simulationOutput <- simulateResiduals(fittedModel = m, plot=T)
-  
-plotResiduals(simulationOutput)
-testUniformity(simulationOutput) #tests if the overall distribution conforms to expectations
-# testOutliers(simulationOutput) #tests if there are more simulation outliers than expected
-testDispersion(simulationOutput) #tests if the simulated dispersion is equal to the observed dispersion
-#testQuantiles(simulationOutput) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
-testZeroInflation(simulationOutput) #tests if there are more zeros than expected
-```
-```{r LUZ-effect-Covid}
+```{r data-mod}
 mod <- df %>%
   group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
   summarise(sum=sum(sum)) %>%
@@ -257,35 +224,138 @@ mod <- df %>%
          covid = as.factor(covid),
          cycle = as.factor(cycle))
 
+ggplot(data=mod, aes(x=covid, y=sum, color=LUZ)) +
+  geom_boxplot() +
+  scale_y_log10() 
+       
+```
 
-m2  <- glmmTMB(sum ~ #Debris count per survey event
+
+```{r create-model}
+m  <- glmmTMB(sum ~ #Debris count per survey event
                 LUZ * covid + #predicted by land use effected by covid
                  (1|LGA/asset_id) + (1|cycle), #suburb random effect
                family=nbinom2(), #negative binomial to deal with count data and zeros
                data = mod)
 
-drop1(m2, test="Chisq")
+drop1(m, test="Chisq")
 
 str(mod)
 
-emmeans(m2, ~covid|LUZ)
-emmeans(m2, pairwise~covid|LUZ, type="response")
-
-summary(m2)
-coef(m2)
-
-ggplot(data=mod, aes(x=covid, y=sum)) +
-  geom_boxplot() +
-       facet_wrap(~LUZ)
+emmeans(m, ~covid|LUZ)
+emmeans(m, pairwise~covid|LUZ, type="response")
 ```
+
+
 ```{r dharma-effect}
-simulationOutput2 <- simulateResiduals(fittedModel = m2, plot=T)
+simulationOutput <- simulateResiduals(fittedModel = m, plot=T)
   
-plotResiduals(simulationOutput2)
-testUniformity(simulationOutput2) #tests if the overall distribution conforms to expectations
+plotResiduals(simulationOutput)
+testUniformity(simulationOutput) #tests if the overall distribution conforms to expectations
 # testOutliers(simulationOutput) #tests if there are more simulation outliers than expected
-testDispersion(simulationOutput2) #tests if the simulated dispersion is equal to the observed dispersion
+testDispersion(simulationOutput) #tests if the simulated dispersion is equal to the observed dispersion
 #testQuantiles(simulationOutput) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
-testZeroInflation(simulationOutput2) #tests if there are more zeros than expected
+testZeroInflation(simulationOutput) #tests if there are more zeros than expected
+```
+```{r temporal-autocorrelation}
+mod$resid = resid(m) #create a column for each survey event's residuals
+
+mod_temp <- mod %>%
+    group_by(date) %>%
+    summarise(sum=sum(resid))
+
+testTemporalAutocorrelation(mod_temp$sum, 
+                              time =  mod_temp$date) #test resid for temporal autocorrelation
+```
+
+```{r predictions}
+#create a new dataframe with columns of all fixed predictor variables in th emodel, and ros of all possible values of those predictor varables that you want predictions from.  Predictors are covid and LUZ.
+nd <- expand.grid(covid = unique(mod$covid),
+                  LUZ = unique(mod$LUZ),
+                  LGA = NA,
+                  asset_id = NA,
+                  cycle = NA)
+
+#predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+pred <- predict(object=m,
+                newdata=nd,
+                se.fit=T,
+                re.form=NA,
+                type="response")
+
+#creating standard error for graphing
+nd$Total <- pred$fit
+nd$SE_upper <- pred$fit + pred$se.fit
+nd$SE_lower <- pred$fit - pred$se.fit
+
+#creating plot
+p <- ggplot(nd, aes(y=Total, x=LUZ)) + 
+  geom_col(aes(fill=LUZ)) +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2)) +
+  labs(title="Debris abundance predictions",
+       subtitle="By land use zone and covid restriction",
+       x="Covid lockdown status", y="Total debris items", tag="") +
+  facet_wrap(~covid) +
+  theme_minimal()
+
+p
+
+```
+```{r vegan}
+#find top 20 items
+top20 <- df %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(20, sum)
+  
+#create vector from top 20 items
+top20 <- top20$item 
+top20 <- unlist(top20)
+
+
+df_top20 <- df %>%
+  filter(item %in% top20)
+
+#create abundance long format
+ abund_long <- df_top20 %>%
+    group_by(event_id, LUZ, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  #convert survey event to rowname  
+  length(unique(abund$event_id)) == nrow(abund) #checking for duplicates
+  abund <- column_to_rownames(abund, var="event_id") #create rownames from survey event
+  
+  com <- abund[2:21]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+
+  ord <- metaMDS(com)
+  plot(ord)
+  
+plot(ord, type = "n")
+points(ord, display = "sites", cex = 0.8, pch=21, col="yellow")
+text(ord, display = "spec", cex=0.7, col="blue")
+```
+```{r MDS}
+#create a dissimilarity matrix that measures similarity between every pair of samples
+abund.mds <- metaMDS(comm = com, distance = "bray", trace = FALSE, autotransform = FALSE)
+
+#create mds ordination plot
+plot(abund.mds$points)
+
+#extract x-y coords to new df
+MDS_xy <- data.frame(abund.mds$points)
+
+#add habitat and location to these coordinates
+MDS_xy$LUZ <- abund$LUZ
+
+MDS_ec <- ggplot(MDS_xy, aes(MDS1, MDS2, color = LUZ)) + geom_point() + theme_bw()
+MDS_ec
 ```
 

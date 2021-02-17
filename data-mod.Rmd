@@ -40,6 +40,7 @@ library(corrplot) #co-occurrence matrix
 library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
+library(emmeans)
 ```
 
 ```{r create-df}
@@ -211,29 +212,30 @@ t <- df %>%
 # https://rdrr.io/cran/DataCombine/man/PercChange.html
 ```
 
-```{r stats-mod}
+```{r LUZ-plus-Covid}
 
 #create df to use for models
 mod <- df %>%
-  group_by(event_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
   summarise(sum=sum(sum)) %>%
   ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(LGA = as.factor(LGA),
          LUZ = as.factor(LUZ),
          cycle = as.factor(cycle))
 
 #model
 m  <- glmmTMB(sum ~ #Debris count per survey event
-                LUZ +
-                covid + #predicted by Habitat
-                 (1|LGA), #date random effect
+                LUZ + #predicted by land use zone
+                covid + #predicted by covid lockdown
+                 (1|LGA) + (1|cycle), #suburb random effect
                family=nbinom1(), #negative binomial to deal with count data and zeros
                data = mod)
 
 summary(m)
 coef(m)
 ```
-```{r dharma}
+```{r dharma-add}
 
 simulationOutput <- simulateResiduals(fittedModel = m, plot=T)
   
@@ -243,5 +245,47 @@ testUniformity(simulationOutput) #tests if the overall distribution conforms to 
 testDispersion(simulationOutput) #tests if the simulated dispersion is equal to the observed dispersion
 #testQuantiles(simulationOutput) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
 testZeroInflation(simulationOutput) #tests if there are more zeros than expected
+```
+```{r LUZ-effect-Covid}
+mod <- df %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(LUZ),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+
+
+m2  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = mod)
+
+drop1(m2, test="Chisq")
+
+str(mod)
+
+emmeans(m2, ~covid|LUZ)
+emmeans(m2, pairwise~covid|LUZ, type="response")
+
+summary(m2)
+coef(m2)
+
+ggplot(data=mod, aes(x=covid, y=sum)) +
+  geom_boxplot() +
+       facet_wrap(~LUZ)
+```
+```{r dharma-effect}
+simulationOutput2 <- simulateResiduals(fittedModel = m2, plot=T)
+  
+plotResiduals(simulationOutput2)
+testUniformity(simulationOutput2) #tests if the overall distribution conforms to expectations
+# testOutliers(simulationOutput) #tests if there are more simulation outliers than expected
+testDispersion(simulationOutput2) #tests if the simulated dispersion is equal to the observed dispersion
+#testQuantiles(simulationOutput) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
+testZeroInflation(simulationOutput2) #tests if there are more zeros than expected
 ```
 

@@ -177,9 +177,147 @@ library(emmeans)
           LUZ = Land.use.zone,
       ) %>%
       distinct()
+    
+  df <- df %>%
+    filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7"))
         
 ```
+```{r top-items-per-CBD-per-lockdown}
 
+CBD_1 <- df %>%
+  filter(LUZ=="CBD", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="CBD")
+
+CBD_2 <- df %>%
+  filter(LUZ=="CBD", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="CBD")
+
+CBD_3 <- df %>%
+  filter(LUZ=="CBD", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="CBD")
+
+top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
+
+ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+```{r top-items-per-shopping-per-lockdown}
+
+shop_1 <- df %>%
+  filter(LUZ=="Shopping Centre", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="Shopping Centre")
+
+shop_2 <- df %>%
+  filter(LUZ=="Shopping Centre", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="Shopping Centre")
+
+shop_3 <- df %>%
+  filter(LUZ=="Shopping Centre", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="Shopping Centre")
+
+top_shop <- rbind(shop_1, shop_2, shop_3)
+
+ggplot(top_shop, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+```{r top-items-per-industrial-per-lockdown}
+
+ind_1 <- df %>%
+  filter(LUZ=="Industrial Precinct", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="Industrial Precinct")
+
+ind_2 <- df %>%
+  filter(LUZ=="Industrial Precinct", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="Industrial Precinct")
+
+ind_3 <- df %>%
+  filter(LUZ=="Industrial Precinct", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="Industrial Precinct")
+
+top_ind <- rbind(ind_1, ind_2, ind_3)
+
+ggplot(top_ind, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+```{r top-items-per-transport-per-lockdown}
+
+tr_1 <- df %>%
+  filter(LUZ=="Public Transport Terminal", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="Public Transport Terminal")
+
+tr_2 <- df %>%
+  filter(LUZ=="Public Transport Terminal", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="Public Transport Terminal")
+
+tr_3 <- df %>%
+  filter(LUZ=="Public Transport Terminal", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="Public Transport Terminal")
+
+top_tr <- rbind(tr_1, tr_2, tr_3)
+
+ggplot(top_tr, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+
+```{r top-items-per-luz-per-lockdown}
+t <- rbind(top_tr, top_ind, top_CBD, top_shop)
+
+ggplot(t, aes(x=covid, y=sum, fill=item)) +
+  geom_col() +
+  facet_wrap(~LUZ)
+```
 
 ```{r day-diff}
 
@@ -234,7 +372,8 @@ ggplot(data=mod, aes(x=covid, y=sum, color=LUZ)) +
     
     df_sum <- df %>%
   group_by(item, cycle, covid) %>% #relevant variables
-  summarise(sum=sum(sum), avg=mean(sum), sd=sd(sum)) %>%
+  summarise(Sum=sum(sum), #sum of each item per cycle
+            avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
   ungroup() %>%
   filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(covid = as.factor(covid),
@@ -247,15 +386,15 @@ ggplot(data=mod, aes(x=covid, y=sum, color=LUZ)) +
     
     top_items <- df_sum %>%
       group_by(cycle) %>%
-      top_n(10, sum) 
+      top_n(5, Sum) 
 
 #add a covid lockdown polygon behind this graph
-  line_item <- ggplot(top_items, aes(x = cycle, y = sum, group = item, colour=item)) +
+  line_item <- ggplot(top_items, aes(x = cycle, y = Sum, group = item, colour=item)) +
       geom_line() +
       geom_point() +
       ggtitle("Item count per Round") +
       guides(colour=guide_legend("Item type")) +
-      ylab("Total item count")
+      ylab("Total item count") 
     line_item
 ```
 
@@ -334,25 +473,324 @@ p
 #also create a line graph (borrow from the one already made of the top items, covid lockdown shaded polygon in the background)
 
 ```
+```{r data-mod-top5}
+# Function loop: each item
+
+top5_txt<- df %>%
+  filter(item %in% c("Cigarette butts & filters", 
+                     "Plastic packaging food (wrap, packets, containers)",
+                     "Plastic wrap non food (bubble wrap etc)",
+                     "Plastic film remnants (bits of plastic bag, wrap etc)",
+                     "Miscellaneous paper, labels & tickets")) %>% 
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+ 
+# Purrr
+library(purrr)
+
+pred_df = purrr::map_df(top5_txt, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    filter(cycle %in% paste0("C",1:7)) %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+  
+ # p1 = ggplot(data=temp_df, aes(x=covid, y=sum+0.5, color=LUZ)) +
+ #    geom_boxplot() +
+ #    scale_y_log10() 
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+
+#  Model validation -------------------------------------------------------
+
+ 
+ # emmeans(m_temp, ~covid|LUZ)
+ # emmeans(m_temp, pairwise~covid|LUZ, type="response")
+ 
+ #dharma cigarette
+ # simulationOutput_cig <- simulateResiduals(fittedModel = m_cig, plot=T)
+ # 
+ # plotResiduals(simulationOutput_cig)
+ # testUniformity(simulationOutput_cig) #tests if the overall distribution conforms to expectations
+ # # testOutliers(simulationOutput_cig) #tests if there are more simulation outliers than expected
+ # testDispersion(simulationOutput_cig) #tests if the simulated dispersion is equal to the observed dispersion
+ # #testQuantiles(simulationOutput_cig) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
+ # testZeroInflation(simulationOutput_cig) #tests if there are more zeros than expected
+
+
+# Model validation end ----------------------------------------------------
+
+ nd_temp <- expand.grid(covid = unique(temp_df$covid),
+                       LUZ = unique(temp_df$LUZ),
+                       LGA = NA,
+                       asset_id = NA,
+                       cycle = NA)
+ 
+ #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+ pred_temp <- predict(object=m_temp,
+                     newdata=nd_temp,
+                     se.fit=T,
+                     re.form=NA,
+                     type="response")
+ 
+ #creating standard error for graphing
+ nd_temp$Total <- pred_temp$fit
+ nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
+ nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
+ nd_temp$item = x
+ 
+ return(nd_temp)
+ 
+ })
+
+
+ #creating plot
+
+ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ)) + 
+   geom_bar(stat="identity", position="dodge", aes(fill=covid)) +
+   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2, 
+                     stat="identity", position="dodge")) +
+   labs(title="Top debris type abundance predictions",
+        subtitle="By land use zone and covid restriction",
+        x="Covid lockdown status", y="Total debris", tag="") +
+   facet_wrap(~item) +
+   theme_minimal()
+ 
+
+ p_all
+ 
+```
+
+```{r data-mod-cig}
+
+#modify data
+mod_cig <- df %>%
+  filter(item=="Cigarette butts & filters") %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(LUZ),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+
+ggplot(data=mod_cig, aes(x=covid, y=sum, color=LUZ)) +
+  geom_boxplot() +
+  scale_y_log10() 
+
+#create model
+m_cig  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = mod_cig)
+
+drop1(m_cig, test="Chisq")
+
+str(mod_cig)
+
+emmeans(m_cig, ~covid|LUZ)
+emmeans(m_cig, pairwise~covid|LUZ, type="response")
+
+#dharma cigarette
+simulationOutput_cig <- simulateResiduals(fittedModel = m_cig, plot=T)
+  
+plotResiduals(simulationOutput_cig)
+testUniformity(simulationOutput_cig) #tests if the overall distribution conforms to expectations
+# testOutliers(simulationOutput_cig) #tests if there are more simulation outliers than expected
+testDispersion(simulationOutput_cig) #tests if the simulated dispersion is equal to the observed dispersion
+#testQuantiles(simulationOutput_cig) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
+testZeroInflation(simulationOutput_cig) #tests if there are more zeros than expected
+```
+
+```{r predictions-cig}
+#create a new dataframe with columns of all fixed predictor variables in th emodel, and ros of all possible values of those predictor varables that you want predictions from.  Predictors are covid and LUZ.
+nd_cig <- expand.grid(covid = unique(mod_cig$covid),
+                  LUZ = unique(mod_cig$LUZ),
+                  LGA = NA,
+                  asset_id = NA,
+                  cycle = NA)
+
+#predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+pred_cig <- predict(object=m_cig,
+                newdata=nd_cig,
+                se.fit=T,
+                re.form=NA,
+                type="response")
+
+#creating standard error for graphing
+nd_cig$Total <- pred_cig$fit
+nd_cig$SE_upper <- pred_cig$fit + pred_cig$se.fit
+nd_cig$SE_lower <- pred_cig$fit - pred_cig$se.fit
+
+#creating plot
+p_cig <- ggplot(nd_cig, aes(y=Total, x=covid)) + 
+  geom_col(aes(fill=covid)) +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2)) +
+  labs(title="Cigarette abundance predictions",
+       subtitle="By land use zone and covid restriction",
+       x="Covid lockdown status", y="Total cigarettes", tag="") +
+  facet_wrap(~LUZ) +
+  theme_minimal()
+
+p_cig
+
+#group them by LUZ stacked bars
+
+#also create a line graph (borrow from the one already made of the top items, covid lockdown shaded polygon in the background)
+
+```
+
+```{r data-mod-plas-food}
+
+#modify data
+mod_pf <- df %>%
+  filter(item=="Plastic packaging food (wrap, packets, containers)") %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(LUZ),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+
+ggplot(data=mod_pf, aes(x=covid, y=sum, color=LUZ)) +
+  geom_boxplot() +
+  scale_y_log10() 
+
+#create model
+m_pf  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = mod_pf)
+
+drop1(m_pf, test="Chisq")
+
+str(mod_pf)
+
+emmeans(m_pf, ~covid|LUZ)
+emmeans(m_pf, pairwise~covid|LUZ, type="response")
+
+#dharma cigarette
+simulationOutput_pf <- simulateResiduals(fittedModel = m_pf, plot=T)
+  
+plotResiduals(simulationOutput_pf)
+testUniformity(simulationOutput_pf) #tests if the overall distribution conforms to expectations
+# testOutliers(simulationOutput_pf) #tests if there are more simulation outliers than expected
+testDispersion(simulationOutput_pf) #tests if the simulated dispersion is equal to the observed dispersion
+#testQuantiles(simulationOutput_pf) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
+testZeroInflation(simulationOutput_pf) #tests if there are more zeros than expected
+```
+
+```{r predictions-plas-food}
+#create a new dataframe with columns of all fixed predictor variables in th emodel, and ros of all possible values of those predictor varables that you want predictions from.  Predictors are covid and LUZ.
+nd_pf <- expand.grid(covid = unique(mod_pf$covid),
+                  LUZ = unique(mod_pf$LUZ),
+                  LGA = NA,
+                  asset_id = NA,
+                  cycle = NA)
+
+#predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+pred_pf <- predict(object=m_pf,
+                newdata=nd_pf,
+                se.fit=T,
+                re.form=NA,
+                type="response")
+
+#creating standard error for graphing
+nd_pf$Total <- pred_pf$fit
+nd_pf$SE_upper <- pred_pf$fit + pred_pf$se.fit
+nd_pf$SE_lower <- pred_pf$fit - pred_pf$se.fit
+
+#creating plot
+p_pf <- ggplot(nd_pf, aes(y=Total, x=covid)) + 
+  geom_col(aes(fill=covid)) +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2)) +
+  labs(title="Plastic food wrap abundance predictions",
+       subtitle="By land use zone and covid restriction",
+       x="Covid lockdown status", y="Total plastic food wrap", tag="") +
+  facet_wrap(~LUZ) +
+  theme_minimal()
+
+p_pf
+
+#group them by LUZ stacked bars
+
+#also create a line graph (borrow from the one already made of the top items, covid lockdown shaded polygon in the background)
+
+```
+
+```{r top5}
+df %>%
+  group_by(LUZ, item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum))
+
+  top5 <- df %>%
+     filter(item %in% c("Cigarette butts & filters", 
+                        "Plastic packaging food (wrap, packets, containers)",
+                        "Plastic wrap non food (bubble wrap etc)",
+                        "Plastic film remnants (bits of plastic bag, wrap etc)",
+                        "Miscellaneous paper, labels & tickets")) %>%
+  group_by(item, cycle, LUZ, covid) %>% #relevant variables
+  summarise(Sum=sum(sum), #sum of each item per cycle
+            avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
+  ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  mutate(covid = as.factor(covid),
+         cycle = as.factor(cycle),
+         LUZ = as.factor(LUZ))
+
+#add a covid lockdown polygon behind this graph
+  top5_p <- ggplot(top5, aes(x = cycle, y = Sum, group = item, colour=item)) +
+      geom_line() +
+      geom_point() +
+      ggtitle("Item count per Round") +
+      guides(colour=guide_legend("Item type")) +
+      ylab("Total item count") +
+    facet_wrap(~LUZ)
+    top5_p
+
+    
+
+```
+
+
 ```{r vegan}
-#find top 20 items
-top20 <- df %>%
+#find top 5 items
+top5 <- df %>%
   group_by(item) %>%
   summarise(sum=sum(sum)) %>%
   arrange(desc(sum)) %>%
-  top_n(20, sum)
+  top_n(5, sum)
   
 #create vector from top 20 items
-top20 <- top20$item 
-top20 <- unlist(top20)
+top5 <- top5$item 
+top5 <- unlist(top5)
 
 
-df_top20 <- df %>%
-  filter(item %in% top20)
+df_top5 <- df %>%
+  filter(item %in% top5)
 
 #create abundance long format
- abund_long <- df_top20 %>%
-    group_by(event_id, LUZ, item) %>% 
+ abund_long <- df_top5 %>%
+    group_by(event_id, LUZ, covid, item) %>% 
     summarise(sum=sum(sum)) %>% #total of each item type per survey event
   ungroup()
 
@@ -363,18 +801,58 @@ df_top20 <- df %>%
   length(unique(abund$event_id)) == nrow(abund) #checking for duplicates
   abund <- column_to_rownames(abund, var="event_id") #create rownames from survey event
   
-  com <- abund[2:21]
+  com <- abund[3:7]
   
   #removing debris items that are zero across all surveys
   com <- com[, which(colSums(com) != 0)]
-
+  
   ord <- metaMDS(com)
   plot(ord)
   
-plot(ord, type = "n")
-points(ord, display = "sites", cex = 0.8, pch=21, col="yellow")
-text(ord, display = "spec", cex=0.7, col="blue")
+  species.scores <- as.data.frame(scores(ord, "species"))
+  
+  abund2 = bind_cols(abund, mds1 = scores(ord)[,1],mds2 = scores(ord)[,2])
+  
+  
+ggplot(abund2, aes(x=mds1, y=mds2, colour="LUZ", shape="covid")) + 
+  geom_point() + # add the point markers
+  coord_equal() +
+  theme_bw()
+
+vignette("ggplot2-specs")
+
+#colour symbols to land use and change shape to covid
+#arrows (vectors that show how items are pulling/pushing)
 ```
+
+```{r vegan-subset}
+#colour symbols to land use and change shape to covid
+#arrows (vectors that show how items are pulling/pushing)
+
+#join covid and land use to ORD$point (MDS x and y values)
+
+  #isolate event_id as a column to join land use and covid level to ord
+  points <- ord$points
+  event_id <- rownames(points)
+  points <- cbind(event_id, points)
+  points <- as.data.frame(points)
+  
+  ord$points
+  
+  #create joining df with land use and covid level
+  df_simple <- df %>%
+    dplyr::select(event_id, LUZ, covid) %>%
+    distinct()
+  
+  #join 
+  points <- left_join(points, df_simple, by="event_id")
+  
+ord$points <- points  #this doesn't work because it is a different data str within ord
+
+#create a separate layer to plot for each LUZ in each covid lockdown level
+
+```
+
 ```{r MDS}
 #create a dissimilarity matrix that measures similarity between every pair of samples
 abund.mds <- metaMDS(comm = com, distance = "bray", trace = FALSE, autotransform = FALSE)

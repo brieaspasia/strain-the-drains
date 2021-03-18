@@ -177,186 +177,47 @@ library(emmeans)
           LUZ = Land.use.zone,
       ) %>%
       distinct()
-    
-  df <- df %>%
-    filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7"))
         
 ```
-```{r top-items-per-CBD-per-lockdown}
 
-CBD_1 <- df %>%
-  filter(LUZ=="CBD", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="CBD")
+```{r combine-cycles-8-9}
 
-CBD_2 <- df %>%
-  filter(LUZ=="CBD", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="CBD")
+C8 <- df %>%
+  filter(cycle == "C8") %>%
+  mutate(asset_item = paste(asset_id, item))
 
-CBD_3 <- df %>%
-  filter(LUZ=="CBD", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="CBD")
+C9 <- df %>%
+  filter(cycle == "C9") %>%
+  mutate(asset_item = paste(asset_id, item))
 
-top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
+t <- left_join(C9, C8, by="asset_item")
+t$sum.y[is.na(t$sum.y)] <- 0
 
-ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
+t <- t %>%
+  mutate(combined_sum = sum.y + sum.x)
 
+C8 <- t2 %>%
+  dplyr::select(asset_id.x, item.x, combined_sum, date.x, date.y, covid.x, LGA.x, LUZ.x) %>%
+  mutate(date=paste0(date.y, ", ", date.x)) %>%
+  rename(asset_id = asset_id.x,
+         item = item.x,
+         sum = combined_sum,
+         covid=covid.x,
+         LGA=LGA.x,
+         LUZ=LUZ.x) %>%
+  dplyr::select(-date.x, -date.y)
+
+#replace C8 and 9 with new C8
+  df <- df %>%
+  filter(cycle %in% paste0("C",1:7)) 
 ```
-```{r top-items-per-shopping-per-lockdown}
-
-shop_1 <- df %>%
-  filter(LUZ=="Shopping Centre", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="Shopping Centre")
-
-shop_2 <- df %>%
-  filter(LUZ=="Shopping Centre", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="Shopping Centre")
-
-shop_3 <- df %>%
-  filter(LUZ=="Shopping Centre", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="Shopping Centre")
-
-top_shop <- rbind(shop_1, shop_2, shop_3)
-
-ggplot(top_shop, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
-
-```
-```{r top-items-per-industrial-per-lockdown}
-
-ind_1 <- df %>%
-  filter(LUZ=="Industrial Precinct", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="Industrial Precinct")
-
-ind_2 <- df %>%
-  filter(LUZ=="Industrial Precinct", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="Industrial Precinct")
-
-ind_3 <- df %>%
-  filter(LUZ=="Industrial Precinct", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="Industrial Precinct")
-
-top_ind <- rbind(ind_1, ind_2, ind_3)
-
-ggplot(top_ind, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
-
-```
-```{r top-items-per-transport-per-lockdown}
-
-tr_1 <- df %>%
-  filter(LUZ=="Public Transport Terminal", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="Public Transport Terminal")
-
-tr_2 <- df %>%
-  filter(LUZ=="Public Transport Terminal", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="Public Transport Terminal")
-
-tr_3 <- df %>%
-  filter(LUZ=="Public Transport Terminal", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="Public Transport Terminal")
-
-top_tr <- rbind(tr_1, tr_2, tr_3)
-
-ggplot(top_tr, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
-
-```
-
-```{r top-items-per-luz-per-lockdown}
-t <- rbind(top_tr, top_ind, top_CBD, top_shop)
-
-ggplot(t, aes(x=covid, y=sum, fill=item)) +
-  geom_col() +
-  facet_wrap(~LUZ)
-```
-
-```{r day-diff}
-
-#find days since last survey at each asset
-diff <- df %>%
-  distinct(event_id, .keep_all = T) %>%
-  dplyr::select(-item,-sum) %>%
-  group_by(asset_id) %>% #looking at each event
-  arrange(date) %>%
-  mutate(days = date - lag(date)) %>% #days since last survey event
-  filter(days != "NA") %>% #remove first survey date
-  ungroup()
-
-diff_red <- diff %>% dplyr::select(event_id, asset_id, days)
-
-df <- df %>%
-  left_join(diff_red, by="event_id") %>%
-  dplyr::select(-asset_id.y) %>%
-  rename(asset_id = asset_id.x)
-
-#calculate diff since last event, then factor in the sum per item
-
-str(df)
-
-df$days <- as.numeric(df$days)
-
-t <- df %>%
-  mutate(change = (sum/days))
-
-# https://rdrr.io/cran/DataCombine/man/PercChange.html
-```
-
 
 ```{r data-mod}
 mod <- df %>%
   group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
   summarise(sum=sum(sum)) %>%
   ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  # filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(LGA = as.factor(LGA),
          LUZ = as.factor(LUZ),
          covid = as.factor(covid),
@@ -367,37 +228,6 @@ ggplot(data=mod, aes(x=covid, y=sum, color=LUZ)) +
   scale_y_log10() 
        
 ```
-```{r top-items}
-#2 Round totals and top items
-    
-    df_sum <- df %>%
-  group_by(item, cycle, covid) %>% #relevant variables
-  summarise(Sum=sum(sum), #sum of each item per cycle
-            avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
-  ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
-  mutate(covid = as.factor(covid),
-         cycle = as.factor(cycle))
-    
-    # labs <- c("Oct 2019","Dec 2019","Jan 2020","Mar 2020", "Apr 2020", "May 2020", "July 2020")
-    # levels(df_sum$cycle) <- labs
-    # 
-    # unique(df_sum$cycle) #why are the levels still 9 after it's been filtered to 7?
-    
-    top_items <- df_sum %>%
-      group_by(cycle) %>%
-      top_n(5, Sum) 
-
-#add a covid lockdown polygon behind this graph
-  line_item <- ggplot(top_items, aes(x = cycle, y = Sum, group = item, colour=item)) +
-      geom_line() +
-      geom_point() +
-      ggtitle("Item count per Round") +
-      guides(colour=guide_legend("Item type")) +
-      ylab("Total item count") 
-    line_item
-```
-
 
 ```{r create-model}
 m  <- glmmTMB(sum ~ #Debris count per survey event
@@ -413,7 +243,6 @@ str(mod)
 emmeans(m, ~covid|LUZ)
 emmeans(m, pairwise~covid|LUZ, type="response")
 ```
-
 
 ```{r dharma-effect}
 simulationOutput <- simulateResiduals(fittedModel = m, plot=T)
@@ -736,43 +565,10 @@ p_pf
 
 ```
 
-```{r top5}
-df %>%
-  group_by(LUZ, item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum))
-
-  top5 <- df %>%
-     filter(item %in% c("Cigarette butts & filters", 
-                        "Plastic packaging food (wrap, packets, containers)",
-                        "Plastic wrap non food (bubble wrap etc)",
-                        "Plastic film remnants (bits of plastic bag, wrap etc)",
-                        "Miscellaneous paper, labels & tickets")) %>%
-  group_by(item, cycle, LUZ, covid) %>% #relevant variables
-  summarise(Sum=sum(sum), #sum of each item per cycle
-            avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
-  ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
-  mutate(covid = as.factor(covid),
-         cycle = as.factor(cycle),
-         LUZ = as.factor(LUZ))
-
-#add a covid lockdown polygon behind this graph
-  top5_p <- ggplot(top5, aes(x = cycle, y = Sum, group = item, colour=item)) +
-      geom_line() +
-      geom_point() +
-      ggtitle("Item count per Round") +
-      guides(colour=guide_legend("Item type")) +
-      ylab("Total item count") +
-    facet_wrap(~LUZ)
-    top5_p
-
-    
-
-```
 
 
-```{r vegan}
+
+```{r vegan-top5}
 #find top 5 items
 top5 <- df %>%
   group_by(item) %>%
@@ -806,24 +602,122 @@ df_top5 <- df %>%
   #removing debris items that are zero across all surveys
   com <- com[, which(colSums(com) != 0)]
   
+#create df to join covid and LUZ to ord
+  
+  df_env <- df %>%
+    dplyr::select("event_id", "covid", "LUZ") %>%
+    distinct()
+    
+  
   ord <- metaMDS(com)
   plot(ord)
   
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$event_id <- rownames(data.scores) #create event id column
+  data.scores <- left_join(data.scores, df_env, by="event_id")  #join LUZ, covid
+  data.scores <- data.scores %>%
+    mutate(covid = as.factor(covid),
+           LUZ = as.factor(LUZ))
+  
   species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
   
-  abund2 = bind_cols(abund, mds1 = scores(ord)[,1],mds2 = scores(ord)[,2])
+  # abund2 = bind_cols(abund, mds1 = scores(ord)[,1],mds2 = scores(ord)[,2])
   
   
-ggplot(abund2, aes(x=mds1, y=mds2, colour="LUZ", shape="covid")) + 
-  geom_point() + # add the point markers
+ggplot() +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.30) +
+  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ)) + 
   coord_equal() +
   theme_bw()
 
-vignette("ggplot2-specs")
+#https://chrischizinski.github.io/rstats/vegan-ggplot2/
 
 #colour symbols to land use and change shape to covid
 #arrows (vectors that show how items are pulling/pushing)
 ```
+
+```{r vegan-top20}
+#find top 20 items
+top20 <- df %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(20, sum)
+  
+#create vector from top 20 items
+top20 <- top20$item 
+top20 <- unlist(top20)
+
+
+df_top20 <- df %>%
+  filter(item %in% top20)
+
+#create abundance long format
+ abund_long <- df_top20 %>%
+    group_by(event_id, LUZ, covid, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  #convert survey event to rowname  
+  length(unique(abund$event_id)) == nrow(abund) #checking for duplicates
+  abund <- column_to_rownames(abund, var="event_id") #create rownames from survey event
+  
+  com <- abund[3:22]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+  
+#create df to join covid and LUZ to ord
+  
+  df_env <- df %>%
+    dplyr::select("event_id", "covid", "LUZ") %>%
+    distinct()
+    
+  
+  ord <- metaMDS(com)
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$event_id <- rownames(data.scores) #create event id column
+  data.scores <- left_join(data.scores, df_env, by="event_id")  #join LUZ, covid
+  data.scores <- data.scores %>%
+    mutate(covid = as.factor(covid),
+           LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+  
+  # abund2 = bind_cols(abund, mds1 = scores(ord)[,1],mds2 = scores(ord)[,2])
+  
+  
+ggplot() +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.30) +
+  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ)) + 
+  coord_equal() +
+  theme_bw()
+
+#https://chrischizinski.github.io/rstats/vegan-ggplot2/
+
+#colour symbols to land use and change shape to covid
+#arrows (vectors that show how items are pulling/pushing)
+```
+```{r mds-hull}
+covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
+    "1", c("NMDS1", "NMDS2")]), ]  # hull values for covid 1
+covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
+    "2", c("NMDS1", "NMDS2")]), ]  # hull values for covid 2
+covid3 <- data.scores[data.scores$covid == "3", ][chull(data.scores[data.scores$covid ==
+    "3", c("NMDS1", "NMDS2")]), ]  # hull values for covid 3
+
+hull.data <- rbind(covid1, covid2, covid3)  #combine grp.a and grp.b
+hull.data
+```
+
 
 ```{r vegan-subset}
 #colour symbols to land use and change shape to covid

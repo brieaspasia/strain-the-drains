@@ -1,0 +1,498 @@
+---
+title: "data-graphs"
+author: "Brie Sherow"
+date: "18/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(ggplot2) #graphing
+library(ggthemes) #graphing templates
+library(hrbrthemes) #graphing templates
+library(lubridate) #date manipulation
+library(forcats) #working with factors
+library(tidyverse) #manipulating data
+library(knitr) #rmarkdown functions
+library(kableExtra) #table layouts
+library(tidyr) #long & wide formats
+library(reshape2) #melt function for wide and long formats
+library(stats) #R stats functions
+library(broom) #create summaries from stats objects
+library(car) #lm regression
+library(MASS) #stats
+library(lme4) #glmer function
+library(DHARMa) #testing model diagnostics
+library(glmmTMB) #fit zero-inflated negative binomial
+library(lattice) #fourth corner heatmap
+library(corrplot) #co-occurrence matrix
+library(gclus) #co-occurrence matrix
+library(broom.mixed) #regression tables
+library(vegan) #ordination
+library(emmeans)
+```
+
+```{r create-df}
+
+#create survey count  
+
+        #load item counts
+        item <- read.csv(file="Data/2101_item.csv", 
+                         header=T, sep=",") 
+        
+        #load events
+        event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        survey_count <- left_join(item, event, by="event_id")
+        
+        survey_count <- survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -note) %>%
+          filter(item!="Pollution Rating") %>%
+          mutate(event_item = paste(event_id, item, sep=" "))
+
+        #summarise duplicate survey entries (this will lose one set of notes....)
+        item_merge <- survey_count %>%
+          group_by(event_item) %>%
+          summarise(sum=sum(total)) %>%
+         ungroup()
+
+        #join survey count to the merged summaries
+        survey_count <- item_merge %>%
+          left_join(survey_count, by="event_item") %>%
+          dplyr::select(-total) %>%
+          unique()
+        
+#create abundance data with all possible debris items and zero values
+
+      #count of items per unique event
+      event_count <- survey_count %>%
+        group_by(event_id, item) %>%
+        summarise(sum=sum(sum)) %>%
+        ungroup()
+
+      #load AMDI code\
+      AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
+                       header=T, sep=",") 
+      
+      #create full list of possible items
+      AMDI <- AMDI_code %>%
+        filter(item_code_id != "LSTD1") %>% #remove pollution rating / microplastics
+        dplyr::select(item.ex) #column of all possible item types
+      
+      
+      #create a df of all possible items at all survey events, complete with zeros
+      abund <- full_join(AMDI, event_count, by=c("item.ex" = "item"))
+      
+      #remove empty row
+      abund <- abund[-11613, ]
+      
+      #data long to wide
+      abund_wide <- spread(abund, item.ex, sum)
+      
+      #replace na values with 0
+      abund_wide[is.na(abund_wide)] <- 0
+        
+      #transform back to long but now with the full items list and zero data
+      abund_long <- melt(abund_wide, id.vars="event_id")
+      
+      #remove the zero event ID (how did that get there?)
+      abund_long <- abund_long[abund_long$event_id != 0, ]
+      
+      #create event_item column for joining
+      abund_long <- abund_long %>%
+      mutate(event_item = paste(event_id, variable, sep=" "))
+
+#join abundance data to survey notes and other columns
+  df <- left_join(abund_long, survey_count, by="event_item") 
+  
+  df <- df %>%
+    dplyr::select(-event_item, -event_id.y, -item, -sum) %>% #remove duplicate columns
+    rename(event_id=event_id.x,
+           item=variable,
+           sum=value) %>% #rename columns
+    arrange(event_id, Asset.ID) %>% #arrange by event so that missing values are aligned
+    fill(Asset.ID, Cycle, date, covid) #fill in missing values to match survey data
+
+  #clean up column classifications
+  
+  #reclassify columns to factor
+    names <- c("event_id", "Asset.ID", "Cycle")
+  
+    df[,names] <- lapply(df[,names], factor)
+  
+  #reclassify date
+    df$date <- dmy(df$date)
+
+#join land use zone and LGA
+    
+    #load sites
+        site <- read.csv(file="Data/200619_site.csv", 
+                         header=T, sep=",") 
+        
+    #join LGA and luz to df
+        df <- left_join(df, site, by = "Asset.ID")
+        
+    #remove unecessary columns
+        df <- df %>%
+          dplyr::select(-Site, -Latitude, -Longitude) 
+     
+#resolve duplicates in MC01, C5    
+        dup <- df %>% 
+          group_by(Asset.ID, Cycle, item) %>% #reconcile duplicates in MC01 Cycle 5
+          summarise(sum=sum(sum)) %>%
+          ungroup() %>%
+          mutate(join = paste(Asset.ID, Cycle, item, sep=" "))
+         
+    # #check difference
+    #      subsetdf <- df %>%
+    #        dplyr::select(Asset.ID, Cycle, item, sum)
+    #      
+    #      setdiff(subsetdf, dup)
+         
+    #join C5 correction to df
+         df <- df %>%
+           mutate(join = paste(Asset.ID, Cycle, item, sep=" "))
+         
+    df <- dup %>% left_join(df, by="join") %>%
+      dplyr::select(-join, -item.y, -sum.y, -Asset.ID.y, -Cycle.y) %>%
+      filter(event_id != "23097") %>%
+      rename(
+          asset_id = Asset.ID.x, 
+          cycle = Cycle.x,
+          item = item.x,
+          sum = sum.x,
+          LUZ = Land.use.zone,
+      ) %>%
+      distinct()
+    
+  # df <- df %>%
+  #   filter(cycle %in% paste0("C",1:7))
+        
+```
+
+
+```{r combine-cycles-8-9}
+
+C8 <- df %>%
+  filter(cycle == "C8") %>%
+  mutate(asset_item = paste(asset_id, item))
+
+C9 <- df %>%
+  filter(cycle == "C9") %>%
+  mutate(asset_item = paste(asset_id, item))
+
+t <- left_join(C9, C8, by="asset_item")
+t$sum.y[is.na(t$sum.y)] <- 0
+
+t <- t %>%
+  mutate(combined_sum = sum.y + sum.x)
+
+C8 <- t2 %>%
+  dplyr::select(asset_id.x, item.x, combined_sum, date.x, date.y, covid.x, LGA.x, LUZ.x) %>%
+  mutate(date=paste0(date.y, ", ", date.x)) %>%
+  rename(asset_id = asset_id.x,
+         item = item.x,
+         sum = combined_sum,
+         covid=covid.x,
+         LGA=LGA.x,
+         LUZ=LUZ.x) %>%
+  dplyr::select(-date.x, -date.y)
+
+#replace C8 and 9 with new C8
+  df <- df %>%
+  filter(cycle %in% paste0("C",1:7)) 
+```
+
+```{r}
+
+```
+
+
+```{r top-items-per-CBD-per-lockdown}
+
+CBD_1 <- df %>%
+  filter(LUZ=="CBD", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="CBD")
+
+CBD_2 <- df %>%
+  filter(LUZ=="CBD", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="CBD")
+
+CBD_3 <- df %>%
+  filter(LUZ=="CBD", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="CBD")
+
+top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
+
+ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+
+
+```{r top-items-per-CBD-per-lockdown-full-cycles}
+#need to account for number of surveys per lockdown
+
+CBD_1 <- df %>%
+  filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="CBD")
+
+CBD_2 <- df %>%
+  filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="CBD")
+
+CBD_3 <- df %>%
+  filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="CBD")
+
+top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
+
+ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+
+```{r top-items-per-shopping-per-lockdown}
+
+shop_1 <- df %>%
+  filter(LUZ=="Shopping Centre", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="Shopping Centre")
+
+shop_2 <- df %>%
+  filter(LUZ=="Shopping Centre", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="Shopping Centre")
+
+shop_3 <- df %>%
+  filter(LUZ=="Shopping Centre", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="Shopping Centre")
+
+top_shop <- rbind(shop_1, shop_2, shop_3)
+
+ggplot(top_shop, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+
+```{r top-items-per-industrial-per-lockdown}
+
+ind_1 <- df %>%
+  filter(LUZ=="Industrial Precinct", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="Industrial Precinct")
+
+ind_2 <- df %>%
+  filter(LUZ=="Industrial Precinct", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="Industrial Precinct")
+
+ind_3 <- df %>%
+  filter(LUZ=="Industrial Precinct", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="Industrial Precinct")
+
+top_ind <- rbind(ind_1, ind_2, ind_3)
+
+ggplot(top_ind, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+
+```{r top-items-per-transport-per-lockdown}
+
+tr_1 <- df %>%
+  filter(LUZ=="Public Transport Terminal", covid==1) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="1", LUZ="Public Transport Terminal")
+
+tr_2 <- df %>%
+  filter(LUZ=="Public Transport Terminal", covid==2) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="2", LUZ="Public Transport Terminal")
+
+tr_3 <- df %>%
+  filter(LUZ=="Public Transport Terminal", covid==3) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  slice_max(sum, n=5) %>%
+  mutate(covid="3", LUZ="Public Transport Terminal")
+
+top_tr <- rbind(tr_1, tr_2, tr_3)
+
+ggplot(top_tr, aes(x=covid, y=sum, fill=item)) +
+  geom_col() 
+
+```
+
+```{r top-items-per-luz-per-lockdown}
+top_LUZ <- rbind(top_tr, top_ind, top_CBD, top_shop)
+
+ggplot(top_LUZ, aes(x=covid, y=sum, fill=item)) +
+  geom_col() +
+  facet_wrap(~LUZ)
+```
+
+```{r day-diff}
+
+# #find days since last survey at each asset
+# diff <- df %>%
+#   distinct(event_id, .keep_all = T) %>%
+#   dplyr::select(-item,-sum) %>%
+#   group_by(asset_id) %>% #looking at each event
+#   arrange(date) %>%
+#   mutate(days = date - lag(date)) %>% #days since last survey event
+#   filter(days != "NA") %>% #remove first survey date
+#   ungroup()
+# 
+# diff_red <- diff %>% dplyr::select(event_id, asset_id, days)
+# 
+# df <- df %>%
+#   left_join(diff_red, by="event_id") %>%
+#   dplyr::select(-asset_id.y) %>%
+#   rename(asset_id = asset_id.x)
+# 
+# #calculate diff since last event, then factor in the sum per item
+# 
+# str(df)
+# 
+# df$days <- as.numeric(df$days)
+# 
+# t <- df %>%
+#   mutate(change = (sum/days))
+# 
+# # https://rdrr.io/cran/DataCombine/man/PercChange.html
+```
+
+```{r top-items}
+#2 Round totals and top items 
+#find averages by dividing C1-7/6 and C8/2
+    
+    df_sum <- df %>%
+  group_by(item, cycle, covid) %>% #relevant variables
+  summarise(Sum=sum(sum), #sum of each item per cycle
+            avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
+  ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  mutate(covid = as.factor(covid),
+         cycle = as.factor(cycle))
+    
+    # labs <- c("Oct 2019","Dec 2019","Jan 2020","Mar 2020", "Apr 2020", "May 2020", "July 2020")
+    # levels(df_sum$cycle) <- labs
+    # 
+    # unique(df_sum$cycle) #why are the levels still 9 after it's been filtered to 7?
+    
+    top_items <- df_sum %>%
+      group_by(cycle) %>%
+      top_n(5, Sum) 
+
+#add a covid lockdown polygon behind this graph
+  line_item <- ggplot(top_items, aes(x = cycle, y = Sum, group = item, colour=item)) +
+      geom_line() +
+      geom_point() +
+      ggtitle("Item count per Round") +
+      guides(colour=guide_legend("Item type")) +
+      ylab("Total item count") 
+    line_item
+```
+
+
+```{r top5}
+df %>%
+  group_by(LUZ, item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum))
+
+  top5 <- df %>%
+     filter(item %in% c("Cigarette butts & filters", 
+                        "Plastic packaging food (wrap, packets, containers)",
+                        "Plastic wrap non food (bubble wrap etc)",
+                        "Plastic film remnants (bits of plastic bag, wrap etc)",
+                        "Miscellaneous paper, labels & tickets")) %>%
+  group_by(item, cycle, LUZ, covid) %>% #relevant variables
+  summarise(Sum=sum(sum), #sum of each item per cycle
+            avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
+  ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  mutate(covid = as.factor(covid),
+         cycle = as.factor(cycle),
+         LUZ = as.factor(LUZ))
+
+#add a covid lockdown polygon behind this graph
+  top5_p <- ggplot(top5, aes(x = cycle, y = Sum, group = item, colour=item)) +
+      geom_line() +
+      geom_point() +
+      ggtitle("Item count per Round") +
+      guides(colour=guide_legend("Item type")) +
+      ylab("Total item count") +
+    facet_wrap(~LUZ)
+    top5_p
+
+```
+
+```{r biggest-difference}
+#need to account for different number of cycles in each lockdown
+diff <- df %>% 
+  group_by(covid, item) %>%
+  summarise(Csum=sum(sum),
+            max=max(sum),
+            min=min(sum)) %>%
+  mutate(diff=max-min)
+  
+```
+

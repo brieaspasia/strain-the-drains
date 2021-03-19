@@ -33,6 +33,7 @@ library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
 library(emmeans)
+
 ```
 
 ```{r create-df}
@@ -172,45 +173,38 @@ library(emmeans)
     
   # df <- df %>%
   #   filter(cycle %in% paste0("C",1:7))
+    
         
 ```
 
 
 ```{r combine-cycles-8-9}
-
+#isolate C8
 C8 <- df %>%
-  filter(cycle == "C8") %>%
-  mutate(asset_item = paste(asset_id, item))
+  filter(cycle == "C8")
 
+#isolate C9
 C9 <- df %>%
-  filter(cycle == "C9") %>%
-  mutate(asset_item = paste(asset_id, item))
+  filter(cycle == "C9")
 
-t <- left_join(C9, C8, by="asset_item")
-t$sum.y[is.na(t$sum.y)] <- 0
+#join C8 and C9 by unique drain and item to capture double surveys
+t <- left_join(C9, C8, by=c("asset_id"="asset_id", "item" = "item"))
+t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
 
 t <- t %>%
-  mutate(combined_sum = sum.y + sum.x)
+  mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+  dplyr::select(event_id.x, item, combined_sum)
 
-C8 <- t2 %>%
-  dplyr::select(asset_id.x, item.x, combined_sum, date.x, date.y, covid.x, LGA.x, LUZ.x) %>%
-  mutate(date=paste0(date.y, ", ", date.x)) %>%
-  rename(asset_id = asset_id.x,
-         item = item.x,
-         sum = combined_sum,
-         covid=covid.x,
-         LGA=LGA.x,
-         LUZ=LUZ.x) %>%
-  dplyr::select(-date.x, -date.y)
-
-#replace C8 and 9 with new C8
-  df <- df %>%
-  filter(cycle %in% paste0("C",1:7)) 
+df <- df %>% 
+  left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+  filter(cycle != "C8") %>%
+  mutate(combined_sum = replace_na(combined_sum, 0),
+          sum2 = ifelse(cycle != "C9", sum, 0),
+          final_sum = sum2 + combined_sum) %>%
+  dplyr::select(-sum2, -sum, -combined_sum) %>%
+  rename(sum = final_sum)
 ```
 
-```{r}
-
-```
 
 
 ```{r top-items-per-CBD-per-lockdown}
@@ -468,7 +462,7 @@ df %>%
   summarise(Sum=sum(sum), #sum of each item per cycle
             avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
   ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  # filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(covid = as.factor(covid),
          cycle = as.factor(cycle),
          LUZ = as.factor(LUZ))
@@ -484,6 +478,29 @@ df %>%
     top5_p
 
 ```
+```{r items}
+
+items <- df %>%
+  group_by(item) %>%
+  summarise(total = sum(sum)) %>%
+  arrange(desc(total)) %>%
+  top_n(23)
+
+t <- df %>%
+  left_join(items, by="item") %>%
+  filter(total > 240) %>%
+  group_by(covid, item) %>%
+  summarise(cov_sum = sum(sum)) %>%
+  mutate(meanCov1 = ifelse(covid==1, cov_sum/4, 0),
+         meanCov2 = ifelse(covid==2, cov_sum, 0),
+         meanCov3 = ifelse(covid==3, cov_sum/3, 0),
+         covMean = meanCov1 + meanCov2 + meanCov3)
+
+ggplot(t, aes(covid, covMean, colour=item)) +
+  geom_line() +
+  facet_wrap(~item) +
+  scale_y_log10()
+```
 
 ```{r biggest-difference}
 #need to account for different number of cycles in each lockdown
@@ -492,7 +509,7 @@ diff <- df %>%
   summarise(Csum=sum(sum),
             max=max(sum),
             min=min(sum)) %>%
-  mutate(diff=max-min)
+  mutate(diff=max-min) 
   
 ```
 

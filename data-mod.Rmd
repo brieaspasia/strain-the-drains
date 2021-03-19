@@ -179,37 +179,31 @@ library(emmeans)
       distinct()
         
 ```
-
 ```{r combine-cycles-8-9}
-
+#isolate C8
 C8 <- df %>%
-  filter(cycle == "C8") %>%
-  mutate(asset_item = paste(asset_id, item))
+  filter(cycle == "C8")
 
+#isolate C9
 C9 <- df %>%
-  filter(cycle == "C9") %>%
-  mutate(asset_item = paste(asset_id, item))
+  filter(cycle == "C9")
 
-t <- left_join(C9, C8, by="asset_item")
-t$sum.y[is.na(t$sum.y)] <- 0
+#join C8 and C9 by unique drain and item to capture double surveys
+t <- left_join(C9, C8, by=c("asset_id"="asset_id", "item" = "item"))
+t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
 
 t <- t %>%
-  mutate(combined_sum = sum.y + sum.x)
+  mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+  dplyr::select(event_id.x, item, combined_sum)
 
-C8 <- t2 %>%
-  dplyr::select(asset_id.x, item.x, combined_sum, date.x, date.y, covid.x, LGA.x, LUZ.x) %>%
-  mutate(date=paste0(date.y, ", ", date.x)) %>%
-  rename(asset_id = asset_id.x,
-         item = item.x,
-         sum = combined_sum,
-         covid=covid.x,
-         LGA=LGA.x,
-         LUZ=LUZ.x) %>%
-  dplyr::select(-date.x, -date.y)
-
-#replace C8 and 9 with new C8
-  df <- df %>%
-  filter(cycle %in% paste0("C",1:7)) 
+df <- df %>% 
+  left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+  filter(cycle != "C8") %>%
+  mutate(combined_sum = replace_na(combined_sum, 0),
+          sum2 = ifelse(cycle != "C9", sum, 0),
+          final_sum = sum2 + combined_sum) %>%
+  dplyr::select(-sum2, -sum, -combined_sum) %>%
+  rename(sum = final_sum)
 ```
 
 ```{r data-mod}
@@ -388,10 +382,9 @@ pred_df = purrr::map_df(top5_txt, function(x){
 
  #creating plot
 
- p_all <- ggplot(pred_df, aes(y=Total, x=LUZ)) + 
-   geom_bar(stat="identity", position="dodge", aes(fill=covid)) +
-   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2, 
-                     stat="identity", position="dodge")) +
+ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
+   geom_bar(stat="identity", position="dodge", show.legend=F) +
+   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
    labs(title="Top debris type abundance predictions",
         subtitle="By land use zone and covid restriction",
         x="Covid lockdown status", y="Total debris", tag="") +
@@ -622,8 +615,16 @@ df_top5 <- df %>%
   species.scores <- as.data.frame(scores(ord, "species"))
   species.scores$item <- rownames(species.scores) #create item id column
   
-  # abund2 = bind_cols(abund, mds1 = scores(ord)[,1],mds2 = scores(ord)[,2])
-  
+#Hull data
+  covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
+    "1", c("NMDS1", "NMDS2")]), ]  # hull values for covid 1
+covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
+    "2", c("NMDS1", "NMDS2")]), ]  # hull values for covid 2
+covid3 <- data.scores[data.scores$covid == "3", ][chull(data.scores[data.scores$covid ==
+    "3", c("NMDS1", "NMDS2")]), ]  # hull values for covid 3
+
+hull.data <- rbind(covid1, covid2, covid3)  #combine grp.a and grp.b
+hull.data
   
 ggplot() +
   geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.30) +
@@ -691,7 +692,16 @@ df_top20 <- df %>%
   species.scores <- as.data.frame(scores(ord, "species"))
   species.scores$item <- rownames(species.scores) #create item id column
   
-  # abund2 = bind_cols(abund, mds1 = scores(ord)[,1],mds2 = scores(ord)[,2])
+#Hull data
+  covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
+    "1", c("NMDS1", "NMDS2")]), ]  # hull values for covid 1
+covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
+    "2", c("NMDS1", "NMDS2")]), ]  # hull values for covid 2
+covid3 <- data.scores[data.scores$covid == "3", ][chull(data.scores[data.scores$covid ==
+    "3", c("NMDS1", "NMDS2")]), ]  # hull values for covid 3
+
+hull.data <- rbind(covid1, covid2, covid3)  #combine grp.a and grp.b
+hull.data
   
   
 ggplot() +
@@ -706,46 +716,7 @@ ggplot() +
 #colour symbols to land use and change shape to covid
 #arrows (vectors that show how items are pulling/pushing)
 ```
-```{r mds-hull}
-covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
-    "1", c("NMDS1", "NMDS2")]), ]  # hull values for covid 1
-covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
-    "2", c("NMDS1", "NMDS2")]), ]  # hull values for covid 2
-covid3 <- data.scores[data.scores$covid == "3", ][chull(data.scores[data.scores$covid ==
-    "3", c("NMDS1", "NMDS2")]), ]  # hull values for covid 3
 
-hull.data <- rbind(covid1, covid2, covid3)  #combine grp.a and grp.b
-hull.data
-```
-
-
-```{r vegan-subset}
-#colour symbols to land use and change shape to covid
-#arrows (vectors that show how items are pulling/pushing)
-
-#join covid and land use to ORD$point (MDS x and y values)
-
-  #isolate event_id as a column to join land use and covid level to ord
-  points <- ord$points
-  event_id <- rownames(points)
-  points <- cbind(event_id, points)
-  points <- as.data.frame(points)
-  
-  ord$points
-  
-  #create joining df with land use and covid level
-  df_simple <- df %>%
-    dplyr::select(event_id, LUZ, covid) %>%
-    distinct()
-  
-  #join 
-  points <- left_join(points, df_simple, by="event_id")
-  
-ord$points <- points  #this doesn't work because it is a different data str within ord
-
-#create a separate layer to plot for each LUZ in each covid lockdown level
-
-```
 
 ```{r MDS}
 #create a dissimilarity matrix that measures similarity between every pair of samples

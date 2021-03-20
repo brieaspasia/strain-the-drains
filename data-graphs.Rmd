@@ -503,13 +503,31 @@ ggplot(t, aes(covid, covMean, colour=item)) +
 ```
 
 ```{r biggest-difference}
-#need to account for different number of cycles in each lockdown
+#need to account for different number of assets in C8
 diff <- df %>% 
   group_by(covid, item) %>%
-  summarise(Csum=sum(sum),
-            max=max(sum),
-            min=min(sum)) %>%
-  mutate(diff=max-min) 
+  summarise(Csum=sum(sum)) %>%
+  mutate(meanCov1 = ifelse(covid==1, Csum/4, 0),
+         meanCov2 = ifelse(covid==2, Csum, 0),
+         meanCov3 = ifelse(covid==3, Csum/3, 0),
+         mean = meanCov1 + meanCov2 + meanCov3) %>%
+  dplyr::select(covid, item, mean)
+
+pre_cov <- diff %>%
+  filter(covid==1) %>%
+  arrange(desc(mean)) %>%
+  top_n(30) %>%
+  dplyr::pull(item)
+
+diff_wide <- diff %>%
+  filter(item %in% pre_cov) %>%
+  spread(covid, mean) %>%
+  rename(Cov1 = 2, Cov2=3, Cov3=4) %>%
+  mutate(diff= (Cov3-Cov1),
+         pct_change = diff/Cov1*100)
+
+ggplot(diff_wide, aes(x=item, y=pct_change, fill=item)) +
+  geom_bar()
   
 ```
 

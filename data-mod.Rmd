@@ -301,6 +301,7 @@ p
 
 top5_txt<- df %>%
   filter(item %in% c("Cigarette butts & filters", 
+                     "Occupational health & safety items",
                      "Plastic packaging food (wrap, packets, containers)",
                      "Plastic wrap non food (bubble wrap etc)",
                      "Plastic film remnants (bits of plastic bag, wrap etc)",

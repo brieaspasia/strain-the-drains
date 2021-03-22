@@ -17,7 +17,7 @@ library(lubridate) #date manipulation
 library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
-library(kableExtra) #table layouts
+# library(kableExtra) #table layouts
 library(tidyr) #long & wide formats
 library(reshape2) #melt function for wide and long formats
 library(stats) #R stats functions
@@ -33,7 +33,9 @@ library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
 library(emmeans)
-
+library(ComplexHeatmap)
+library(RColorBrewer)
+library(heatmaply)
 
 ```
 
@@ -43,6 +45,10 @@ library(emmeans)
 
         #load item counts
         item <- read.csv(file="Data/2101_item.csv", 
+                         header=T, sep=",") 
+
+        #load item labels
+        item_label <- read.csv(file="Data/item_label.csv", 
                          header=T, sep=",") 
         
         #load events
@@ -172,6 +178,13 @@ library(emmeans)
       ) %>%
       distinct()
     
+    df <- df %>%
+      left_join(item_label, by=c("item" = "item.type")) %>%
+      mutate(item = A3) %>%
+      dplyr::select(-A3)
+      
+    
+    
   # df <- df %>%
   #   filter(cycle %in% paste0("C",1:7))
     
@@ -210,177 +223,177 @@ df <- df %>%
 
 ```{r top-items-per-CBD-per-lockdown}
 
-CBD_1 <- df %>%
-  filter(LUZ=="CBD", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="CBD")
-
-CBD_2 <- df %>%
-  filter(LUZ=="CBD", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="CBD")
-
-CBD_3 <- df %>%
-  filter(LUZ=="CBD", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="CBD")
-
-top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
-
-ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
+# CBD_1 <- df %>%
+#   filter(LUZ=="CBD", covid==1) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="1", LUZ="CBD")
+# 
+# CBD_2 <- df %>%
+#   filter(LUZ=="CBD", covid==2) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="2", LUZ="CBD")
+# 
+# CBD_3 <- df %>%
+#   filter(LUZ=="CBD", covid==3) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="3", LUZ="CBD")
+# 
+# top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
+# 
+# ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
+#   geom_col()
 
 ```
 
 
 ```{r top-items-per-CBD-per-lockdown-full-cycles}
-#need to account for number of surveys per lockdown
-
-CBD_1 <- df %>%
-  filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="CBD")
-
-CBD_2 <- df %>%
-  filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="CBD")
-
-CBD_3 <- df %>%
-  filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="CBD")
-
-top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
-
-ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
+# #need to account for number of surveys per lockdown
+# 
+# CBD_1 <- df %>%
+#   filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==1) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="1", LUZ="CBD")
+# 
+# CBD_2 <- df %>%
+#   filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==2) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="2", LUZ="CBD")
+# 
+# CBD_3 <- df %>%
+#   filter(LUZ=="CBD", LGA %in% c("Dandenong", "Kingston"), covid==3) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="3", LUZ="CBD")
+# 
+# top_CBD <- rbind(CBD_1, CBD_2, CBD_3)
+# 
+# ggplot(top_CBD, aes(x=covid, y=sum, fill=item)) +
+#   geom_col()
 
 ```
 
 ```{r top-items-per-shopping-per-lockdown}
-
-shop_1 <- df %>%
-  filter(LUZ=="Shopping Centre", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="Shopping Centre")
-
-shop_2 <- df %>%
-  filter(LUZ=="Shopping Centre", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="Shopping Centre")
-
-shop_3 <- df %>%
-  filter(LUZ=="Shopping Centre", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="Shopping Centre")
-
-top_shop <- rbind(shop_1, shop_2, shop_3)
-
-ggplot(top_shop, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
+# 
+# shop_1 <- df %>%
+#   filter(LUZ=="Shopping Centre", covid==1) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="1", LUZ="Shopping Centre")
+# 
+# shop_2 <- df %>%
+#   filter(LUZ=="Shopping Centre", covid==2) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="2", LUZ="Shopping Centre")
+# 
+# shop_3 <- df %>%
+#   filter(LUZ=="Shopping Centre", covid==3) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="3", LUZ="Shopping Centre")
+# 
+# top_shop <- rbind(shop_1, shop_2, shop_3)
+# 
+# ggplot(top_shop, aes(x=covid, y=sum, fill=item)) +
+#   geom_col()
 
 ```
 
 ```{r top-items-per-industrial-per-lockdown}
 
-ind_1 <- df %>%
-  filter(LUZ=="Industrial Precinct", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="Industrial Precinct")
-
-ind_2 <- df %>%
-  filter(LUZ=="Industrial Precinct", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="Industrial Precinct")
-
-ind_3 <- df %>%
-  filter(LUZ=="Industrial Precinct", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="Industrial Precinct")
-
-top_ind <- rbind(ind_1, ind_2, ind_3)
-
-ggplot(top_ind, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
+# ind_1 <- df %>%
+#   filter(LUZ=="Industrial Precinct", covid==1) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="1", LUZ="Industrial Precinct")
+# 
+# ind_2 <- df %>%
+#   filter(LUZ=="Industrial Precinct", covid==2) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="2", LUZ="Industrial Precinct")
+# 
+# ind_3 <- df %>%
+#   filter(LUZ=="Industrial Precinct", covid==3) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="3", LUZ="Industrial Precinct")
+# 
+# top_ind <- rbind(ind_1, ind_2, ind_3)
+# 
+# ggplot(top_ind, aes(x=covid, y=sum, fill=item)) +
+#   geom_col()
 
 ```
 
 ```{r top-items-per-transport-per-lockdown}
 
-tr_1 <- df %>%
-  filter(LUZ=="Public Transport Terminal", covid==1) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="1", LUZ="Public Transport Terminal")
-
-tr_2 <- df %>%
-  filter(LUZ=="Public Transport Terminal", covid==2) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="2", LUZ="Public Transport Terminal")
-
-tr_3 <- df %>%
-  filter(LUZ=="Public Transport Terminal", covid==3) %>%
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  slice_max(sum, n=5) %>%
-  mutate(covid="3", LUZ="Public Transport Terminal")
-
-top_tr <- rbind(tr_1, tr_2, tr_3)
-
-ggplot(top_tr, aes(x=covid, y=sum, fill=item)) +
-  geom_col() 
+# tr_1 <- df %>%
+#   filter(LUZ=="Public Transport Terminal", covid==1) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="1", LUZ="Public Transport Terminal")
+# 
+# tr_2 <- df %>%
+#   filter(LUZ=="Public Transport Terminal", covid==2) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="2", LUZ="Public Transport Terminal")
+# 
+# tr_3 <- df %>%
+#   filter(LUZ=="Public Transport Terminal", covid==3) %>%
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   slice_max(sum, n=5) %>%
+#   mutate(covid="3", LUZ="Public Transport Terminal")
+# 
+# top_tr <- rbind(tr_1, tr_2, tr_3)
+# 
+# ggplot(top_tr, aes(x=covid, y=sum, fill=item)) +
+#   geom_col() 
 
 ```
 
 ```{r top-items-per-luz-per-lockdown}
-top_LUZ <- rbind(top_tr, top_ind, top_CBD, top_shop)
-
-ggplot(top_LUZ, aes(x=covid, y=sum, fill=item)) +
-  geom_col() +
-  facet_wrap(~LUZ)
+# top_LUZ <- rbind(top_tr, top_ind, top_CBD, top_shop)
+# 
+# ggplot(top_LUZ, aes(x=covid, y=sum, fill=item)) +
+#   geom_col() +
+#   facet_wrap(~LUZ)
 ```
 
 ```{r day-diff}
@@ -418,7 +431,7 @@ ggplot(top_LUZ, aes(x=covid, y=sum, fill=item)) +
 #2 Round totals and top items 
 #find averages by dividing C1-7/6 and C8/2
     
-    df_sum <- df %>%
+  df_sum <- df %>%
   group_by(item, cycle, covid) %>% #relevant variables
   summarise(Sum=sum(sum), #sum of each item per cycle
             avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
@@ -434,36 +447,42 @@ ggplot(top_LUZ, aes(x=covid, y=sum, fill=item)) +
     
     top_items <- df_sum %>%
       group_by(cycle) %>%
-      top_n(5, Sum) 
+      top_n(5, Sum)
+    
+  #   t <- top_items %>%
+  # group_by(item, cycle) %>%
+  # summarise_at(vars(avg), list(avg = mean))
 
 #add a covid lockdown polygon behind this graph
-  line_item <- ggplot(top_items, aes(x = cycle, y = Sum, group = item, colour=item)) +
+  line_item <- ggplot(top_items, aes(x = cycle, y = avg, group = item, colour=item)) +
       geom_line() +
       geom_point() +
       ggtitle("Item count per Round") +
       guides(colour=guide_legend("Item type")) +
       ylab("Total item count") 
     line_item
+    
+
 ```
 
 
-```{r top5}
+```{r top5-per-luz-per-cycle}
 df %>%
   group_by(LUZ, item) %>%
   summarise(sum=sum(sum)) %>%
   arrange(desc(sum))
 
   top5 <- df %>%
-     filter(item %in% c("Cigarette butts & filters", 
-                        "Plastic packaging food (wrap, packets, containers)",
-                        "Plastic wrap non food (bubble wrap etc)",
-                        "Plastic film remnants (bits of plastic bag, wrap etc)",
-                        "Miscellaneous paper, labels & tickets")) %>%
+     filter(item %in% c("Cigarette butts", 
+                        "Plastic packaging (food)",
+                        "Plastic wrap (non-food)",
+                        "Soft plastic remnants",
+                        "Paper stubs")) %>%
   group_by(item, cycle, LUZ, covid) %>% #relevant variables
   summarise(Sum=sum(sum), #sum of each item per cycle
             avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
   ungroup() %>%
-  # filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(covid = as.factor(covid),
          cycle = as.factor(cycle),
          LUZ = as.factor(LUZ))
@@ -479,27 +498,34 @@ df %>%
     top5_p
 
 ```
-```{r items}
+```{r avg-items-per-lockdown}
 
 items <- df %>%
   group_by(item) %>%
   summarise(total = sum(sum)) %>%
   arrange(desc(total)) %>%
-  top_n(23)
+  top_n(25)
 
-t <- df %>%
+covMean <- df %>%
   left_join(items, by="item") %>%
-  filter(total > 240) %>%
-  group_by(covid, item) %>%
+  filter(total > 210) %>%
+  group_by(covid, LUZ, item) %>%
   summarise(cov_sum = sum(sum)) %>%
   mutate(meanCov1 = ifelse(covid==1, cov_sum/4, 0),
          meanCov2 = ifelse(covid==2, cov_sum, 0),
          meanCov3 = ifelse(covid==3, cov_sum/3, 0),
          covMean = meanCov1 + meanCov2 + meanCov3)
 
-ggplot(t, aes(covid, covMean, colour=item)) +
+
+ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
   geom_line() +
-  facet_wrap(~item) +
+  facet_wrap(~item, scales="free_y") 
+  # + scale_x_discrete(labels=c("1" = "No lockdown", "2" = "Moderate lockdown",
+  #                             "3" = "Strict lockdown"))
+
+ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
+  geom_line() +
+  facet_wrap(~item, scales="free_y") +
   scale_y_log10()
 ```
 
@@ -531,26 +557,69 @@ ggplot(diff_wide, aes(x=item, y=pct_change, fill=item)) +
   geom_bar()
   
 ```
-```{r heatmap}
-#vignette
-set.seed(123)
-nr1 = 4; nr2 = 8; nr3 = 6; nr = nr1 + nr2 + nr3
-nc1 = 6; nc2 = 8; nc3 = 10; nc = nc1 + nc2 + nc3
-mat = cbind(rbind(matrix(rnorm(nr1*nc1, mean = 1,   sd = 0.5), nr = nr1),
-          matrix(rnorm(nr2*nc1, mean = 0,   sd = 0.5), nr = nr2),
-          matrix(rnorm(nr3*nc1, mean = 0,   sd = 0.5), nr = nr3)),
-    rbind(matrix(rnorm(nr1*nc2, mean = 0,   sd = 0.5), nr = nr1),
-          matrix(rnorm(nr2*nc2, mean = 1,   sd = 0.5), nr = nr2),
-          matrix(rnorm(nr3*nc2, mean = 0,   sd = 0.5), nr = nr3)),
-    rbind(matrix(rnorm(nr1*nc3, mean = 0.5, sd = 0.5), nr = nr1),
-          matrix(rnorm(nr2*nc3, mean = 0.5, sd = 0.5), nr = nr2),
-          matrix(rnorm(nr3*nc3, mean = 1,   sd = 0.5), nr = nr3))
-   )
-mat = mat[sample(nr, nr), sample(nc, nc)] # random shuffle rows and columns
-rownames(mat) = paste0("row", seq_len(nr))
-colnames(mat) = paste0("column", seq_len(nc))
 
-Heatmap(mat)
+```{r heatmap-item}
+
+top20 <- df %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
+  group_by(item) %>%
+  summarise(total=sum(sum)) %>%
+  arrange(desc(total)) %>%
+  top_n(20) %>%
+  dplyr::select(item)
+
+top20 <- as.vector(unlist(top20))
+
+top_LUZ <- df %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4"), item %in% top20) %>%
+  group_by(LUZ) %>%
+  mutate(total_LUZ=sum(sum)) %>%
+  ungroup() %>%
+  group_by(LUZ, item) %>%
+  mutate(total_itemLUZ = sum(sum)) %>%
+  ungroup() %>%
+  mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
+  dplyr::select(item, LUZ, pct) %>%
+  unique() %>%
+  spread(item, pct) %>%
+  column_to_rownames(var="LUZ")
+
+mat <- data.matrix(top_LUZ) #matrix for heatmap
+
+mat2 = ifelse(mat <= 0.9,"<1",as.character(round(mat,2))) #matrix for labels
+
+col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat), location = 1, rot = 60, 
+                              just = "right"))
+
+Heatmap(log10(mat), 
+        name = "Debris count (percentage per land use zone)", 
+        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
+                      title = "Debris counts (% total)",labels = c("Low", "High"),
+                      grid_width = unit(0.8, "cm"),
+                      legend_height = unit(5, "cm"),
+                      title_position = "leftcenter-rot"), 
+        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
+        row_dend_reorder = TRUE, 
+        row_order = sort(rownames(mat)),
+        show_column_dend = FALSE,
+        show_row_dend = FALSE,
+        bottom_annotation = col_ha,
+        show_row_names = TRUE,
+        row_names_side = "left",
+        show_column_names = FALSE,
+        border = TRUE,
+        column_title = "Percentage of debris items in each land use zone",
+        #percentage label
+        cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf("%s", mat2[i, j]), x, y, gp = gpar(fontsize = 10))},
+        )
+
+heatmaply(m_topLUZ, xlab="Land Use Zones", ylab="Debris Items", show_dendrogram=F)
+
+
 ```
+
+
+
 
 

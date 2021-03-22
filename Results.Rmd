@@ -1,20 +1,12 @@
 ---
-title: "drains-data-mod"
+title: "Results"
 author: "Brie Sherow"
-date: "06/02/2021"
+date: "22/03/2021"
 output: html_document
-  html_document:
-    toc: yes
-    toc_float: yes
-    code_folding: hide
-    df_print: paged
-  pdf_document:
-    toc: yes
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-getwd()
 ```
 
 ```{r libraries}
@@ -25,7 +17,7 @@ library(lubridate) #date manipulation
 library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
-library(kableExtra) #table layouts
+# library(kableExtra) #table layouts
 library(tidyr) #long & wide formats
 library(reshape2) #melt function for wide and long formats
 library(stats) #R stats functions
@@ -41,6 +33,10 @@ library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
 library(emmeans)
+library(ComplexHeatmap)
+library(RColorBrewer)
+library(heatmaply)
+
 ```
 
 ```{r create-df}
@@ -182,12 +178,29 @@ library(emmeans)
       ) %>%
       distinct()
     
-        df <- df %>%
+    item_labelDF <- df %>%
+      distinct(item)
+    
+    df <- df %>%
       left_join(item_label, by=c("item" = "item.type")) %>%
       mutate(item = A3) %>%
       dplyr::select(-A3)
+    
+      
+ # lost_items <- anti_join(item_label, item_labelDF, by=c("item.type"="item"))   
+    
+  # df <- df %>%
+  #   filter(cycle %in% paste0("C",1:7))
+    df <- df %>%
+      mutate(asset_id=as.factor(asset_id),
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ)
+             )
         
 ```
+
+
 ```{r combine-cycles-8-9}
 #isolate C8
 C8 <- df %>%
@@ -204,6 +217,7 @@ t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
 t <- t %>%
   mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
   dplyr::select(event_id.x, item, combined_sum)
+
 df <- df %>% 
   left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
   filter(cycle != "C8") %>%
@@ -212,22 +226,148 @@ df <- df %>%
           final_sum = sum2 + combined_sum) %>%
   dplyr::select(-sum2, -sum, -combined_sum) %>%
   rename(sum = final_sum)
+
 ```
 
+
+```{r heatmap-item}
+
+top20 <- df %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
+  group_by(item) %>%
+  summarise(total=sum(sum)) %>%
+  arrange(desc(total)) %>%
+  top_n(20) %>%
+  dplyr::select(item)
+
+top20 <- as.vector(unlist(top20))
+
+top_LUZ <- df %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4"), item %in% top20) %>%
+  group_by(LUZ) %>%
+  mutate(total_LUZ=sum(sum)) %>%
+  ungroup() %>%
+  group_by(LUZ, item) %>%
+  mutate(total_itemLUZ = sum(sum)) %>%
+  ungroup() %>%
+  mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
+  dplyr::select(item, LUZ, pct) %>%
+  unique() %>%
+  spread(item, pct) %>%
+  column_to_rownames(var="LUZ")
+
+mat <- data.matrix(top_LUZ) #matrix for heatmap
+
+mat2 = ifelse(mat <= 0.9,"<1",as.character(round(mat,2))) #matrix for labels
+
+col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat), location = 1, rot = 60, 
+                              just = "right"))
+
+Heatmap(log10(mat), 
+        name = "Debris count (percentage per land use zone)", 
+        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
+                      title = "Debris counts (% total)",labels = c("Low", "High"),
+                      grid_width = unit(0.8, "cm"),
+                      legend_height = unit(5, "cm"),
+                      title_position = "leftcenter-rot"), 
+        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
+        row_dend_reorder = TRUE, 
+        row_order = sort(rownames(mat)),
+        show_column_dend = FALSE,
+        show_row_dend = FALSE,
+        bottom_annotation = col_ha,
+        show_row_names = TRUE,
+        row_names_side = "left",
+        show_column_names = FALSE,
+        border = TRUE,
+        column_title = "Percentage of debris items in each land use zone",
+        #percentage label
+        cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf("%s", mat2[i, j]), x, y, gp = gpar(fontsize = 10))},
+        )
+
+# heatmaply(mat, xlab="Land Use Zones", ylab="Debris Items", show_dendrogram=F)
+
+```
+
+```{r avg-items-per-lockdown}
+
+items <- df %>%
+  group_by(item) %>%
+  summarise(total = sum(sum)) %>%
+  arrange(desc(total)) %>%
+  top_n(25)
+
+covMean <- df %>%
+  left_join(items, by="item") %>%
+  filter(total > 210) %>%
+  group_by(covid, LUZ, item) %>%
+  summarise(cov_sum = sum(sum)) %>%
+  mutate(meanCov1 = ifelse(covid==1, cov_sum/4, 0),
+         meanCov2 = ifelse(covid==2, cov_sum, 0),
+         meanCov3 = ifelse(covid==3, cov_sum/3, 0),
+         covMean = meanCov1 + meanCov2 + meanCov3)
+
+
+ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
+  geom_line() +
+  facet_wrap(~item, scales="free_y") 
+  # + scale_x_discrete(labels=c("1" = "No lockdown", "2" = "Moderate lockdown",
+  #                             "3" = "Strict lockdown"))
+
+# ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
+#   geom_line() +
+#   facet_wrap(~item, scales="free_y") +
+#   scale_y_log10()
+```
+
+```{r top5-per-luz-per-cycle}
+df %>%
+  group_by(LUZ, item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum))
+
+  top5 <- df %>%
+     filter(item %in% c("Cigarette butts", 
+                        "Plastic packaging (food)",
+                        "Plastic wrap (non-food)",
+                        "Soft plastic remnants",
+                        "Paper stubs")) %>%
+  group_by(item, cycle, LUZ, covid) %>% #relevant variables
+  summarise(Sum=sum(sum), #sum of each item per cycle
+            avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
+  ungroup() %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  mutate(covid = as.factor(covid),
+         cycle = as.factor(cycle),
+         LUZ = as.factor(LUZ))
+
+#add a covid lockdown polygon behind this graph
+  top5_p <- ggplot(top5, aes(x = cycle, y = Sum, group = item, colour=item)) +
+      geom_line() +
+      geom_point() +
+      ggtitle("Item count per Round") +
+      guides(colour=guide_legend("Item type")) +
+      ylab("Total item count") +
+    facet_wrap(~LUZ)
+    top5_p
+
+```
+##GLMM and predictions
 ```{r data-mod}
 mod <- df %>%
   group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
   summarise(sum=sum(sum)) %>%
   ungroup() %>%
-  # filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(LGA = as.factor(LGA),
          LUZ = as.factor(LUZ),
          covid = as.factor(covid),
          cycle = as.factor(cycle))
 
-ggplot(data=mod, aes(x=covid, y=sum, color=LUZ)) +
-  geom_boxplot() +
-  scale_y_log10() 
+# ggplot(data=mod, aes(x=covid, y=sum, color=LUZ)) +
+#   geom_boxplot() +
+#   scale_y_log10() 
        
 ```
 
@@ -482,9 +622,8 @@ p_hs
 #also create a line graph (borrow from the one already made of the top items, covid lockdown shaded polygon in the background)
 
 ```
-
-
-```{r vegan-top5}
+##MDS plots
+```{r top5-covid-hull}
 #find top 5 items
 top5 <- df %>%
   group_by(item) %>%
@@ -562,7 +701,7 @@ ggplot() +
 #arrows (vectors that show how items are pulling/pushing)
 ```
 
-```{r vegan-top20}
+```{r top20-covid-hull}
 #find top 20 items
 top20 <- df %>%
   group_by(item) %>%
@@ -658,8 +797,7 @@ ggplot() +
 #arrows (vectors that show how items are pulling/pushing)
 ```
 
-
-```{r LUZ-hull}
+```{r top20-LUZ-hull}
 #Hull data
 CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
     "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
@@ -681,7 +819,3 @@ ggplot() +
   coord_equal() +
   theme_bw()
 ```
-
-
-
-

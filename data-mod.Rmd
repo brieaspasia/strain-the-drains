@@ -195,7 +195,6 @@ t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
 t <- t %>%
   mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
   dplyr::select(event_id.x, item, combined_sum)
-
 df <- df %>% 
   left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
   filter(cycle != "C8") %>%
@@ -301,7 +300,6 @@ p
 
 top5_txt<- df %>%
   filter(item %in% c("Cigarette butts & filters", 
-                     "Occupational health & safety items",
                      "Plastic packaging food (wrap, packets, containers)",
                      "Plastic wrap non food (bubble wrap etc)",
                      "Plastic film remnants (bits of plastic bag, wrap etc)",
@@ -397,169 +395,84 @@ pred_df = purrr::map_df(top5_txt, function(x){
  
 ```
 
-```{r data-mod-cig}
+```{r data-mod-h&s}
 
 #modify data
-mod_cig <- df %>%
-  filter(item=="Cigarette butts & filters") %>%
+mod_hs <- df %>%
+  filter(item=="Occupational health & safety items") %>%
   group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
   summarise(sum=sum(sum)) %>%
   ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(LGA = as.factor(LGA),
          LUZ = as.factor(LUZ),
          covid = as.factor(covid),
          cycle = as.factor(cycle))
 
-ggplot(data=mod_cig, aes(x=covid, y=sum, color=LUZ)) +
-  geom_boxplot() +
-  scale_y_log10() 
+ggplot(data=mod_hs, aes(x=covid, y=sum, color=LUZ)) +
+  geom_boxplot()
 
 #create model
-m_cig  <- glmmTMB(sum ~ #Debris count per survey event
+m_hs  <- glmmTMB(sum ~ #Debris count per survey event
                 LUZ * covid + #predicted by land use effected by covid
                  (1|LGA/asset_id) + (1|cycle), #suburb random effect
                family=nbinom2(), #negative binomial to deal with count data and zeros
-               data = mod_cig)
+               data = mod_hs)
 
-drop1(m_cig, test="Chisq")
+drop1(m_hs, test="Chisq")
 
-str(mod_cig)
+str(mod_hs)
 
-emmeans(m_cig, ~covid|LUZ)
-emmeans(m_cig, pairwise~covid|LUZ, type="response")
+emmeans(m_hs, ~covid|LUZ)
+emmeans(m_hs, pairwise~covid|LUZ, type="response")
 
-#dharma cigarette
-simulationOutput_cig <- simulateResiduals(fittedModel = m_cig, plot=T)
+#dharma health and safety
+simulationOutput_hs <- simulateResiduals(fittedModel = m_hs, plot=T)
   
-plotResiduals(simulationOutput_cig)
-testUniformity(simulationOutput_cig) #tests if the overall distribution conforms to expectations
-# testOutliers(simulationOutput_cig) #tests if there are more simulation outliers than expected
-testDispersion(simulationOutput_cig) #tests if the simulated dispersion is equal to the observed dispersion
-#testQuantiles(simulationOutput_cig) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
-testZeroInflation(simulationOutput_cig) #tests if there are more zeros than expected
+plotResiduals(simulationOutput_hs)
+testUniformity(simulationOutput_hs) #tests if the overall distribution conforms to expectations
+# testOutliers(simulationOutput_hs) #tests if there are more simulation outliers than expected
+testDispersion(simulationOutput_hs) #tests if the simulated dispersion is equal to the observed dispersion
+#testQuantiles(simulationOutput_hs) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
+testZeroInflation(simulationOutput_hs) #tests if there are more zeros than expected
 ```
 
-```{r predictions-cig}
+```{r predictions-hs}
 #create a new dataframe with columns of all fixed predictor variables in th emodel, and ros of all possible values of those predictor varables that you want predictions from.  Predictors are covid and LUZ.
-nd_cig <- expand.grid(covid = unique(mod_cig$covid),
-                  LUZ = unique(mod_cig$LUZ),
+nd_hs <- expand.grid(covid = unique(mod_hs$covid),
+                  LUZ = unique(mod_hs$LUZ),
                   LGA = NA,
                   asset_id = NA,
                   cycle = NA)
 
 #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
-pred_cig <- predict(object=m_cig,
-                newdata=nd_cig,
+pred_hs <- predict(object=m_hs,
+                newdata=nd_hs,
                 se.fit=T,
                 re.form=NA,
                 type="response")
 
 #creating standard error for graphing
-nd_cig$Total <- pred_cig$fit
-nd_cig$SE_upper <- pred_cig$fit + pred_cig$se.fit
-nd_cig$SE_lower <- pred_cig$fit - pred_cig$se.fit
+nd_hs$Total <- pred_hs$fit
+nd_hs$SE_upper <- pred_hs$fit + pred_hs$se.fit
+nd_hs$SE_lower <- pred_hs$fit - pred_hs$se.fit
 
 #creating plot
-p_cig <- ggplot(nd_cig, aes(y=Total, x=covid)) + 
+p_hs <- ggplot(nd_hs, aes(y=Total, x=covid)) + 
   geom_col(aes(fill=covid)) +
   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2)) +
-  labs(title="Cigarette abundance predictions",
+  labs(title="Occupational health item abundance predictions",
        subtitle="By land use zone and covid restriction",
-       x="Covid lockdown status", y="Total cigarettes", tag="") +
+       x="Covid lockdown status", y="Total items", tag="") +
   facet_wrap(~LUZ) +
   theme_minimal()
 
-p_cig
+p_hs
 
 #group them by LUZ stacked bars
 
 #also create a line graph (borrow from the one already made of the top items, covid lockdown shaded polygon in the background)
 
 ```
-
-```{r data-mod-plas-food}
-
-#modify data
-mod_pf <- df %>%
-  filter(item=="Plastic packaging food (wrap, packets, containers)") %>%
-  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-  summarise(sum=sum(sum)) %>%
-  ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
-  mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(LUZ),
-         covid = as.factor(covid),
-         cycle = as.factor(cycle))
-
-ggplot(data=mod_pf, aes(x=covid, y=sum, color=LUZ)) +
-  geom_boxplot() +
-  scale_y_log10() 
-
-#create model
-m_pf  <- glmmTMB(sum ~ #Debris count per survey event
-                LUZ * covid + #predicted by land use effected by covid
-                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
-               family=nbinom2(), #negative binomial to deal with count data and zeros
-               data = mod_pf)
-
-drop1(m_pf, test="Chisq")
-
-str(mod_pf)
-
-emmeans(m_pf, ~covid|LUZ)
-emmeans(m_pf, pairwise~covid|LUZ, type="response")
-
-#dharma cigarette
-simulationOutput_pf <- simulateResiduals(fittedModel = m_pf, plot=T)
-  
-plotResiduals(simulationOutput_pf)
-testUniformity(simulationOutput_pf) #tests if the overall distribution conforms to expectations
-# testOutliers(simulationOutput_pf) #tests if there are more simulation outliers than expected
-testDispersion(simulationOutput_pf) #tests if the simulated dispersion is equal to the observed dispersion
-#testQuantiles(simulationOutput_pf) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
-testZeroInflation(simulationOutput_pf) #tests if there are more zeros than expected
-```
-
-```{r predictions-plas-food}
-#create a new dataframe with columns of all fixed predictor variables in th emodel, and ros of all possible values of those predictor varables that you want predictions from.  Predictors are covid and LUZ.
-nd_pf <- expand.grid(covid = unique(mod_pf$covid),
-                  LUZ = unique(mod_pf$LUZ),
-                  LGA = NA,
-                  asset_id = NA,
-                  cycle = NA)
-
-#predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
-pred_pf <- predict(object=m_pf,
-                newdata=nd_pf,
-                se.fit=T,
-                re.form=NA,
-                type="response")
-
-#creating standard error for graphing
-nd_pf$Total <- pred_pf$fit
-nd_pf$SE_upper <- pred_pf$fit + pred_pf$se.fit
-nd_pf$SE_lower <- pred_pf$fit - pred_pf$se.fit
-
-#creating plot
-p_pf <- ggplot(nd_pf, aes(y=Total, x=covid)) + 
-  geom_col(aes(fill=covid)) +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2)) +
-  labs(title="Plastic food wrap abundance predictions",
-       subtitle="By land use zone and covid restriction",
-       x="Covid lockdown status", y="Total plastic food wrap", tag="") +
-  facet_wrap(~LUZ) +
-  theme_minimal()
-
-p_pf
-
-#group them by LUZ stacked bars
-
-#also create a line graph (borrow from the one already made of the top items, covid lockdown shaded polygon in the background)
-
-```
-
-
 
 
 ```{r vegan-top5}
@@ -701,14 +614,32 @@ covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$
 covid3 <- data.scores[data.scores$covid == "3", ][chull(data.scores[data.scores$covid ==
     "3", c("NMDS1", "NMDS2")]), ]  # hull values for covid 3
 
+#create polygons
 hull.data <- rbind(covid1, covid2, covid3)  #combine grp.a and grp.b
 hull.data
-  
+
+#create arrows
+env <- abund[,1:2] #isolate environmental factors
+
+#convert com to a matrix
+m_com = as.matrix(com)
+
+#nmds code
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray")
+nmds
+
+en = envfit(nmds, env, permutations = 999, na.rm = TRUE) #run envfit
+en
+
+en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
+en_coord_cat = as.data.frame(scores(en, "factors")) * ordiArrowMul(en)
   
 ggplot() +
-  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.30) +
+  # geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.1) +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
-  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ)) + 
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ), alpha=0.8) + 
   coord_equal() +
   theme_bw()
 
@@ -719,20 +650,6 @@ ggplot() +
 ```
 
 
-```{r MDS}
-#create a dissimilarity matrix that measures similarity between every pair of samples
-abund.mds <- metaMDS(comm = com, distance = "bray", trace = FALSE, autotransform = FALSE)
 
-#create mds ordination plot
-plot(abund.mds$points)
 
-#extract x-y coords to new df
-MDS_xy <- data.frame(abund.mds$points)
-
-#add habitat and location to these coordinates
-MDS_xy$LUZ <- abund$LUZ
-
-MDS_ec <- ggplot(MDS_xy, aes(MDS1, MDS2, color = LUZ)) + geom_point() + theme_bw()
-MDS_ec
-```
 

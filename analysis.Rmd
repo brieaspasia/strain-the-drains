@@ -1,0 +1,18 @@
+---
+title: "StrainDrains"
+author: "Brie Sherow"
+date: "19/01/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+

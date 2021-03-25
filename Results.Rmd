@@ -17,7 +17,7 @@ library(lubridate) #date manipulation
 library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
-# library(kableExtra) #table layouts
+library(kableExtra) #table layouts
 library(tidyr) #long & wide formats
 library(reshape2) #melt function for wide and long formats
 library(stats) #R stats functions
@@ -33,7 +33,7 @@ library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
 library(emmeans)
-library(ComplexHeatmap)
+# library(ComplexHeatmap)
 library(RColorBrewer)
 library(heatmaply)
 
@@ -287,7 +287,6 @@ Heatmap(log10(mat),
         )
 
 # heatmaply(mat, xlab="Land Use Zones", ylab="Debris Items", show_dendrogram=F)
-
 ```
 
 ```{r avg-items-per-lockdown}
@@ -319,6 +318,33 @@ ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
 #   geom_line() +
 #   facet_wrap(~item, scales="free_y") +
 #   scale_y_log10()
+```
+
+```{r avg-items-per-cycle}
+
+# c_items <- df %>%
+#   group_by(cycle, LUZ, item) %>%
+#   summarise(total = sum(sum)) %>%
+#   arrange(desc(total)) %>%
+#   top_n(25) 
+# 
+# lids <- c_items %>%
+#   filter(item=="Plastic drink bottles")
+# 
+# ggplot(lids, aes(cycle, total)) +
+#   geom_col() +
+#   facet_wrap(~LUZ)
+#   # facet_wrap(~item, scales="free_y") 
+#   # + scale_x_discrete(labels=c("1" = "No lockdown", "2" = "Moderate lockdown",
+#   #                             "3" = "Strict lockdown"))
+# 
+# # ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
+# #   geom_line() +
+# #   facet_wrap(~item, scales="free_y") +
+# #   scale_y_log10()
+# 
+# btl <- df %>%
+#   filter(cycle=="C7", item=="Plastic drink bottles", LUZ=="Public Transport Terminal")
 ```
 
 ```{r top5-per-luz-per-cycle}
@@ -384,6 +410,7 @@ str(mod)
 
 emmeans(m, ~covid|LUZ)
 emmeans(m, pairwise~covid|LUZ, type="response")
+
 ```
 
 ```{r dharma-effect}
@@ -405,6 +432,8 @@ mod_temp <- mod %>%
 
 testTemporalAutocorrelation(mod_temp$sum, 
                               time =  mod_temp$date) #test resid for temporal autocorrelation
+
+citation("DHARMa")
 ```
 
 ```{r predictions}

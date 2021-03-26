@@ -17,7 +17,7 @@ library(lubridate) #date manipulation
 library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
-library(kableExtra) #table layouts
+##(kableExtra) #table layouts
 library(tidyr) #long & wide formats
 library(reshape2) #melt function for wide and long formats
 library(stats) #R stats functions

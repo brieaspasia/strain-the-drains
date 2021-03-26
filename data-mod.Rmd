@@ -51,6 +51,9 @@ library(emmeans)
         item <- read.csv(file="Data/2101_item.csv", 
                          header=T, sep=",") 
 
+  #remove duplicate entries
+        item <- unique(item[!duplicated(item),])
+
         #load item labels
         item_label <- read.csv(file="Data/item_label.csv", 
                          header=T, sep=",") 
@@ -63,7 +66,7 @@ library(emmeans)
         survey_count <- left_join(item, event, by="event_id")
         
         survey_count <- survey_count %>%
-          dplyr::select(-event.tot, -event.wt, -vol, -hr, -note) %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -event_date) %>%
           filter(item!="Pollution Rating") %>%
           mutate(event_item = paste(event_id, item, sep=" "))
 
@@ -182,12 +185,29 @@ library(emmeans)
       ) %>%
       distinct()
     
-        df <- df %>%
+    item_labelDF <- df %>%
+      distinct(item)
+    
+    df <- df %>%
       left_join(item_label, by=c("item" = "item.type")) %>%
       mutate(item = A3) %>%
       dplyr::select(-A3)
+    
+      
+ # lost_items <- anti_join(item_label, item_labelDF, by=c("item.type"="item"))   
+    
+  # df <- df %>%
+  #   filter(cycle %in% paste0("C",1:7))
+    df <- df %>%
+      mutate(asset_id=as.factor(asset_id),
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ)
+             )
         
 ```
+
+
 ```{r combine-cycles-8-9}
 #isolate C8
 C8 <- df %>%

@@ -17,7 +17,7 @@ library(lubridate) #date manipulation
 library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
-##(kableExtra) #table layouts
+# library(kableExtra) #table layouts
 library(tidyr) #long & wide formats
 library(reshape2) #melt function for wide and long formats
 library(stats) #R stats functions
@@ -47,6 +47,9 @@ library(heatmaply)
         item <- read.csv(file="Data/2101_item.csv", 
                          header=T, sep=",") 
 
+  #remove duplicate entries
+        item <- unique(item[!duplicated(item),])
+
         #load item labels
         item_label <- read.csv(file="Data/item_label.csv", 
                          header=T, sep=",") 
@@ -59,7 +62,7 @@ library(heatmaply)
         survey_count <- left_join(item, event, by="event_id")
         
         survey_count <- survey_count %>%
-          dplyr::select(-event.tot, -event.wt, -vol, -hr, -note) %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -event_date, -note) %>%
           filter(item!="Pollution Rating") %>%
           mutate(event_item = paste(event_id, item, sep=" "))
 
@@ -197,9 +200,7 @@ library(heatmaply)
              LGA=as.factor(LGA),
              LUZ=as.factor(LUZ)
              )
-        
 ```
-
 
 ```{r combine-cycles-8-9}
 #isolate C8
@@ -297,22 +298,36 @@ items <- df %>%
   arrange(desc(total)) %>%
   top_n(25)
 
-covMean <- df %>%
+# #by covid lockdown level
+# covMean <- df %>%
+#   left_join(items, by="item") %>%
+#   filter(total > 205) %>%
+#   group_by(covid, LUZ, item) %>%
+#   summarise(cov_sum = sum(sum)) %>%
+#   mutate(meanCov1 = ifelse(covid==1, cov_sum/4, 0),
+#          meanCov2 = ifelse(covid==2, cov_sum, 0),
+#          meanCov3 = ifelse(covid==3, cov_sum/3, 0),
+#          covMean = meanCov1 + meanCov2 + meanCov3)
+
+item_per_cycle <- df %>%
   left_join(items, by="item") %>%
-  filter(total > 210) %>%
-  group_by(covid, LUZ, item) %>%
-  summarise(cov_sum = sum(sum)) %>%
-  mutate(meanCov1 = ifelse(covid==1, cov_sum/4, 0),
-         meanCov2 = ifelse(covid==2, cov_sum, 0),
-         meanCov3 = ifelse(covid==3, cov_sum/3, 0),
-         covMean = meanCov1 + meanCov2 + meanCov3)
+  filter(total > 205) %>%
+  group_by(date, LUZ, item) %>%
+  summarise(cycle_sum = sum(sum)) 
 
 
-ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
+ggplot(item_per_cycle, aes(date, cycle_sum, colour=LUZ)) +
   geom_line() +
-  facet_wrap(~item, scales="free_y") 
+  facet_wrap(~item) +
+  scale_y_log10()
   # + scale_x_discrete(labels=c("1" = "No lockdown", "2" = "Moderate lockdown",
   #                             "3" = "Strict lockdown"))
+
+ggplot(item_per_cycle, aes(date, cycle_sum, group=LUZ, colour=LUZ)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~item, scale="free_y")
+  
 
 # ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
 #   geom_line() +
@@ -320,27 +335,6 @@ ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
 #   scale_y_log10()
 ```
 
-```{r avg-items-per-cycle}
-
-c_items <- df %>%
-  group_by(cycle, LUZ, item) %>%
-  summarise(total = sum(sum)) %>%
-  arrange(desc(total)) %>%
-  top_n(5)
-
-ggplot(c_items, aes(cycle, total, colour=LUZ)) +
-  geom_line() +
-  facet_wrap(~item, scales="free_y")
-  # facet_wrap(~item, scales="free_y")
-  # + scale_x_discrete(labels=c("1" = "No lockdown", "2" = "Moderate lockdown",
-  #                             "3" = "Strict lockdown"))
-
-# ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
-#   geom_line() +
-#   facet_wrap(~item, scales="free_y") +
-#   scale_y_log10()
-
-```
 
 ```{r top5-per-luz-per-cycle}
 df %>%
@@ -354,17 +348,16 @@ df %>%
                         "Plastic wrap (non-food)",
                         "Soft plastic remnants",
                         "Paper stubs")) %>%
-  group_by(item, cycle, LUZ, covid) %>% #relevant variables
+  group_by(item, date, LUZ, covid) %>% #relevant variables
   summarise(Sum=sum(sum), #sum of each item per cycle
             avg=mean(sum), sd=sd(sum)) %>% #mean of each item overall
   ungroup() %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
+  # filter(cycle %in% c("C1", "C2", "C3", "C4", "C5", "C6", "C7")) %>%
   mutate(covid = as.factor(covid),
-         cycle = as.factor(cycle),
          LUZ = as.factor(LUZ))
 
 #add a covid lockdown polygon behind this graph
-  top5_p <- ggplot(top5, aes(x = cycle, y = Sum, group = item, colour=item)) +
+  top5_p <- ggplot(top5, aes(x = date, y = Sum, group = item, colour=item)) +
       geom_line() +
       geom_point() +
       ggtitle("Item count per Round") +

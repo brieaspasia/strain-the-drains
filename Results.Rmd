@@ -312,11 +312,12 @@ items <- df %>%
 item_per_cycle <- df %>%
   left_join(items, by="item") %>%
   filter(total > 205) %>%
-  group_by(date, LUZ, item) %>%
+  group_by(date, covid, LUZ, item) %>%
   summarise(cycle_sum = sum(sum)) 
 
-
+#https://plotly.com/ggplot2/geom_rect/
 ggplot(item_per_cycle, aes(date, cycle_sum, colour=LUZ)) +
+  geom_rect(aes(xmin=xstart, xmax=xend, ymin= -Inf, ymax=Inf, fill=covid)) +
   geom_line() +
   facet_wrap(~item) +
   scale_y_log10()

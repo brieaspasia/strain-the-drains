@@ -36,6 +36,7 @@ library(emmeans)
 library(ComplexHeatmap)
 library(RColorBrewer)
 library(heatmaply)
+library(cowplot) #minimal backgrounds for ggplot
 
 ```
 
@@ -287,8 +288,85 @@ Heatmap(log10(mat),
         grid.text(sprintf("%s", mat2[i, j]), x, y, gp = gpar(fontsize = 10))},
         )
 
+
 # heatmaply(mat, xlab="Land Use Zones", ylab="Debris Items", show_dendrogram=F)
 ```
+```{r MDS-pre-covid}
+#find top 5 items
+top15 <- df %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(15, sum)
+  
+#create vector from top 20 items
+top15 <- top15$item 
+top15 <- unlist(top15)
+
+
+df_top15 <- df %>%
+  filter(item %in% top15)
+
+#create abundance long format
+ abund_long <- df_top15 %>%
+    group_by(event_id, LUZ, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  #convert survey event to rowname  
+  length(unique(abund$event_id)) == nrow(abund) #checking for duplicates
+  abund <- column_to_rownames(abund, var="event_id") #create rownames from survey event
+  
+  com <- abund[2:16]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+  
+#create df to join covid and LUZ to ord
+  
+  df_env <- df %>%
+    dplyr::select("event_id", "LUZ") %>%
+    distinct()
+    
+  
+  ord <- metaMDS(com)
+  plot(ord)
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$event_id <- rownames(data.scores) #create event id column
+  data.scores <- left_join(data.scores, df_env, by="event_id")  #join LUZ
+  data.scores <- data.scores %>%
+    mutate(LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+  
+  #Hull data
+CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+    "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+    "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+    "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
+
+#create polygons
+hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
+hull.data
+
+ggplot() +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
+  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ), alpha=0.8) + 
+  coord_equal() +
+  theme_bw()
+```
+
 
 ```{r avg-items-per-lockdown}
 
@@ -298,42 +376,34 @@ items <- df %>%
   arrange(desc(total)) %>%
   top_n(25)
 
-# #by covid lockdown level
-# covMean <- df %>%
-#   left_join(items, by="item") %>%
-#   filter(total > 205) %>%
-#   group_by(covid, LUZ, item) %>%
-#   summarise(cov_sum = sum(sum)) %>%
-#   mutate(meanCov1 = ifelse(covid==1, cov_sum/4, 0),
-#          meanCov2 = ifelse(covid==2, cov_sum, 0),
-#          meanCov3 = ifelse(covid==3, cov_sum/3, 0),
-#          covMean = meanCov1 + meanCov2 + meanCov3)
-
 item_per_cycle <- df %>%
   left_join(items, by="item") %>%
   filter(total > 205) %>%
   group_by(date, covid, LUZ, item) %>%
-  summarise(cycle_sum = sum(sum)) 
+  summarise(cycle_sum = sum(sum))
 
-#https://plotly.com/ggplot2/geom_rect/
-ggplot(item_per_cycle, aes(date, cycle_sum, colour=LUZ)) +
-  geom_rect(aes(xmin=xstart, xmax=xend, ymin= -Inf, ymax=Inf, fill=covid)) +
-  geom_line() +
-  facet_wrap(~item) +
-  scale_y_log10()
-  # + scale_x_discrete(labels=c("1" = "No lockdown", "2" = "Moderate lockdown",
-  #                             "3" = "Strict lockdown"))
+covid_lvl <- data.frame(name = c("1", "2", "3", "4", "5"),
+                   start = as.Date(c("2019-10-29", "2020-03-14", "2020-03-19", "2020-06-21",
+                             "2020-07-06")),
+                   end = as.Date(c("2020-03-14", "2020-03-19", "2020-06-21", "2020-07-06", 
+                           "2020-10-17")),
+                   level = c("No lockdown", "Moderate lockdown", "Strict lockdown", "Moderate lockdown", "Strict lockdown"),
+                   stringsAsFactors = FALSE) %>%
+  mutate(median_x = start + floor((end-start)/2))
 
-ggplot(item_per_cycle, aes(date, cycle_sum, group=LUZ, colour=LUZ)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(~item, scale="free_y")
-  
 
-# ggplot(covMean, aes(covid, covMean, colour=LUZ)) +
-#   geom_line() +
-#   facet_wrap(~item, scales="free_y") +
-#   scale_y_log10()
+p <- ggplot() +
+  geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+                                ymin= -Inf, ymax=Inf), alpha=0.1) +
+  labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
+       x="Date", y="Debris count per survey cycle") +
+  geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
+  theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+  facet_wrap(~item, scales="free") 
+  # theme_cowplot(12)
+p
+
+#https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 ```
 
 
@@ -641,7 +711,7 @@ p_hs
 
 ```
 ##MDS plots
-```{r top5-covid-hull}
+```{r top5-event}
 #find top 5 items
 top5 <- df %>%
   group_by(item) %>%
@@ -696,20 +766,22 @@ df_top5 <- df %>%
   species.scores$item <- rownames(species.scores) #create item id column
   
 #Hull data
-  covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
-    "1", c("NMDS1", "NMDS2")]), ]  # hull values for covid 1
-covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
-    "2", c("NMDS1", "NMDS2")]), ]  # hull values for covid 2
-covid3 <- data.scores[data.scores$covid == "3", ][chull(data.scores[data.scores$covid ==
-    "3", c("NMDS1", "NMDS2")]), ]  # hull values for covid 3
+CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+    "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+    "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+    "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
 
-hull.data <- rbind(covid1, covid2, covid3)  #combine grp.a and grp.b
+#create polygons
+hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
 hull.data
   
 ggplot() +
-  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.30) +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
-  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ)) + 
+  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid)) + 
   coord_equal() +
   theme_bw()
 
@@ -719,7 +791,7 @@ ggplot() +
 #arrows (vectors that show how items are pulling/pushing)
 ```
 
-```{r top20-covid-hull}
+```{r top20-event}
 #find top 20 items
 top20 <- df %>%
   group_by(item) %>%
@@ -773,15 +845,16 @@ df_top20 <- df %>%
   species.scores$item <- rownames(species.scores) #create item id column
   
 #Hull data
-  covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
-    "1", c("NMDS1", "NMDS2")]), ]  # hull values for covid 1
-covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
-    "2", c("NMDS1", "NMDS2")]), ]  # hull values for covid 2
-covid3 <- data.scores[data.scores$covid == "3", ][chull(data.scores[data.scores$covid ==
-    "3", c("NMDS1", "NMDS2")]), ]  # hull values for covid 3
+CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+    "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+    "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+    "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
 
 #create polygons
-hull.data <- rbind(covid1, covid2, covid3)  #combine grp.a and grp.b
+hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
 hull.data
 
 #create arrows
@@ -802,10 +875,10 @@ en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
 en_coord_cat = as.data.frame(scores(en, "factors")) * ordiArrowMul(en)
   
 ggplot() +
-  # geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.1) +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
   geom_point(data=data.scores, 
-             aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ), alpha=0.8) + 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
   coord_equal() +
   theme_bw()
 
@@ -814,8 +887,115 @@ ggplot() +
 #colour symbols to land use and change shape to covid
 #arrows (vectors that show how items are pulling/pushing)
 ```
+```{r MDS-top20-aggregate}
 
-```{r top20-LUZ-hull}
+#find top 20 items
+top20 <- df %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(20, sum)
+  
+#create vector from top 20 items
+top20 <- top20$item 
+top20 <- unlist(top20)
+
+df_top20 <- df %>%
+  filter(item %in% top20)
+
+#create abundance long format
+ abund_long <- df_top20 %>%
+    group_by(LUZ, covid, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+  
+  com <- abund[3:22]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+    
+  
+  ord <- metaMDS(com)
+  plot(ord)
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$LUZ <- abund$LUZ
+  data.scores$covid <- abund$covid
+  data.scores <- data.scores %>%
+    mutate(covid = as.factor(covid),
+           LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+  
+#Hull data
+CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+    "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+    "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+    "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
+
+#create polygons
+hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
+hull.data
+  
+ggplot() +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
+  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid)) + 
+  coord_equal() +
+  theme_bw()
+
+```
+```{r MDS-LGA-top20}
+#find top 20 items
+top20 <- df %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(20, sum)
+  
+#create vector from top 20 items
+top20 <- top20$item 
+top20 <- unlist(top20)
+
+
+df_top20 <- df %>%
+  filter(item %in% top20)
+
+#create abundance long format
+ abund_long <- df_top20 %>%
+    group_by(LGA, LUZ, covid, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  
+  com <- abund[4:23]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+  
+  ord <- metaMDS(com)
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$LUZ <- abund$LUZ
+  data.scores$covid <- abund$covid
+  data.scores <- data.scores %>%
+    mutate(covid = as.factor(covid),
+           LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+  
+  
 #Hull data
 CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
     "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
@@ -829,6 +1009,7 @@ Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[da
 hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
 hull.data
 
+  
 ggplot() +
   geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
@@ -836,4 +1017,38 @@ ggplot() +
              aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
   coord_equal() +
   theme_bw()
+
+#https://chrischizinski.github.io/rstats/vegan-ggplot2/
+
+#colour symbols to land use and change shape to covid
+#arrows (vectors that show how items are pulling/pushing)
+```
+
+
+
+```{r adonis}
+
+
+# #Rosie's example
+# rockpools.adonis <- adonis(RockPools_vars_std ~ RockPools$Habitat*RockPools$Year,permutations = 999, method = "bray")
+# rockpools.adonis
+
+df.adonis <- adonis(com ~ data.scores$LUZ*data.scores$covid, permutations=999, method="bray")
+df.adonis
+
+#testing land use dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.luz <- betadisper(df.dis, data.scores$LUZ) # test dispersion
+df.betadisper.luz
+permutest(df.betadisper.luz) #dispersion not significant
+
+#testing covid dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.cov <- betadisper(df.dis, data.scores$covid) # test dispersion
+df.betadisper.cov
+permutest(df.betadisper.cov) #dispersion not significant
+
+#pairwise land use comparisons
+LUZ.pair <- adonis.pair(df.dis, abund$LUZ, nper = 1000, corr.method = "fdr")
+
 ```

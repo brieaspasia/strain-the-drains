@@ -259,13 +259,14 @@ top_LUZ <- df %>%
   column_to_rownames(var="LUZ")
 
 mat <- data.matrix(top_LUZ) #matrix for heatmap
+mat <- round(mat,0)
+mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
 
-mat2 = ifelse(mat <= 0.9,"<1",as.character(round(mat,2))) #matrix for labels
 
 col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat), location = 1, rot = 60, 
                               just = "right"))
 
-Heatmap(log10(mat), 
+Heatmap(log10(mat+0.1), 
         name = "Debris count (percentage per land use zone)", 
         heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
                       title = "Debris counts (% total)",labels = c("Low", "High"),
@@ -394,6 +395,7 @@ p <- ggplot() +
                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
        x="Date", y="Debris count per survey cycle") +
+  # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
   geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
   facet_wrap(~item, scales="free") 

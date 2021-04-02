@@ -1,0 +1,362 @@
+---
+title: "Container Deposit Scheme"
+author: "Brie Sherow"
+date: "02/04/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, warning=FALSE, message=FALSE, results='hide'}
+library(ggplot2) #graphing
+library(ggthemes) #graphing templates
+library(hrbrthemes) #graphing templates
+library(lubridate) #date manipulation
+library(forcats) #working with factors
+library(tidyverse) #manipulating data
+library(knitr) #rmarkdown functions
+library(kableExtra) #table layouts
+library(tidyr) #long & wide formats
+library(reshape2) #melt function for wide and long formats
+library(RColorBrewer)
+#library(cowplot) #minimal backgrounds for ggplot
+
+```
+# Data
+Survey data from Tangaroa Blue "Strain the Drains" project.  Nine survey cycles, collected in 6-week intervals from October 2019 to October 20.  Cycle 8, being a partial survey round with assets re-surveyed in cycle 9, was merged with cycle 9.  
+
+```{r create-df, warning=FALSE, message=FALSE, results='hide'}
+
+#create survey count  
+
+        #load item counts
+        item <- read.csv(file="Data/2101_item.csv", 
+                         header=T, sep=",") 
+
+  #remove duplicate entries
+        item <- unique(item[!duplicated(item),])
+
+        #load item labels
+        item_label <- read.csv(file="Data/item_label.csv", 
+                         header=T, sep=",") 
+        
+        #load events
+        event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        survey_count <- left_join(item, event, by="event_id")
+        
+        survey_count <- survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -event_date, -note) %>%
+          filter(item!="Pollution Rating") %>%
+          mutate(event_item = paste(event_id, item, sep=" "))
+
+        #summarise duplicate survey entries (this will lose one set of notes....)
+        item_merge <- survey_count %>%
+          group_by(event_item) %>%
+          summarise(sum=sum(total)) %>%
+         ungroup()
+
+        #join survey count to the merged summaries
+        survey_count <- item_merge %>%
+          left_join(survey_count, by="event_item") %>%
+          dplyr::select(-total) %>%
+          unique()
+        
+#create abundance data with all possible debris items and zero values
+
+      #count of items per unique event
+      event_count <- survey_count %>%
+        group_by(event_id, item) %>%
+        summarise(sum=sum(sum)) %>%
+        ungroup()
+
+      #load AMDI code\
+      AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
+                       header=T, sep=",") 
+      
+      #create full list of possible items
+      AMDI <- AMDI_code %>%
+        filter(item_code_id != "LSTD1") %>% #remove pollution rating / microplastics
+        dplyr::select(item.ex) #column of all possible item types
+      
+      
+      #create a df of all possible items at all survey events, complete with zeros
+      abund <- full_join(AMDI, event_count, by=c("item.ex" = "item"))
+      
+      #remove empty row
+      abund <- abund[-11613, ]
+      
+      #data long to wide
+      abund_wide <- spread(abund, item.ex, sum)
+      
+      #replace na values with 0
+      abund_wide[is.na(abund_wide)] <- 0
+        
+      #transform back to long but now with the full items list and zero data
+      abund_long <- melt(abund_wide, id.vars="event_id")
+      
+      #remove the zero event ID (how did that get there?)
+      abund_long <- abund_long[abund_long$event_id != 0, ]
+      
+      #create event_item column for joining
+      abund_long <- abund_long %>%
+      mutate(event_item = paste(event_id, variable, sep=" "))
+
+#join abundance data to survey notes and other columns
+  df <- left_join(abund_long, survey_count, by="event_item") 
+  
+  df <- df %>%
+    dplyr::select(-event_item, -event_id.y, -item, -sum) %>% #remove duplicate columns
+    rename(event_id=event_id.x,
+           item=variable,
+           sum=value) %>% #rename columns
+    arrange(event_id, Asset.ID) %>% #arrange by event so that missing values are aligned
+    fill(Asset.ID, Cycle, date, covid) #fill in missing values to match survey data
+
+  #clean up column classifications
+  
+  #reclassify columns to factor
+    names <- c("event_id", "Asset.ID", "Cycle")
+  
+    df[,names] <- lapply(df[,names], factor)
+  
+  #reclassify date
+    df$date <- dmy(df$date)
+
+#join land use zone and LGA
+    
+    #load sites
+        site <- read.csv(file="Data/200619_site.csv", 
+                         header=T, sep=",") 
+        
+    #join LGA and luz to df
+        df <- left_join(df, site, by = "Asset.ID")
+        
+    #remove unecessary columns
+        df <- df %>%
+          dplyr::select(-Site, -Latitude, -Longitude) 
+     
+#resolve duplicates in MC01, C5    
+        dup <- df %>% 
+          group_by(Asset.ID, Cycle, item) %>% #reconcile duplicates in MC01 Cycle 5
+          summarise(sum=sum(sum)) %>%
+          ungroup() %>%
+          mutate(join = paste(Asset.ID, Cycle, item, sep=" "))
+         
+    # #check difference
+    #      subsetdf <- df %>%
+    #        dplyr::select(Asset.ID, Cycle, item, sum)
+    #      
+    #      setdiff(subsetdf, dup)
+         
+    #join C5 correction to df
+         df <- df %>%
+           mutate(join = paste(Asset.ID, Cycle, item, sep=" "))
+         
+    df <- dup %>% left_join(df, by="join") %>%
+      dplyr::select(-join, -item.y, -sum.y, -Asset.ID.y, -Cycle.y) %>%
+      filter(event_id != "23097") %>%
+      rename(
+          asset_id = Asset.ID.x, 
+          cycle = Cycle.x,
+          item = item.x,
+          sum = sum.x,
+          LUZ = Land.use.zone,
+      ) %>%
+      distinct()
+    
+    item_labelDF <- df %>%
+      distinct(item)
+    
+    df <- df %>%
+      left_join(item_label, by=c("item" = "item.type")) %>%
+      mutate(item = A3) %>%
+      dplyr::select(-A3)
+    
+      
+ #lost_items <- anti_join(item_label, item_labelDF, by=c("item.type"="item"))   
+    
+  # df <- df %>%
+  #   filter(cycle %in% paste0("C",1:7))
+    df <- df %>%
+      mutate(asset_id=as.factor(asset_id),
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ)
+             )
+    
+#combine cycles 8 and 9
+      #isolate C8
+      C8 <- df %>%
+        filter(cycle == "C8")
+      
+      #isolate C9
+      C9 <- df %>%
+        filter(cycle == "C9")
+      
+      #join C8 and C9 by unique drain and item to capture double surveys
+      t <- left_join(C9, C8, by=c("asset_id"="asset_id", "item" = "item"))
+      t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
+      
+      t <- t %>%
+        mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+        dplyr::select(event_id.x, item, combined_sum)
+      
+      df <- df %>% 
+        left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+        filter(cycle != "C8") %>%
+        mutate(combined_sum = replace_na(combined_sum, 0),
+                sum2 = ifelse(cycle != "C9", sum, 0),
+                final_sum = sum2 + combined_sum) %>%
+        dplyr::select(-sum2, -sum, -combined_sum) %>%
+        rename(sum = final_sum)
+
+```
+# Container Deposit Scheme
+Items included in Victoria's 'Container Deposit Scheme' include drink cartons, beer bottles, aluminum cans, and plastic drink bottles.  The results of a full year of surveys indicate that aluminum cans and plastic drink bottles are more abundant than beer bottles and drink cartons in selected Melbourne storm drains.  These totals are likely low due to the Covid-19 lockdowns from March through October 2020.
+```{r filter-CDS-items}
+CDS <- df %>%
+  filter(cycle %in% paste0("C",1:9)) %>%
+  filter(item %in% c("Drink cartons", 
+                     "Beer bottles (and similar)",
+                     "Aluminium cans",
+                     "Plastic drink bottles"))
+
+#Find the top item types across all surveys
+CDS_totals <- CDS %>%
+  group_by(item) %>%
+  mutate(total=sum(sum)) %>% #sum of total items by type and land use %>%
+        dplyr::select(item, total) %>% #remove irrelevant columns
+        filter(total>0) %>% #remove zero values
+        distinct() %>% #remove duplicate entries
+        ungroup()
+
+CDS_kable_tot <- CDS_totals %>%
+  mutate_if(is.numeric, format, digits=2) %>%
+  kable("html", 
+      col.names = c("Debris Type", "Total"),
+      caption = "Debris count: sum of all surveys") %>% 
+  kable_styling(bootstrap_options="condensed", position="left")
+CDS_kable_tot #print table
+  
+save_kable(CDS_kable_tot, "Output/CDS_kable_tot.png") #save table as png
+```
+# Pre-Covid results
+This table shows results from the first four survey rounds, pre-Covid lockdown.
+
+```{r CDS-per-cycle}
+
+#Find the top item types across all surveys
+CDS_cycle <- CDS %>%
+  filter(cycle %in% paste0("C", 1:4)) %>%
+  group_by(item) %>%
+  mutate(total=sum(sum),
+         cycle_sum= total/4) %>% #sum of total items by type and land use %>%
+        dplyr::select(item, total, cycle_sum) %>% #remove irrelevant columns
+        filter(total>0) %>% #remove zero values
+        distinct() %>% #remove duplicate entries
+        ungroup()
+
+CDS_kable_cycle <- CDS_cycle %>%
+  mutate_if(is.numeric, format, digits=0) %>%
+  kable("html", 
+      col.names = c("Debris Type", "Pre-Covid Total", "Every 6 weeks"),
+      caption = "Debris Count: Oct 2019 to March 2020") %>% 
+  kable_styling(bootstrap_options="condensed", position="left")
+CDS_kable_cycle #print table
+  
+save_kable(CDS_kable_cycle, "Output/CDS_kable_cycle.png") #save table as png
+```
+# Pre-Covid by land use
+This table shows results from the first four survey rounds, pre-Covid lockdown. The mean per land use is relatively similar for each item.
+```{r CDS-per-cycle-LUZ, warning=FALSE, message=FALSE}
+
+#find means per luz in each pre-covid cycle
+CDS_cycle_LUZ <- CDS %>%
+  filter(cycle %in% paste0("C", 1:4)) %>%
+  group_by(item, LUZ) %>%
+  summarise(total=sum(sum),
+            mean=mean(total)/4,
+            sd=sd(sum))
+
+#function to collapse rows
+collapse_rows_df <- function(df, variable){
+  group_var <- enquo(variable)
+  df %>%
+    group_by(!! group_var) %>%
+    mutate(groupRow = 1:n()) %>%
+    ungroup() %>%
+    mutate(!!quo_name(group_var) := ifelse(groupRow == 1, as.character(!! group_var), "")) %>%
+    select(-c(groupRow))
+}
+
+CDS_kable_LUZ <- CDS_cycle_LUZ %>%
+  mutate_if(is.numeric, format, digits=0) %>%
+  dplyr::select(-item) %>%
+  collapse_rows_df(item) %>%
+  kable("html", 
+      col.names = c("Debris Type", "Land use zone", "Pre-Covid Total", "Every 6 weeks", "SD"),
+      caption = "Debris Count by Land Use: Oct 2019 to March 2020") %>% 
+  kable_styling(bootstrap_options="condensed", position="left")
+CDS_kable_LUZ #print table
+  
+# save_kable(CDS_kable_cycle, "Output/CDS_kable_cycle.png") #save table as png
+```
+# Pre-Covid results by land use
+Graphical representation of the table above. Note the y-scale is free, so for example the variation in beer bottles and drink cartons looks greater than it is.
+
+```{r CDS-per-cycle-LUZ-graph}
+CDS_cycle_LUZ %>%
+  ggplot(aes(LUZ, mean, fill=LUZ)) +
+  labs(fill="Land Use Zone") +
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd, width=0.2), position=position_dodge(width=0.90)) +
+  theme(axis.text.x = element_blank()) +
+  ylab("Debris count per 6-week cycle") + 
+  xlab("Land use zones") + 
+  ggtitle("Mean item count by land use (pre-Covid)") +
+  facet_wrap(~item, scales="free")
+```
+
+# Impact of Covid-19
+Here we can see the impact of Covid-19 lockdown on each of the items.  Aluminum cans show a similar decline in all land use zones during lockdowns. Public transport shows the steepest spike for aluminum cans once lockdown came into effect, and the easing between lockdowns in C5 did not appear to impact the downward trend.  Plastic bottles, however, spike during the moderate lockdown period, specifically in public transport terminals. Because of the free-y scales, the variation in beer bottles and drink cartons is less than appears.
+
+```{r avg-items-per-lockdown, warning=F, message=F}
+
+item_per_cycle <- CDS %>%
+  group_by(date, covid, LUZ, item) %>%
+  summarise(cycle_sum = sum(sum))
+
+covid_lvl <- data.frame(name = c("1", "2", "3", "4", "5"),
+                   start = as.Date(c("2019-10-29", "2020-03-14", "2020-03-19", "2020-06-21",
+                             "2020-07-07")),
+                   end = as.Date(c("2020-03-14", "2020-03-19", "2020-06-21", "2020-07-07", 
+                           "2020-10-17")),
+                   level = c("No lockdown", "Moderate lockdown", "Strict lockdown", "Moderate lockdown", "Strict lockdown"),
+                   stringsAsFactors = FALSE) %>%
+  mutate(median_x = start + floor((end-start)/2))
+
+
+p <- ggplot() +
+  geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+                                ymin= -Inf, ymax=Inf), alpha=0.1) +
+  labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
+       x="Date", y="Debris count per survey cycle") +
+  # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
+  geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
+  theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+  facet_wrap(~item, scales="free_y") 
+  # theme_cowplot(12)
+p
+```

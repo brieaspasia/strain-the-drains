@@ -233,7 +233,7 @@ library(cowplot) #minimal backgrounds for ggplot
       rename(sum = final_sum)
 ```
 # Percentage of items by land use
-You'd asked about recreating this with errorbars, however I'm not sure how that would work as these values represent the sum total of items in each of these land uses.  We also discussed moving this to supplementary data, however I think it's actually a really important part of the story. While Covid impact may be a hot topic currently, I don't want to the land use results to get lost in the Covid hype. I think that the differences between land use are the most relevant part of this data in terms of implications for debris management efforts. 
+We'd discussed recreating this with errorbars, however I'm not sure how that would work as these values represent the sum total of items in each of these land uses?  We also discussed moving this to supplementary data, however I think it's actually a really important part of the story. While Covid impact may be a hot topic currently, I don't want the land use results to get lost in the Covid hype, especially because I haven't found any other papers about land use and stormwater debris. Also, the differences between land use are likely the most relevant part of this data in terms of implications for debris management efforts. 
 ```{r heatmap-item-top15, warning=FALSE, message=FALSE}
 
 top15 <- df %>%
@@ -292,7 +292,11 @@ Heatmap(log10(mat+0.1),
         )
 
 ```
+
+
 ## Timeline of debris item count
+
+
 Top 15 items + OH&S through Covid-19 lockdowns.
 ```{r avg-items-per-lockdown, warning=FALSE, message=FALSE}
 #find top 15 items
@@ -335,8 +339,12 @@ p
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 ```
 
+
+
 ##GLMM and predictions
-I had a note to recreate this as a line graph through time, but that would necessitate changing the model and adding cycle or date as a fixed effect.  I tried several versions of that model and of a line graph, but none really made sense...
+
+
+I had a note to recreate this as a line graph through time, but that would necessitate changing the model and adding cycle or date as a fixed effect, which seems like I shouldn't do.  I tried several versions of that model and of a line graph, but none really made sense...
 ```{r data-mod, warning=FALSE, message=FALSE}
 #aggregate data
 mod <- df %>%
@@ -389,7 +397,10 @@ p <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) +
 
 p
 ```
+
 # GLMM for top four items and OH&S
+
+
 The above graph shows total debris count per asset every 6 weeks.  Because of lower numbers, here I've shown total debris count per LGA land use zone every 6 weeks. 
 ```{r data-mod-top5, warning=FALSE, message=FALSE}
 # Function loop: each item
@@ -458,9 +469,13 @@ pred_df <- pred_df %>%
          LUZ_SE_upper = SE_upper*5,
          LUZ_SE_lower = SE_lower*5)
 
+# New facet label names for covid variable
+pred_df$covid <- factor(pred_df$covid, levels = c("1", "2", "3"),
+                  labels = c("No lockdown", "Moderate lockdown", "Strict lockdown"))
+
  #create plot
 p_all <- ggplot(pred_df, aes(y=luz_tot, x=LUZ, fill=covid)) + 
-  geom_bar(position="dodge", stat="identity", show.legend=F) +
+  geom_bar(position="dodge", stat="identity") +
   geom_errorbar(aes(ymin=LUZ_SE_lower, ymax=LUZ_SE_upper, width=0.2), position=position_dodge(width=0.90)) +
   labs(title="Debris count (every 6 weeks per LGA)",
        subtitle="By covid restriction",
@@ -471,9 +486,12 @@ p_all <- ggplot(pred_df, aes(y=luz_tot, x=LUZ, fill=covid)) +
 p_all
  
 ```
+
 # MDS plot
-I've found that the MDS plot changes a lot depending on what variables I use to aggregate.  Here I've used all the variables from the model except asset_ID, as the unique assets created a lot of background noise. I've tried to find if there are any rules around how to aggregate data for MDS, but am still not sure...
-```{r MDS-LGA-top15, warning=FALSE, message=FALSE}
+
+
+I've found that the MDS plot changes a lot depending on what variables I use to aggregate.  Here I've used all the variables from the model except asset_ID, as the unique assets created a lot of background noise.
+```{r MDS-LGA-top15, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
 #find top 20 items
 top15 <- df %>%
   group_by(item) %>%
@@ -529,8 +547,10 @@ Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[da
 #create polygons
 hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
 hull.data
+```
 
-  
+```{r MDS-plot, warning=FALSE, message=FALSE}
+#MDS plot
 ggplot() +
   geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
@@ -538,12 +558,11 @@ ggplot() +
              aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
   coord_equal() +
   theme_bw()
-
-#https://chrischizinski.github.io/rstats/vegan-ggplot2/
 ```
 
 # Testing community data
-I've done some tests on the MDS data results, are there any other tests that I should do to make sure I'm interpreting it correctly?
+
+
 ```{r adonis-pairwise, warning=FALSE, message=FALSE}
 
 #Both land use and covid have significant scores, but there is not a significant interaction between them

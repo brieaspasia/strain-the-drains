@@ -1,0 +1,564 @@
+---
+title: "Results-Figs"
+author: "Brie Sherow"
+date: "05/04/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, warning=FALSE, message=FALSE, results='hide', include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, warning=FALSE, message=FALSE, results='hide', include=FALSE}
+library(ggplot2) #graphing
+library(ggthemes) #graphing templates
+library(hrbrthemes) #graphing templates
+library(lubridate) #date manipulation
+library(forcats) #working with factors
+library(tidyverse) #manipulating data
+library(knitr) #rmarkdown functions
+library(tidyr) #long & wide formats
+library(reshape2) #melt function for wide and long formats
+library(stats) #R stats functions
+library(broom) #create summaries from stats objects
+library(car) #lm regression
+library(MASS) #stats
+library(lme4) #glmer function
+library(DHARMa) #testing model diagnostics
+library(glmmTMB) #fit zero-inflated negative binomial
+library(lattice) #fourth corner heatmap
+library(corrplot) #co-occurrence matrix
+library(gclus) #co-occurrence matrix
+library(broom.mixed) #regression tables
+library(vegan) #ordination
+library(emmeans)
+library(ComplexHeatmap)
+library(RColorBrewer)
+library(heatmaply)
+library(cowplot) #minimal backgrounds for ggplot
+
+```
+
+```{r create-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
+#create survey count  
+
+        #load item counts
+        item <- read.csv(file="Data/2101_item.csv", 
+                         header=T, sep=",") 
+
+#remove duplicate entries
+        item <- unique(item[!duplicated(item),])
+
+        #load item labels
+        item_label <- read.csv(file="Data/item_label.csv", 
+                         header=T, sep=",") 
+        
+        #load events
+        event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        survey_count <- left_join(item, event, by="event_id")
+        
+        survey_count <- survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -event_date, -note) %>%
+          filter(item!="Pollution Rating") %>%
+          mutate(event_item = paste(event_id, item, sep=" "))
+
+        #summarise duplicate survey entries (this will lose one set of notes....)
+        item_merge <- survey_count %>%
+          group_by(event_item) %>%
+          summarise(sum=sum(total)) %>%
+         ungroup()
+
+        #join survey count to the merged summaries
+        survey_count <- item_merge %>%
+          left_join(survey_count, by="event_item") %>%
+          dplyr::select(-total) %>%
+          unique()
+        
+#create abundance data with all possible debris items and zero values
+
+      #count of items per unique event
+      event_count <- survey_count %>%
+        group_by(event_id, item) %>%
+        summarise(sum=sum(sum)) %>%
+        ungroup()
+
+      #load AMDI code\
+      AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
+                       header=T, sep=",") 
+      
+      #create full list of possible items
+      AMDI <- AMDI_code %>%
+        filter(item_code_id != "LSTD1") %>% #remove pollution rating / microplastics
+        dplyr::select(item.ex) #column of all possible item types
+      
+      
+      #create a df of all possible items at all survey events, complete with zeros
+      abund <- full_join(AMDI, event_count, by=c("item.ex" = "item"))
+      
+      #remove empty row
+      abund <- abund[-11613, ]
+      
+      #data long to wide
+      abund_wide <- spread(abund, item.ex, sum)
+      
+      #replace na values with 0
+      abund_wide[is.na(abund_wide)] <- 0
+        
+      #transform back to long but now with the full items list and zero data
+      abund_long <- melt(abund_wide, id.vars="event_id")
+      
+      #remove the zero event ID (how did that get there?)
+      abund_long <- abund_long[abund_long$event_id != 0, ]
+      
+      #create event_item column for joining
+      abund_long <- abund_long %>%
+      mutate(event_item = paste(event_id, variable, sep=" "))
+
+#join abundance data to survey notes and other columns
+      df <- left_join(abund_long, survey_count, by="event_item") 
+      
+      df <- df %>%
+        dplyr::select(-event_item, -event_id.y, -item, -sum) %>% #remove duplicate columns
+        rename(event_id=event_id.x,
+               item=variable,
+               sum=value) %>% #rename columns
+        arrange(event_id, Asset.ID) %>% #arrange by event so that missing values are aligned
+        fill(Asset.ID, Cycle, date, covid) #fill in missing values to match survey data
+    
+      #clean up column classifications
+      
+      #reclassify columns to factor
+        names <- c("event_id", "Asset.ID", "Cycle")
+      
+        df[,names] <- lapply(df[,names], factor)
+      
+      #reclassify date
+        df$date <- dmy(df$date)
+
+#join land use zone and LGA
+    
+      #load sites
+          site <- read.csv(file="Data/200619_site.csv", 
+                           header=T, sep=",") 
+          
+      #join LGA and luz to df
+          df <- left_join(df, site, by = "Asset.ID")
+          
+      #remove unecessary columns
+          df <- df %>%
+            dplyr::select(-Site, -Latitude, -Longitude) 
+       
+#resolve duplicates in MC01, C5    
+          dup <- df %>% 
+            group_by(Asset.ID, Cycle, item) %>% #reconcile duplicates in MC01 Cycle 5
+            summarise(sum=sum(sum)) %>%
+            ungroup() %>%
+            mutate(join = paste(Asset.ID, Cycle, item, sep=" "))
+           
+      # #check difference
+      #      subsetdf <- df %>%
+      #        dplyr::select(Asset.ID, Cycle, item, sum)
+      #      
+      #      setdiff(subsetdf, dup)
+           
+      #join C5 correction to df
+           df <- df %>%
+             mutate(join = paste(Asset.ID, Cycle, item, sep=" "))
+           
+      df <- dup %>% left_join(df, by="join") %>%
+        dplyr::select(-join, -item.y, -sum.y, -Asset.ID.y, -Cycle.y) %>%
+        filter(event_id != "23097") %>%
+        rename(
+            asset_id = Asset.ID.x, 
+            cycle = Cycle.x,
+            item = item.x,
+            sum = sum.x,
+            LUZ = Land.use.zone,
+        ) %>%
+        distinct()
+      
+      item_labelDF <- df %>%
+        distinct(item)
+      
+      df <- df %>%
+        left_join(item_label, by=c("item" = "item.type")) %>%
+        mutate(item = A3) %>%
+        dplyr::select(-A3)
+    
+      
+# lost_items <- anti_join(item_label, item_labelDF, by=c("item.type"="item"))  
+      
+#classify columns correctly    
+      df <- df %>%
+      mutate(asset_id=as.factor(asset_id),
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ)
+             )
+
+#Combine C8 and C9    
+     #isolate C8
+    C8 <- df %>%
+      filter(cycle == "C8")
+    
+    #isolate C9
+    C9 <- df %>%
+      filter(cycle == "C9")
+    
+    #join C8 and C9 by unique drain and item to capture double surveys
+    t <- left_join(C9, C8, by=c("asset_id"="asset_id", "item" = "item"))
+    t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
+    
+    t <- t %>%
+      mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+      dplyr::select(event_id.x, item, combined_sum)
+    
+    df <- df %>% 
+      left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+      filter(cycle != "C8") %>%
+      mutate(combined_sum = replace_na(combined_sum, 0),
+              sum2 = ifelse(cycle != "C9", sum, 0),
+              final_sum = sum2 + combined_sum) %>%
+      dplyr::select(-sum2, -sum, -combined_sum) %>%
+      rename(sum = final_sum)
+```
+# Percentage of items by land use
+You'd asked about recreating this with errorbars, however I'm not sure how that would work as these values represent the sum total of items in each of these land uses.  We also discussed moving this to supplementary data, however I think it's actually a really important part of the story. While Covid impact may be a hot topic currently, I don't want to the land use results to get lost in the Covid hype. I think that the differences between land use are the most relevant part of this data in terms of implications for debris management efforts. 
+```{r heatmap-item-top15, warning=FALSE, message=FALSE}
+
+top15 <- df %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
+  group_by(item) %>%
+  summarise(total=sum(sum)) %>%
+  arrange(desc(total)) %>%
+  top_n(15) %>%
+  dplyr::select(item)
+
+top15 <- as.vector(unlist(top15))
+
+top_LUZ <- df %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4"), item %in% top15) %>%
+  group_by(LUZ) %>%
+  mutate(total_LUZ=sum(sum)) %>%
+  ungroup() %>%
+  group_by(LUZ, item) %>%
+  mutate(total_itemLUZ = sum(sum)) %>%
+  ungroup() %>%
+  mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
+  dplyr::select(item, LUZ, pct) %>%
+  unique() %>%
+  spread(item, pct) %>%
+  column_to_rownames(var="LUZ")
+
+mat <- data.matrix(top_LUZ) #matrix for heatmap
+mat <- round(mat,0)
+mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
+
+
+col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat), location = 1, rot = 60, 
+                              just = "right"))
+
+Heatmap(log10(mat+0.1), 
+        name = "Debris count (percentage per land use zone)", 
+        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
+                      title = "Debris counts (% total)",labels = c("Low", "High"),
+                      grid_width = unit(0.8, "cm"),
+                      legend_height = unit(5, "cm"),
+                      title_position = "leftcenter-rot"), 
+        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
+        row_dend_reorder = TRUE, 
+        row_order = sort(rownames(mat)),
+        show_column_dend = FALSE,
+        show_row_dend = FALSE,
+        bottom_annotation = col_ha,
+        show_row_names = TRUE,
+        row_names_side = "left",
+        show_column_names = FALSE,
+        border = TRUE,
+        column_title = "Percentage of top 15 debris items per land use zone",
+        #percentage label
+        cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
+        )
+
+```
+## Timeline of debris item count
+Top 15 items + OH&S through Covid-19 lockdowns.
+```{r avg-items-per-lockdown, warning=FALSE, message=FALSE}
+#find top 15 items
+top15 <- df %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(15, sum)
+  
+#create vector from top 15 items
+top15 <- top15$item 
+top15 <- unlist(top15)
+
+item_per_cycle <- df %>%
+  filter(item %in% top15 | item == "OH & S") %>%
+  group_by(date, covid, LUZ, item) %>%
+  summarise(cycle_sum = sum(sum))
+
+covid_lvl <- data.frame(name = c("1", "2", "3", "4", "5"),
+                   start = as.Date(c("2019-10-29", "2020-03-14", "2020-03-19", "2020-06-21",
+                             "2020-07-06")),
+                   end = as.Date(c("2020-03-14", "2020-03-19", "2020-06-21", "2020-07-06", 
+                           "2020-10-17")),
+                   level = c("No lockdown", "Moderate lockdown", "Strict lockdown", "Moderate lockdown", "Strict lockdown"),
+                   stringsAsFactors = FALSE) %>%
+  mutate(median_x = start + floor((end-start)/2))
+
+
+p <- ggplot() +
+  geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+                                ymin= -Inf, ymax=Inf), alpha=0.1) +
+  labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
+       x="Date", y="Debris count per survey cycle") +
+  # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
+  geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
+  theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+  facet_wrap(~item, scales="free_y") 
+p
+
+#reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
+```
+
+##GLMM and predictions
+I had a note to recreate this as a line graph through time, but that would necessitate changing the model and adding cycle or date as a fixed effect.  I tried several versions of that model and of a line graph, but none really made sense...
+```{r data-mod, warning=FALSE, message=FALSE}
+#aggregate data
+mod <- df %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  filter(cycle %in% paste0("C",1:7)) %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(LUZ),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+       
+#create model
+m  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = mod)
+
+#create predictor df
+nd <- expand.grid(covid = unique(mod$covid),
+                  LUZ = unique(mod$LUZ),
+                  LGA = NA,
+                  asset_id = NA,
+                  cycle = NA)
+
+#predict mean values of response variable
+pred <- predict(object=m,
+                newdata=nd,
+                se.fit=T,
+                re.form=NA,
+                type="response")
+
+#create standard error for graphing
+nd$Total <- pred$fit
+nd$SE_upper <- pred$fit + pred$se.fit
+nd$SE_lower <- pred$fit - pred$se.fit
+
+# New facet label names for covid variable
+nd$covid <- factor(nd$covid, levels = c("1", "2", "3"),
+                  labels = c("No lockdown", "Moderate lockdown", "Strict lockdown"))
+
+#create plot
+p <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+  labs(title="Debris count (every 6 weeks)",
+       subtitle="By land use zone and covid restriction",
+       x="", y="Total debris items per asset", tag="") 
+
+p
+```
+# GLMM for top four items and OH&S
+The above graph shows total debris count per asset every 6 weeks.  Because of lower numbers, here I've shown total debris count per LGA land use zone every 6 weeks. 
+```{r data-mod-top5, warning=FALSE, message=FALSE}
+# Function loop: each item
+
+#Top 4 plus OH&S
+top5_txt<- df %>%
+  filter(item %in% c("Cigarette butts", 
+                     "Plastic packaging (food)",
+                     "Plastic wrap (non-food)",
+                     "Soft plastic remnants",
+                     "OH & S")) %>% 
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+ 
+# Purrr
+library(purrr)
+
+pred_df = purrr::map_df(top5_txt, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    filter(cycle %in% paste0("C",1:7)) %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+
+ nd_temp <- expand.grid(covid = unique(temp_df$covid),
+                       LUZ = unique(temp_df$LUZ),
+                       LGA = NA,
+                       asset_id = NA,
+                       cycle = NA)
+ 
+ #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+ pred_temp <- predict(object=m_temp,
+                     newdata=nd_temp,
+                     se.fit=T,
+                     re.form=NA,
+                     type="response")
+ 
+ #creating standard error for graphing
+ nd_temp$Total <- pred_temp$fit
+ nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
+ nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
+ nd_temp$item = x
+ 
+ return(nd_temp)
+ 
+ })
+
+#create columns for predictions by LUZ rather than by asset
+pred_df <- pred_df %>%
+  mutate(luz_tot = Total*5,
+         LUZ_SE_upper = SE_upper*5,
+         LUZ_SE_lower = SE_lower*5)
+
+ #create plot
+p_all <- ggplot(pred_df, aes(y=luz_tot, x=LUZ, fill=covid)) + 
+  geom_bar(position="dodge", stat="identity", show.legend=F) +
+  geom_errorbar(aes(ymin=LUZ_SE_lower, ymax=LUZ_SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+  labs(title="Debris count (every 6 weeks per LGA)",
+       subtitle="By covid restriction",
+       x="", y="Total debris items per land use zone", tag="") +
+  facet_wrap(~item, scales="free_y") +
+  guides(x =  guide_axis(angle = 45)) 
+
+p_all
+ 
+```
+# MDS plot
+I've found that the MDS plot changes a lot depending on what variables I use to aggregate.  Here I've used all the variables from the model except asset_ID, as the unique assets created a lot of background noise. I've tried to find if there are any rules around how to aggregate data for MDS, but am still not sure...
+```{r MDS-LGA-top15, warning=FALSE, message=FALSE}
+#find top 20 items
+top15 <- df %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(15, sum)
+  
+#create vector from top 20 items
+top15 <- top15$item 
+top15 <- unlist(top15)
+
+
+df_top15 <- df %>%
+  filter(item %in% top15)
+
+#create abundance long format
+ abund_long <- df_top15 %>%
+    group_by(LGA, LUZ, covid, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  
+  com <- abund[4:18]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+  
+  ord <- metaMDS(com)
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$LUZ <- abund$LUZ
+  data.scores$covid <- abund$covid
+  data.scores <- data.scores %>%
+    mutate(covid = as.factor(covid),
+           LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+  
+  
+#Hull data
+CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+    "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+    "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+    "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
+
+#create polygons
+hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
+hull.data
+
+  
+ggplot() +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
+  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
+  coord_equal() +
+  theme_bw()
+
+#https://chrischizinski.github.io/rstats/vegan-ggplot2/
+```
+
+# Testing community data
+I've done some tests on the MDS data results, are there any other tests that I should do to make sure I'm interpreting it correctly?
+```{r adonis-pairwise, warning=FALSE, message=FALSE}
+
+#Both land use and covid have significant scores, but there is not a significant interaction between them
+df.adonis <- adonis(com ~ data.scores$LUZ*data.scores$covid, permutations=999, method="bray")
+df.adonis
+
+#testing land use dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.luz <- betadisper(df.dis, data.scores$LUZ) # test dispersion
+df.betadisper.luz
+permutest(df.betadisper.luz) #dispersion not significant
+
+#testing covid dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.cov <- betadisper(df.dis, data.scores$covid) # test dispersion
+df.betadisper.cov
+permutest(df.betadisper.cov) #dispersion not significant
+```

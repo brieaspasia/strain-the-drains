@@ -390,7 +390,7 @@ top15 <- unlist(top15)
 
 
 item_per_cycle <- df %>%
-  filter(item %in% top15 | item == "OH & S" | item=="Foam take-away" | item=="Plastic drink bottles" | item=="Aluminium cans" | item=="Packaging accessories") %>%
+  filter(item %in% top15 | item == "OH & S" | item=="Foam take-away" | item=="Plastic drink bottles" | item=="Aluminium cans" | item=="Packaging accessories" | item=="Hard plastic lids") %>%
   group_by(date, covid, LUZ, item) %>%
   summarise(cycle_sum = sum(sum))
 

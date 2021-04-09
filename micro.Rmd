@@ -78,6 +78,8 @@ df.poly = left_join(ls.df$polystyrene, ls.df$event[,1:3], by = "event_id")
 df.poly = left_join(df.poly, ls.df$site[,1:3], by = "Asset.ID")
 
 df.poly = df.poly %>% group_by(LGA) %>% summarise(total = sum(Totals))
+
+unique(df$Type)
 ```
 
 ```{r ggplot}

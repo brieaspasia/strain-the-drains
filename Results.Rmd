@@ -184,12 +184,12 @@ library(cowplot) #minimal backgrounds for ggplot
       
       item_labelDF <- df %>%
         distinct(item)
-      
+
       df <- df %>%
         left_join(item_label, by=c("item" = "item.type")) %>%
         mutate(item = A3) %>%
         dplyr::select(-A3)
-    
+
       
 # lost_items <- anti_join(item_label, item_labelDF, by=c("item.type"="item"))  
       
@@ -229,6 +229,19 @@ df <- df %>%
   rename(sum = final_sum)
 
 ```
+
+```{r just-for-fun}
+t <- df %>%
+  group_by(item) %>%
+  summarise(total=sum(sum)) %>%
+  arrange(desc(total)) %>%
+  left_join(item_label, by=c("item" = "item")) %>%
+  mutate(item_label = A3) %>%
+  dplyr::select(-A3)
+
+write.csv(t, file="item-sum.csv")
+```
+
 
 
 ```{r heatmap-item-top15}
@@ -375,8 +388,9 @@ top15 <- df %>%
 top15 <- top15$item 
 top15 <- unlist(top15)
 
+
 item_per_cycle <- df %>%
-  filter(item %in% top15 | item == "OH & S") %>%
+  filter(item %in% top15 | item == "OH & S" | item=="Foam take-away" | item=="Plastic drink bottles" | item=="Aluminium cans" | item=="Packaging accessories") %>%
   group_by(date, covid, LUZ, item) %>%
   summarise(cycle_sum = sum(sum))
 

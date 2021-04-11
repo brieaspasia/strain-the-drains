@@ -279,7 +279,12 @@ unique(df$item)
 ```{r data-mod-top5, warning=FALSE, message=FALSE}
 # Function loop: each item
 
-txt <- df %>%
+#Top 4 plus OH&S
+txt<- df %>%
+  filter(item %in% c("Plastic shards", 
+                     "Plastic chips",
+                     "Plastic resin pellet")) %>% 
+  distinct(item)%>%
   pull(item) %>% 
   droplevels()
 
@@ -289,6 +294,7 @@ library(purrr)
 pred_df = purrr::map_df(txt, function(x){
   
   temp_df = df %>% 
+    filter(item == paste0(x)) %>%
     group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
     summarise(sum=sum(sum)) %>%
     ungroup() %>%

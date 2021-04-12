@@ -43,103 +43,76 @@ library(cowplot) #minimal backgrounds for ggplot
 #create survey count  
 
         #load item counts
-        item <- read.csv(file="Data/200630_micro.csv", 
+        micro <- read.csv(file="Data/200630_micro.csv", 
                          header=T, sep=",") 
 
         #remove duplicate entries
-        item <- unique(item[!duplicated(item),])
-
+        micro <- unique(micro[!duplicated(micro),])
+        
+        micro <- micro %>%
+        group_by(event_id, Type) %>%
+        summarise(sum=sum(tot)) %>%
+        ungroup()
         
         #load events
         event <- read.csv(file="Data/2101_event.csv", 
                          header=T, sep=",") 
         
         #join event info to item count
-        survey_count <- left_join(item, event, by="event_id")
+        survey_count <- left_join(event, item, by="event_id")
         
         survey_count <- survey_count %>%
-          dplyr::select(-event.tot, -event.wt, -vol, -hr, event_date) %>%
-          mutate(event_item = paste(event_id, Type, sep=" "))
-
-        #summarise duplicate survey entries (this will lose one set of notes....)
-        item_merge <- survey_count %>%
-          group_by(event_item) %>%
-          summarise(sum=sum(tot)) %>%
-         ungroup()
-
-        #join survey count to the merged summaries
-        survey_count <- item_merge %>%
-          left_join(survey_count, by="event_item") %>%
-          dplyr::select(-tot) %>%
-          unique()
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, event_date)
         
 #create abundance data with all possible debris items and zero values
-
-      #count of items per unique event
-      event_count <- survey_count %>%
-        group_by(event_id, Type) %>%
-        summarise(sum=sum(sum)) %>%
-        ungroup()
       
       #create full list of possible items (only five micro categories)
-      type <- as.data.frame(unique(event_count$Type))
+      type <- as.data.frame(unique(item$Type))
       
       
       #create a df of all possible items at all survey events, complete with zeros
-      abund <- full_join(event_count, type, by=c("Type" = "unique(event_count$Type)"))
+      abund <- full_join(survey_count, type, by=c("Type" = "unique(item$Type)"))
       
       #data long to wide
       abund_wide <- spread(abund, Type, sum)
       
+      abund_wide <- abund_wide %>%
+        dplyr::select(event_id, "Glass beads", "Plastic chips", "Plastic shards", "Plastic resin pellet", "Polystyrene balls")
+      
       #replace na values with 0
       abund_wide[is.na(abund_wide)] <- 0
-        
+      
       #transform back to long but now with the full items list and zero data
       abund_long <- melt(abund_wide, id.vars="event_id")
-
-#join abundance data to survey notes and other columns
-      df <- left_join(abund_long, survey_count, by=c("event_id" = "event_id", "variable" = "Type"))
+     
+      df <- left_join(abund_long, event, by="event_id")
       
-      df <- df %>%
-        dplyr::select(-event_item, -event_date, -sum) %>% #remove duplicate columns
-        rename(item=variable, sum=value) %>% #rename columns
-        arrange(event_id, Asset.ID) %>% #arrange by event so that missing values are aligned
-        fill(Asset.ID, Cycle, date, covid) #fill in missing values to match survey data
-    
-      #clean up column classifications
-      
-      #reclassify columns to factor
-        names <- c("event_id", "Asset.ID", "Cycle")
-      
-        df[,names] <- lapply(df[,names], factor)
-      
-      #reclassify date
-        df$date <- dmy(df$date)
-
-#join land use zone and LGA
-    
       #load sites
           site <- read.csv(file="Data/200619_site.csv", 
                            header=T, sep=",") 
-          
-      #join LGA and luz to df
-          df <- left_join(df, site, by = "Asset.ID")
-          
-      #remove unecessary columns and rename
-          df <- df %>%
-            dplyr::select(-Site, -Latitude, -Longitude) %>%
-            rename(asset_id = Asset.ID, 
-            cycle = Cycle,
-            LUZ=Land.use.zone) %>%
-        distinct()
       
-#classify columns correctly    
+            #join LGA and luz to df
+          df <- left_join(df, site, by = "Asset.ID")
+      
+      
       df <- df %>%
-      mutate(asset_id=as.factor(asset_id),
+        dplyr::select(-event_date, -event.tot, -event.wt, -vol, -hr, -Site, -Latitude, -Longitude) %>% #remove duplicate columns
+        rename(item=variable, #rename columns
+               sum=value,
+               asset_id = Asset.ID,
+               cycle=Cycle,
+               LUZ = Land.use.zone) %>% 
+        mutate(asset_id=as.factor(asset_id), #classify columns correctly  
              item=as.factor(item),
              LGA=as.factor(LGA),
-             LUZ=as.factor(LUZ)
+             LUZ=as.factor(LUZ),
+             event_id=as.factor(event_id),
+             cycle=as.factor(cycle),
+             date=dmy(date)
              )
+      
+      
+      # write.csv(df,here("Data","micro_view.csv"))
 ```
 
 ```{r heatmap-item-top15, warning=FALSE, message=FALSE}

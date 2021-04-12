@@ -141,54 +141,32 @@ library(cowplot) #minimal backgrounds for ggplot
       rename(sum = final_sum)
 ```
 
-```{r heatmap-item-top15, warning=FALSE, message=FALSE}
+```{r micro-plot}
+df_item = df %>% group_by(LUZ, item) %>% summarise(sum = sum(sum), sd = sd(sum))
 
-preCov <- df %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
-  group_by(LUZ) %>%
-  mutate(total_LUZ=sum(sum)) %>%
-  ungroup() %>%
-  group_by(LUZ, item) %>%
-  mutate(total_itemLUZ = sum(sum)) %>%
-  ungroup() %>%
-  mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
-  dplyr::select(item, LUZ, pct) %>%
-  unique() %>%
-  spread(item, pct) %>%
-  column_to_rownames(var="LUZ")
+# df_item = df_item %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
 
-mat <- data.matrix(preCov) #matrix for heatmap
-mat <- round(mat,0)
-mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
+p <- ggplot(df_item, aes(x = LUZ, y = sum, fill = item)) +
+        geom_bar(stat="identity", position="dodge") +
+        geom_text(aes(y = sum + sd, label = round(sum,2)), 
+                  position = position_dodge(width =0.9), 
+                  vjust = -0.5, color = "black", size = 3) +
+        geom_errorbar(aes(ymin = sum - sd, ymax = sum + sd), 
+                      width = .2, position = position_dodge(.9)) +
+        theme_hc() + 
+        scale_fill_brewer(
+          type = "qual", palette = 8,
+          direction = 2, aesthetics = "fill"
+        ) + 
+        # theme(axis.text.x = element_text(angle = 70)) +
+        ggtitle("Counts of microplastics (< 5mm) by Land Use") +
+        labs(y = "Microplastic counts (thousands)", x="") +
+        theme(axis.text.x=element_text(color = "black", size=11, 
+                                 vjust=.8, angle=30, hjust=0.8))
 
-
-col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat), location = 1, rot = 60, 
-                              just = "right"))
-
-Heatmap(log10(mat+0.1), 
-        name = "Debris count (percentage per land use zone)", 
-        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
-                      title = "Debris counts (% total)",labels = c("Low", "High"),
-                      grid_width = unit(0.8, "cm"),
-                      legend_height = unit(5, "cm"),
-                      title_position = "leftcenter-rot"), 
-        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
-        row_dend_reorder = TRUE, 
-        row_order = sort(rownames(mat)),
-        show_column_dend = FALSE,
-        show_row_dend = FALSE,
-        bottom_annotation = col_ha,
-        show_row_names = TRUE,
-        row_names_side = "left",
-        show_column_names = FALSE,
-        border = TRUE,
-        column_title = "Percentage of micro items per land use zone",
-        #percentage label
-        cell_fun = function(j, i, x, y, width, height, fill) {
-        grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
-        )
-
+p
 ```
+
 
 ```{r avg-items-per-lockdown, warning=FALSE, message=FALSE}
 

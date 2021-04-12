@@ -816,7 +816,7 @@ ggplot() +
 ```
 
 ```{r MDS-LGA-top15}
-#find top 20 items
+#find top 15 items
 top15 <- df %>%
   group_by(item) %>%
   summarise(sum=sum(sum)) %>%

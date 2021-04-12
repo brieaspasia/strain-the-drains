@@ -49,8 +49,10 @@ library(cowplot) #minimal backgrounds for ggplot
         #remove duplicate entries
         micro <- unique(micro[!duplicated(micro),])
         
+        micro$tot <- as.integer(micro$tot)
+        
         micro <- micro %>%
-        group_by(event_id, Type) %>%
+        group_by(event_id, item) %>%
         summarise(sum=sum(tot)) %>%
         ungroup()
         
@@ -59,25 +61,25 @@ library(cowplot) #minimal backgrounds for ggplot
                          header=T, sep=",") 
         
         #join event info to item count
-        survey_count <- left_join(event, item, by="event_id")
+        survey_count <- left_join(event, micro, by="event_id")
         
         survey_count <- survey_count %>%
           dplyr::select(-event.tot, -event.wt, -vol, -hr, event_date)
         
 #create abundance data with all possible debris items and zero values
       
-      #create full list of possible items (only five micro categories)
-      type <- as.data.frame(unique(item$Type))
+      #create full list of possible items (only four micro categories)
+      item <- as.data.frame(unique(micro$item))
       
       
       #create a df of all possible items at all survey events, complete with zeros
-      abund <- full_join(survey_count, type, by=c("Type" = "unique(item$Type)"))
+      abund <- full_join(survey_count, item, by=c("item" = "unique(micro$item)"))
       
       #data long to wide
-      abund_wide <- spread(abund, Type, sum)
+      abund_wide <- spread(abund, item, sum)
       
       abund_wide <- abund_wide %>%
-        dplyr::select(event_id, "Glass beads", "Plastic chips", "Plastic shards", "Plastic resin pellet", "Polystyrene balls")
+        dplyr::select(event_id, "Glass beads", "Secondary plastics", "Primary plastics", "Polystyrene balls")
       
       #replace na values with 0
       abund_wide[is.na(abund_wide)] <- 0
@@ -112,7 +114,31 @@ library(cowplot) #minimal backgrounds for ggplot
              )
       
       
-      # write.csv(df,here("Data","micro_view.csv"))
+#Combine C8 and C9    
+     #isolate C8
+    C8 <- df %>%
+      filter(cycle == "C8")
+    
+    #isolate C9
+    C9 <- df %>%
+      filter(cycle == "C9")
+    
+    #join C8 and C9 by unique drain and item to capture double surveys
+    t <- left_join(C9, C8, by=c("asset_id"="asset_id", "item" = "item"))
+    t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
+    
+    t <- t %>%
+      mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+      dplyr::select(event_id.x, item, combined_sum)
+    
+    df <- df %>% 
+      left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+      filter(cycle != "C8") %>%
+      mutate(combined_sum = replace_na(combined_sum, 0),
+              sum2 = ifelse(cycle != "C9", sum, 0),
+              final_sum = sum2 + combined_sum) %>%
+      dplyr::select(-sum2, -sum, -combined_sum) %>%
+      rename(sum = final_sum)
 ```
 
 ```{r heatmap-item-top15, warning=FALSE, message=FALSE}
@@ -156,7 +182,7 @@ Heatmap(log10(mat+0.1),
         row_names_side = "left",
         show_column_names = FALSE,
         border = TRUE,
-        column_title = "Percentage of top 15 debris items per land use zone",
+        column_title = "Percentage of micro items per land use zone",
         #percentage label
         cell_fun = function(j, i, x, y, width, height, fill) {
         grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
@@ -249,6 +275,17 @@ p
 unique(df$item)
 ```
 
+```{r dharma-effect}
+simulationOutput <- simulateResiduals(fittedModel = m, plot=T)
+  
+plotResiduals(simulationOutput)
+testUniformity(simulationOutput) #tests if the overall distribution conforms to expectations
+# testOutliers(simulationOutput) #tests if there are more simulation outliers than expected
+testDispersion(simulationOutput) #tests if the simulated dispersion is equal to the observed dispersion
+#testQuantiles(simulationOutput) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
+testZeroInflation(simulationOutput) #tests if there are more zeros than expected
+```
+
 ```{r data-mod-top5, warning=FALSE, message=FALSE}
 # Function loop: each item
 
@@ -330,4 +367,80 @@ p_all <- ggplot(pred_df, aes(y=luz_tot, x=LUZ, fill=covid)) +
 
 p_all
  
+```
+
+```{r MDS-LGA}
+
+#create abundance long format
+ abund_long <- df %>%
+    group_by(LGA, LUZ, covid, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+  abund <- abund[rowSums(abund[4:7])>0,] #remove zero rows
+  
+  com <- abund[4:7]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)] #remove zero columns
+  
+  
+  ord <- metaMDS(com)
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$LUZ <- abund$LUZ
+  data.scores$covid <- abund$covid
+  data.scores <- data.scores %>%
+    mutate(covid = as.factor(covid),
+           LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+  
+  
+#Hull data
+CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+    "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+    "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+    "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
+
+#create polygons
+hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
+hull.data
+
+  
+ggplot() +
+  geom_polygon(data=hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
+  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
+  coord_equal() +
+  theme_bw()
+
+#https://chrischizinski.github.io/rstats/vegan-ggplot2/
+
+#colour symbols to land use and change shape to covid
+#arrows (vectors that show how items are pulling/pushing)
+```
+
+```{r adonis-pairwise}
+df.adonis <- adonis(com ~ data.scores$LUZ*data.scores$covid, permutations=999, method="bray")
+df.adonis
+
+#testing land use dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.luz <- betadisper(df.dis, data.scores$LUZ) # test dispersion
+df.betadisper.luz
+permutest(df.betadisper.luz) #dispersion not significant
+
+#testing covid dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.cov <- betadisper(df.dis, data.scores$covid) # test dispersion
+df.betadisper.cov
+permutest(df.betadisper.cov) #dispersion not significant
 ```

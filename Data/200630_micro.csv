@@ -1,361 +1,430 @@
-event_id,Type,tot
-20799,Plastic resin pellet,3564
-20799,Plastic resin pellet,144
-20800,Plastic resin pellet,56
-20801,Plastic resin pellet,3
-20760,Plastic resin pellet,810
-20761,Plastic resin pellet,1100
-20762,Plastic resin pellet,3396
-20763,Plastic resin pellet,3050
-20764,Plastic resin pellet,476
-20852,Plastic resin pellet,14
-20856,Plastic resin pellet,5250
-20917,Plastic resin pellet,3
-20922,Plastic resin pellet,9
-20820,Plastic resin pellet,340
-20824,Plastic resin pellet,380
-21520,Plastic resin pellet,7300
-21520,Plastic chips,144000
-21453,Plastic resin pellet,1808
-21454,Plastic resin pellet,829
-21455,Plastic resin pellet,1560
-21457,Plastic resin pellet,1890
-21534,Plastic resin pellet,2920
-21525,Plastic resin pellet,1
-21460,Plastic resin pellet,1
-21475,Glass beads,28000
-21378,Plastic resin pellet,325
-21379,Plastic resin pellet,2
-21382,Plastic resin pellet,1816
-21957,Plastic shards,360
-21957,Plastic resin pellet,60
-21958,Plastic resin pellet,21
-21958,Plastic shards,15
-21959,Plastic resin pellet,21696
-21959,Plastic shards,74112
-21961,Plastic resin pellet,4
-21979,Plastic resin pellet,468
-21981,Plastic resin pellet,1680
-21982,Plastic resin pellet,4570
-21983,Plastic resin pellet,657
-21984,Plastic resin pellet,512
-22107,Plastic resin pellet,405
-22109,Plastic resin pellet,9
-22111,Plastic resin pellet,2900
-21865,Plastic resin pellet,1
-22068,Plastic resin pellet,516
-22069,Plastic resin pellet,12
-22073,Plastic resin pellet,2359
-22476,Plastic resin pellet,13
-22477,Plastic resin pellet,56
-22479,Plastic shards,128000
-22479,Plastic resin pellet,3840
-22556,Plastic resin pellet,150
-22557,Plastic resin pellet,19872
-22558,Plastic resin pellet,10960
-22559,Plastic resin pellet,2400
-22560,Plastic resin pellet,2240
-22538,Plastic resin pellet,6
-22517,Plastic resin pellet,1290
-22518,Plastic resin pellet,15
-22521,Plastic resin pellet,3200
-22623,Plastic resin pellet,2
-22609,Plastic resin pellet,6
-22483,Plastic resin pellet,520
-22485,Plastic resin pellet,47
-22488,Plastic resin pellet,2531
-23215,Plastic resin pellet,504
-23215,Plastic shards,1704
-23216,Plastic shards,960
-23216,Plastic resin pellet,160
-23217,Plastic resin pellet,704
-23217,Plastic shards,6320
-23219,Plastic resin pellet,16
-23143,Plastic resin pellet,1940
-23144,Plastic resin pellet,32783
-23145,Plastic resin pellet,21568
-23146,Plastic resin pellet,4976
-23146,Plastic shards,32
-23147,Plastic resin pellet,224
-23147,Plastic chips,48
-23161,Plastic shards,408
-23161,Plastic resin pellet,1887
-23110,Plastic resin pellet,1
-23220,Plastic shards,384
-23220,Plastic resin pellet,5024
-23221,Plastic resin pellet,284
-23224,Plastic resin pellet,12736
-23933,Plastic shards,26390
-23933,Plastic resin pellet,1408
-23770,Plastic resin pellet,1
-23782,Plastic resin pellet,130
-23783,Plastic resin pellet,1360
-23784,Plastic resin pellet,6300
-23785,Plastic resin pellet,1720
-23786,Plastic resin pellet,1267
-23803,Plastic resin pellet,12
-23825,Plastic resin pellet,10
-23830,Plastic resin pellet,17888
-23837,Plastic resin pellet,1
-23867,Polystyrene balls,13600
-21495,Polystyrene balls,4954
-23162,Polystyrene balls,1609
-21439,Polystyrene balls,1600
-20822,Polystyrene balls,1442
-22462,Polystyrene balls,885
-23807,Polystyrene balls,682
-21486,Polystyrene balls,489
-21536,Polystyrene balls,444
-20910,Polystyrene balls,425
-22088,Polystyrene balls,410
-21487,Polystyrene balls,403
-22592,Polystyrene balls,380
-21384,Polystyrene balls,355
-21542,Polystyrene balls,319
-23226,Polystyrene balls,302
-21498,Polystyrene balls,260
-20897,Polystyrene balls,250
-22517,Polystyrene balls,209
-22456,Polystyrene balls,203
-20859,Polystyrene balls,131
-21491,Polystyrene balls,114
-22496,Polystyrene balls,108
-21540,Polystyrene balls,84
-21481,Polystyrene balls,84
-23227,Polystyrene balls,80
-22090,Polystyrene balls,68
-21879,Polystyrene balls,65
-22091,Polystyrene balls,60
-21479,Polystyrene balls,57
-21547,Polystyrene balls,56
-22593,Polystyrene balls,55
-21496,Polystyrene balls,52
-21480,Polystyrene balls,52
-21867,Polystyrene balls,52
-21862,Polystyrene balls,52
-22092,Polystyrene balls,46
-21771,Polystyrene balls,45
-23225,Polystyrene balls,44
-21464,Polystyrene balls,43
-22089,Polystyrene balls,40
-21538,Polystyrene balls,35
-21484,Polystyrene balls,35
-21509,Polystyrene balls,32
-22115,Polystyrene balls,32
-21501,Polystyrene balls,31
-23169,Polystyrene balls,30
-21527,Polystyrene balls,29
-21466,Polystyrene balls,29
-21475,Polystyrene balls,29
-23107,Polystyrene balls,2000
-21483,Polystyrene balls,27
-23918,Polystyrene balls,27
-21541,Polystyrene balls,26
-21532,Polystyrene balls,26
-21905,Polystyrene balls,26
-22607,Polystyrene balls,26
-23168,Polystyrene balls,26
-23172,Polystyrene balls,26
-22112,Polystyrene balls,24
-22116,Polystyrene balls,24
-21976,Polystyrene balls,23
-21468,Polystyrene balls,22
-21472,Polystyrene balls,22
-21381,Polystyrene balls,22
-22497,Polystyrene balls,21
-21525,Polystyrene balls,20
-23115,Polystyrene balls,20
-21765,Polystyrene balls,18
-22609,Polystyrene balls,18
-23158,Polystyrene balls,18
-21458,Polystyrene balls,17
-21378,Polystyrene balls,16
-21388,Polystyrene balls,16
-21952,Polystyrene balls,16
-22114,Polystyrene balls,16
-21871,Polystyrene balls,16
-21515,Polystyrene balls,15
-21526,Polystyrene balls,15
-21469,Polystyrene balls,15
-21461,Polystyrene balls,15
-21859,Polystyrene balls,15
-23219,Polystyrene balls,15
-21873,Polystyrene balls,14
-23161,Polystyrene balls,14
-21497,Polystyrene balls,13
-21978,Polystyrene balls,13
-21874,Polystyrene balls,13
-21884,Polystyrene balls,13
-23803,Polystyrene balls,13
-20753,Polystyrene balls,12
-22103,Polystyrene balls,12
-22460,Polystyrene balls,12
-22532,Polystyrene balls,12
-22619,Polystyrene balls,12
-23159,Polystyrene balls,12
-23085,Polystyrene balls,12
-21463,Polystyrene balls,11
-22503,Polystyrene balls,11
-22494,Polystyrene balls,11
-21544,Polystyrene balls,10
-21473,Polystyrene balls,10
-21485,Polystyrene balls,10
-21493,Polystyrene balls,10
-22623,Polystyrene balls,10
-23165,Polystyrene balls,10
-23167,Polystyrene balls,10
-23813,Polystyrene balls,10
-20760,Polystyrene balls,9
-21442,Polystyrene balls,9
-21876,Polystyrene balls,9
-22636,Polystyrene balls,9
-23164,Polystyrene balls,9
-23105,Polystyrene balls,9
-21392,Polystyrene balls,8
-21962,Polystyrene balls,8
-21974,Polystyrene balls,8
-21861,Polystyrene balls,8
-23084,Polystyrene balls,8
-23117,Polystyrene balls,8
-23110,Polystyrene balls,8
-21927,Polystyrene balls,7
-22117,Polystyrene balls,7
-21880,Polystyrene balls,7
-22083,Polystyrene balls,7
-23090,Polystyrene balls,7
-21516,Polystyrene balls,6
-21512,Polystyrene balls,6
-21385,Polystyrene balls,6
-21969,Polystyrene balls,6
-21971,Polystyrene balls,6
-21973,Polystyrene balls,6
-21778,Polystyrene balls,6
-22526,Polystyrene balls,6
-22505,Polystyrene balls,6
-23166,Polystyrene balls,6
-21513,Polystyrene balls,5
-21543,Polystyrene balls,5
-21459,Polystyrene balls,5
-21460,Polystyrene balls,5
-21970,Polystyrene balls,5
-22553,Polystyrene balls,5
-22608,Polystyrene balls,5
-22602,Polystyrene balls,5
-23123,Polystyrene balls,5
-23912,Polystyrene balls,5
-23891,Polystyrene balls,5
-23832,Polystyrene balls,5
-21454,Polystyrene balls,4
-21456,Polystyrene balls,4
-21447,Polystyrene balls,4
-21448,Polystyrene balls,4
-21451,Polystyrene balls,4
-21548,Polystyrene balls,4
-21492,Polystyrene balls,4
-21393,Polystyrene balls,4
-21983,Polystyrene balls,4
-22113,Polystyrene balls,4
-22109,Polystyrene balls,4
-22106,Polystyrene balls,4
-21764,Polystyrene balls,4
-22077,Polystyrene balls,4
-22548,Polystyrene balls,4
-22525,Polystyrene balls,4
-22635,Polystyrene balls,4
-22610,Polystyrene balls,4
-22492,Polystyrene balls,4
-23079,Polystyrene balls,4
-23897,Polystyrene balls,4
-21519,Polystyrene balls,3
-21511,Polystyrene balls,3
-21533,Polystyrene balls,3
-21462,Polystyrene balls,3
-21397,Polystyrene balls,3
-21386,Polystyrene balls,3
-21390,Polystyrene balls,3
-21926,Polystyrene balls,3
-21902,Polystyrene balls,3
-21979,Polystyrene balls,3
-21967,Polystyrene balls,3
-21975,Polystyrene balls,3
-22085,Polystyrene balls,3
-22533,Polystyrene balls,3
-22538,Polystyrene balls,3
-22550,Polystyrene balls,3
-22527,Polystyrene balls,3
-22514,Polystyrene balls,3
-22611,Polystyrene balls,3
-22499,Polystyrene balls,3
-22490,Polystyrene balls,3
-23133,Polystyrene balls,3
-23173,Polystyrene balls,3
-23081,Polystyrene balls,3
-23101,Polystyrene balls,3
-23103,Polystyrene balls,3
-23114,Polystyrene balls,3
-23230,Polystyrene balls,3
-23231,Polystyrene balls,3
-23837,Polystyrene balls,3
-21452,Polystyrene balls,2
-21379,Polystyrene balls,2
-21382,Polystyrene balls,2
-21387,Polystyrene balls,2
-21391,Polystyrene balls,2
-21951,Polystyrene balls,2
-21924,Polystyrene balls,2
-21925,Polystyrene balls,2
-21963,Polystyrene balls,2
-21966,Polystyrene balls,2
-22102,Polystyrene balls,2
-21886,Polystyrene balls,2
-21769,Polystyrene balls,2
-21864,Polystyrene balls,2
-22073,Polystyrene balls,2
-22473,Polystyrene balls,2
-22459,Polystyrene balls,2
-22452,Polystyrene balls,2
-22554,Polystyrene balls,2
-22522,Polystyrene balls,2
-22528,Polystyrene balls,2
-22531,Polystyrene balls,2
-22625,Polystyrene balls,2
-22615,Polystyrene balls,2
-23228,Polystyrene balls,2
-23819,Polystyrene balls,2
-23862,Polystyrene balls,2
-21505,Polystyrene balls,1
-21450,Polystyrene balls,1
-21534,Polystyrene balls,1
-21476,Polystyrene balls,1
-21482,Polystyrene balls,1
-21396,Polystyrene balls,1
-21380,Polystyrene balls,1
-21389,Polystyrene balls,1
-21961,Polystyrene balls,1
-21968,Polystyrene balls,1
-21877,Polystyrene balls,1
-21770,Polystyrene balls,1
-21858,Polystyrene balls,1
-22074,Polystyrene balls,1
-22474,Polystyrene balls,1
-22461,Polystyrene balls,1
-22535,Polystyrene balls,1
-22536,Polystyrene balls,1
-22549,Polystyrene balls,1
-22552,Polystyrene balls,1
-22524,Polystyrene balls,1
-22519,Polystyrene balls,1
-22634,Polystyrene balls,1
-22637,Polystyrene balls,1
-22617,Polystyrene balls,1
-22618,Polystyrene balls,1
-22616,Polystyrene balls,1
-22485,Polystyrene balls,1
-22488,Polystyrene balls,1
-23124,Polystyrene balls,1
-23128,Polystyrene balls,1
-23134,Polystyrene balls,1
-23156,Polystyrene balls,1
-23078,Polystyrene balls,1
-23112,Polystyrene balls,1
-23232,Polystyrene balls,1
+event_id,Type,tot,item
+20799,Plastic resin pellet,3564,Primary plastics
+20799,Plastic resin pellet,144,Primary plastics
+20800,Plastic resin pellet,56,Primary plastics
+20801,Plastic resin pellet,3,Primary plastics
+20760,Plastic resin pellet,810,Primary plastics
+20761,Plastic resin pellet,1100,Primary plastics
+20762,Plastic resin pellet,3396,Primary plastics
+20763,Plastic resin pellet,3050,Primary plastics
+20764,Plastic resin pellet,476,Primary plastics
+20852,Plastic resin pellet,14,Primary plastics
+20856,Plastic resin pellet,5250,Primary plastics
+20917,Plastic resin pellet,3,Primary plastics
+20922,Plastic resin pellet,9,Primary plastics
+20820,Plastic resin pellet,340,Primary plastics
+20824,Plastic resin pellet,380,Primary plastics
+21520,Plastic resin pellet,7300,Primary plastics
+21520,Plastic chips,144000,Secondary plastics
+21453,Plastic resin pellet,1808,Primary plastics
+21454,Plastic resin pellet,829,Primary plastics
+21455,Plastic resin pellet,1560,Primary plastics
+21457,Plastic resin pellet,1890,Primary plastics
+21534,Plastic resin pellet,2920,Primary plastics
+21525,Plastic resin pellet,1,Primary plastics
+21460,Plastic resin pellet,1,Primary plastics
+21475,Glass beads,28000,Glass beads
+21378,Plastic resin pellet,325,Primary plastics
+21379,Plastic resin pellet,2,Primary plastics
+21382,Plastic resin pellet,1816,Primary plastics
+21957,Plastic shards,360,Secondary plastics
+21957,Plastic resin pellet,60,Primary plastics
+21958,Plastic resin pellet,21,Primary plastics
+21958,Plastic shards,15,Secondary plastics
+21959,Plastic resin pellet,21696,Primary plastics
+21959,Plastic shards,74112,Secondary plastics
+21961,Plastic resin pellet,4,Primary plastics
+21979,Plastic resin pellet,468,Primary plastics
+21981,Plastic resin pellet,1680,Primary plastics
+21982,Plastic resin pellet,4570,Primary plastics
+21983,Plastic resin pellet,657,Primary plastics
+21984,Plastic resin pellet,512,Primary plastics
+22107,Plastic resin pellet,405,Primary plastics
+22109,Plastic resin pellet,9,Primary plastics
+22111,Plastic resin pellet,2900,Primary plastics
+21865,Plastic resin pellet,1,Primary plastics
+22068,Plastic resin pellet,516,Primary plastics
+22069,Plastic resin pellet,12,Primary plastics
+22073,Plastic resin pellet,2359,Primary plastics
+22476,Plastic resin pellet,13,Primary plastics
+22477,Plastic resin pellet,56,Primary plastics
+22479,Plastic shards,128000,Secondary plastics
+22479,Plastic resin pellet,3840,Primary plastics
+22556,Plastic resin pellet,150,Primary plastics
+22557,Plastic resin pellet,19872,Primary plastics
+22558,Plastic resin pellet,10960,Primary plastics
+22559,Plastic resin pellet,2400,Primary plastics
+22560,Plastic resin pellet,2240,Primary plastics
+22538,Plastic resin pellet,6,Primary plastics
+22517,Plastic resin pellet,1290,Primary plastics
+22518,Plastic resin pellet,15,Primary plastics
+22521,Plastic resin pellet,3200,Primary plastics
+22623,Plastic resin pellet,2,Primary plastics
+22609,Plastic resin pellet,6,Primary plastics
+22483,Plastic resin pellet,520,Primary plastics
+22485,Plastic resin pellet,47,Primary plastics
+22488,Plastic resin pellet,2531,Primary plastics
+23215,Plastic resin pellet,504,Primary plastics
+23215,Plastic shards,1704,Secondary plastics
+23216,Plastic shards,960,Secondary plastics
+23216,Plastic resin pellet,160,Primary plastics
+23217,Plastic resin pellet,704,Primary plastics
+23217,Plastic shards,6320,Secondary plastics
+23219,Plastic resin pellet,16,Primary plastics
+23143,Plastic resin pellet,1940,Primary plastics
+23144,Plastic resin pellet,32783,Primary plastics
+23145,Plastic resin pellet,21568,Primary plastics
+23146,Plastic resin pellet,4976,Primary plastics
+23146,Plastic shards,32,Secondary plastics
+23147,Plastic resin pellet,224,Primary plastics
+23147,Plastic chips,48,Secondary plastics
+23161,Plastic shards,408,Secondary plastics
+23161,Plastic resin pellet,1887,Primary plastics
+23110,Plastic resin pellet,1,Primary plastics
+23220,Plastic shards,384,Secondary plastics
+23220,Plastic resin pellet,5024,Primary plastics
+23221,Plastic resin pellet,284,Primary plastics
+23224,Plastic resin pellet,12736,Primary plastics
+23933,Plastic shards,26390,Secondary plastics
+23933,Plastic resin pellet,1408,Primary plastics
+23770,Plastic resin pellet,1,Primary plastics
+23782,Plastic resin pellet,130,Primary plastics
+23783,Plastic resin pellet,1360,Primary plastics
+23784,Plastic resin pellet,6300,Primary plastics
+23785,Plastic resin pellet,1720,Primary plastics
+23786,Plastic resin pellet,1267,Primary plastics
+23803,Plastic resin pellet,12,Primary plastics
+23825,Plastic resin pellet,10,Primary plastics
+23830,Plastic resin pellet,17888,Primary plastics
+23837,Plastic resin pellet,1,Primary plastics
+23867,Polystyrene balls,13600,Polystyrene balls
+21495,Polystyrene balls,4954,Polystyrene balls
+23162,Polystyrene balls,1609,Polystyrene balls
+21439,Polystyrene balls,1600,Polystyrene balls
+20822,Polystyrene balls,1442,Polystyrene balls
+22462,Polystyrene balls,885,Polystyrene balls
+23807,Polystyrene balls,682,Polystyrene balls
+21486,Polystyrene balls,489,Polystyrene balls
+21536,Polystyrene balls,444,Polystyrene balls
+20910,Polystyrene balls,425,Polystyrene balls
+22088,Polystyrene balls,410,Polystyrene balls
+21487,Polystyrene balls,403,Polystyrene balls
+22592,Polystyrene balls,380,Polystyrene balls
+21384,Polystyrene balls,355,Polystyrene balls
+21542,Polystyrene balls,319,Polystyrene balls
+23226,Polystyrene balls,302,Polystyrene balls
+21498,Polystyrene balls,260,Polystyrene balls
+20897,Polystyrene balls,250,Polystyrene balls
+22517,Polystyrene balls,209,Polystyrene balls
+22456,Polystyrene balls,203,Polystyrene balls
+20859,Polystyrene balls,131,Polystyrene balls
+21491,Polystyrene balls,114,Polystyrene balls
+22496,Polystyrene balls,108,Polystyrene balls
+21540,Polystyrene balls,84,Polystyrene balls
+21481,Polystyrene balls,84,Polystyrene balls
+23227,Polystyrene balls,80,Polystyrene balls
+22090,Polystyrene balls,68,Polystyrene balls
+21879,Polystyrene balls,65,Polystyrene balls
+22091,Polystyrene balls,60,Polystyrene balls
+21479,Polystyrene balls,57,Polystyrene balls
+21547,Polystyrene balls,56,Polystyrene balls
+22593,Polystyrene balls,55,Polystyrene balls
+21496,Polystyrene balls,52,Polystyrene balls
+21480,Polystyrene balls,52,Polystyrene balls
+21867,Polystyrene balls,52,Polystyrene balls
+21862,Polystyrene balls,52,Polystyrene balls
+22092,Polystyrene balls,46,Polystyrene balls
+21771,Polystyrene balls,45,Polystyrene balls
+23225,Polystyrene balls,44,Polystyrene balls
+21464,Polystyrene balls,43,Polystyrene balls
+22089,Polystyrene balls,40,Polystyrene balls
+21538,Polystyrene balls,35,Polystyrene balls
+21484,Polystyrene balls,35,Polystyrene balls
+21509,Polystyrene balls,32,Polystyrene balls
+22115,Polystyrene balls,32,Polystyrene balls
+21501,Polystyrene balls,31,Polystyrene balls
+23169,Polystyrene balls,30,Polystyrene balls
+21527,Polystyrene balls,29,Polystyrene balls
+21466,Polystyrene balls,29,Polystyrene balls
+21475,Polystyrene balls,29,Polystyrene balls
+23107,Polystyrene balls,2000,Polystyrene balls
+21483,Polystyrene balls,27,Polystyrene balls
+23918,Polystyrene balls,27,Polystyrene balls
+21541,Polystyrene balls,26,Polystyrene balls
+21532,Polystyrene balls,26,Polystyrene balls
+21905,Polystyrene balls,26,Polystyrene balls
+22607,Polystyrene balls,26,Polystyrene balls
+23168,Polystyrene balls,26,Polystyrene balls
+23172,Polystyrene balls,26,Polystyrene balls
+22112,Polystyrene balls,24,Polystyrene balls
+22116,Polystyrene balls,24,Polystyrene balls
+21976,Polystyrene balls,23,Polystyrene balls
+21468,Polystyrene balls,22,Polystyrene balls
+21472,Polystyrene balls,22,Polystyrene balls
+21381,Polystyrene balls,22,Polystyrene balls
+22497,Polystyrene balls,21,Polystyrene balls
+21525,Polystyrene balls,20,Polystyrene balls
+23115,Polystyrene balls,20,Polystyrene balls
+21765,Polystyrene balls,18,Polystyrene balls
+22609,Polystyrene balls,18,Polystyrene balls
+23158,Polystyrene balls,18,Polystyrene balls
+21458,Polystyrene balls,17,Polystyrene balls
+21378,Polystyrene balls,16,Polystyrene balls
+21388,Polystyrene balls,16,Polystyrene balls
+21952,Polystyrene balls,16,Polystyrene balls
+22114,Polystyrene balls,16,Polystyrene balls
+21871,Polystyrene balls,16,Polystyrene balls
+21515,Polystyrene balls,15,Polystyrene balls
+21526,Polystyrene balls,15,Polystyrene balls
+21469,Polystyrene balls,15,Polystyrene balls
+21461,Polystyrene balls,15,Polystyrene balls
+21859,Polystyrene balls,15,Polystyrene balls
+23219,Polystyrene balls,15,Polystyrene balls
+21873,Polystyrene balls,14,Polystyrene balls
+23161,Polystyrene balls,14,Polystyrene balls
+21497,Polystyrene balls,13,Polystyrene balls
+21978,Polystyrene balls,13,Polystyrene balls
+21874,Polystyrene balls,13,Polystyrene balls
+21884,Polystyrene balls,13,Polystyrene balls
+23803,Polystyrene balls,13,Polystyrene balls
+20753,Polystyrene balls,12,Polystyrene balls
+22103,Polystyrene balls,12,Polystyrene balls
+22460,Polystyrene balls,12,Polystyrene balls
+22532,Polystyrene balls,12,Polystyrene balls
+22619,Polystyrene balls,12,Polystyrene balls
+23159,Polystyrene balls,12,Polystyrene balls
+23085,Polystyrene balls,12,Polystyrene balls
+21463,Polystyrene balls,11,Polystyrene balls
+22503,Polystyrene balls,11,Polystyrene balls
+22494,Polystyrene balls,11,Polystyrene balls
+21544,Polystyrene balls,10,Polystyrene balls
+21473,Polystyrene balls,10,Polystyrene balls
+21485,Polystyrene balls,10,Polystyrene balls
+21493,Polystyrene balls,10,Polystyrene balls
+22623,Polystyrene balls,10,Polystyrene balls
+23165,Polystyrene balls,10,Polystyrene balls
+23167,Polystyrene balls,10,Polystyrene balls
+23813,Polystyrene balls,10,Polystyrene balls
+20760,Polystyrene balls,9,Polystyrene balls
+21442,Polystyrene balls,9,Polystyrene balls
+21876,Polystyrene balls,9,Polystyrene balls
+22636,Polystyrene balls,9,Polystyrene balls
+23164,Polystyrene balls,9,Polystyrene balls
+23105,Polystyrene balls,9,Polystyrene balls
+21392,Polystyrene balls,8,Polystyrene balls
+21962,Polystyrene balls,8,Polystyrene balls
+21974,Polystyrene balls,8,Polystyrene balls
+21861,Polystyrene balls,8,Polystyrene balls
+23084,Polystyrene balls,8,Polystyrene balls
+23117,Polystyrene balls,8,Polystyrene balls
+23110,Polystyrene balls,8,Polystyrene balls
+21927,Polystyrene balls,7,Polystyrene balls
+22117,Polystyrene balls,7,Polystyrene balls
+21880,Polystyrene balls,7,Polystyrene balls
+22083,Polystyrene balls,7,Polystyrene balls
+23090,Polystyrene balls,7,Polystyrene balls
+21516,Polystyrene balls,6,Polystyrene balls
+21512,Polystyrene balls,6,Polystyrene balls
+21385,Polystyrene balls,6,Polystyrene balls
+21969,Polystyrene balls,6,Polystyrene balls
+21971,Polystyrene balls,6,Polystyrene balls
+21973,Polystyrene balls,6,Polystyrene balls
+21778,Polystyrene balls,6,Polystyrene balls
+22526,Polystyrene balls,6,Polystyrene balls
+22505,Polystyrene balls,6,Polystyrene balls
+23166,Polystyrene balls,6,Polystyrene balls
+21513,Polystyrene balls,5,Polystyrene balls
+21543,Polystyrene balls,5,Polystyrene balls
+21459,Polystyrene balls,5,Polystyrene balls
+21460,Polystyrene balls,5,Polystyrene balls
+21970,Polystyrene balls,5,Polystyrene balls
+22553,Polystyrene balls,5,Polystyrene balls
+22608,Polystyrene balls,5,Polystyrene balls
+22602,Polystyrene balls,5,Polystyrene balls
+23123,Polystyrene balls,5,Polystyrene balls
+23912,Polystyrene balls,5,Polystyrene balls
+23891,Polystyrene balls,5,Polystyrene balls
+23832,Polystyrene balls,5,Polystyrene balls
+21454,Polystyrene balls,4,Polystyrene balls
+21456,Polystyrene balls,4,Polystyrene balls
+21447,Polystyrene balls,4,Polystyrene balls
+21448,Polystyrene balls,4,Polystyrene balls
+21451,Polystyrene balls,4,Polystyrene balls
+21548,Polystyrene balls,4,Polystyrene balls
+21492,Polystyrene balls,4,Polystyrene balls
+21393,Polystyrene balls,4,Polystyrene balls
+21983,Polystyrene balls,4,Polystyrene balls
+22113,Polystyrene balls,4,Polystyrene balls
+22109,Polystyrene balls,4,Polystyrene balls
+22106,Polystyrene balls,4,Polystyrene balls
+21764,Polystyrene balls,4,Polystyrene balls
+22077,Polystyrene balls,4,Polystyrene balls
+22548,Polystyrene balls,4,Polystyrene balls
+22525,Polystyrene balls,4,Polystyrene balls
+22635,Polystyrene balls,4,Polystyrene balls
+22610,Polystyrene balls,4,Polystyrene balls
+22492,Polystyrene balls,4,Polystyrene balls
+23079,Polystyrene balls,4,Polystyrene balls
+23897,Polystyrene balls,4,Polystyrene balls
+21519,Polystyrene balls,3,Polystyrene balls
+21511,Polystyrene balls,3,Polystyrene balls
+21533,Polystyrene balls,3,Polystyrene balls
+21462,Polystyrene balls,3,Polystyrene balls
+21397,Polystyrene balls,3,Polystyrene balls
+21386,Polystyrene balls,3,Polystyrene balls
+21390,Polystyrene balls,3,Polystyrene balls
+21926,Polystyrene balls,3,Polystyrene balls
+21902,Polystyrene balls,3,Polystyrene balls
+21979,Polystyrene balls,3,Polystyrene balls
+21967,Polystyrene balls,3,Polystyrene balls
+21975,Polystyrene balls,3,Polystyrene balls
+22085,Polystyrene balls,3,Polystyrene balls
+22533,Polystyrene balls,3,Polystyrene balls
+22538,Polystyrene balls,3,Polystyrene balls
+22550,Polystyrene balls,3,Polystyrene balls
+22527,Polystyrene balls,3,Polystyrene balls
+22514,Polystyrene balls,3,Polystyrene balls
+22611,Polystyrene balls,3,Polystyrene balls
+22499,Polystyrene balls,3,Polystyrene balls
+22490,Polystyrene balls,3,Polystyrene balls
+23133,Polystyrene balls,3,Polystyrene balls
+23173,Polystyrene balls,3,Polystyrene balls
+23081,Polystyrene balls,3,Polystyrene balls
+23101,Polystyrene balls,3,Polystyrene balls
+23103,Polystyrene balls,3,Polystyrene balls
+23114,Polystyrene balls,3,Polystyrene balls
+23230,Polystyrene balls,3,Polystyrene balls
+23231,Polystyrene balls,3,Polystyrene balls
+23837,Polystyrene balls,3,Polystyrene balls
+21452,Polystyrene balls,2,Polystyrene balls
+21379,Polystyrene balls,2,Polystyrene balls
+21382,Polystyrene balls,2,Polystyrene balls
+21387,Polystyrene balls,2,Polystyrene balls
+21391,Polystyrene balls,2,Polystyrene balls
+21951,Polystyrene balls,2,Polystyrene balls
+21924,Polystyrene balls,2,Polystyrene balls
+21925,Polystyrene balls,2,Polystyrene balls
+21963,Polystyrene balls,2,Polystyrene balls
+21966,Polystyrene balls,2,Polystyrene balls
+22102,Polystyrene balls,2,Polystyrene balls
+21886,Polystyrene balls,2,Polystyrene balls
+21769,Polystyrene balls,2,Polystyrene balls
+21864,Polystyrene balls,2,Polystyrene balls
+22073,Polystyrene balls,2,Polystyrene balls
+22473,Polystyrene balls,2,Polystyrene balls
+22459,Polystyrene balls,2,Polystyrene balls
+22452,Polystyrene balls,2,Polystyrene balls
+22554,Polystyrene balls,2,Polystyrene balls
+22522,Polystyrene balls,2,Polystyrene balls
+22528,Polystyrene balls,2,Polystyrene balls
+22531,Polystyrene balls,2,Polystyrene balls
+22625,Polystyrene balls,2,Polystyrene balls
+22615,Polystyrene balls,2,Polystyrene balls
+23228,Polystyrene balls,2,Polystyrene balls
+23819,Polystyrene balls,2,Polystyrene balls
+23862,Polystyrene balls,2,Polystyrene balls
+21505,Polystyrene balls,1,Polystyrene balls
+21450,Polystyrene balls,1,Polystyrene balls
+21534,Polystyrene balls,1,Polystyrene balls
+21476,Polystyrene balls,1,Polystyrene balls
+21482,Polystyrene balls,1,Polystyrene balls
+21396,Polystyrene balls,1,Polystyrene balls
+21380,Polystyrene balls,1,Polystyrene balls
+21389,Polystyrene balls,1,Polystyrene balls
+21961,Polystyrene balls,1,Polystyrene balls
+21968,Polystyrene balls,1,Polystyrene balls
+21877,Polystyrene balls,1,Polystyrene balls
+21770,Polystyrene balls,1,Polystyrene balls
+21858,Polystyrene balls,1,Polystyrene balls
+22074,Polystyrene balls,1,Polystyrene balls
+22474,Polystyrene balls,1,Polystyrene balls
+22461,Polystyrene balls,1,Polystyrene balls
+22535,Polystyrene balls,1,Polystyrene balls
+22536,Polystyrene balls,1,Polystyrene balls
+22549,Polystyrene balls,1,Polystyrene balls
+22552,Polystyrene balls,1,Polystyrene balls
+22524,Polystyrene balls,1,Polystyrene balls
+22519,Polystyrene balls,1,Polystyrene balls
+22634,Polystyrene balls,1,Polystyrene balls
+22637,Polystyrene balls,1,Polystyrene balls
+22617,Polystyrene balls,1,Polystyrene balls
+22618,Polystyrene balls,1,Polystyrene balls
+22616,Polystyrene balls,1,Polystyrene balls
+22485,Polystyrene balls,1,Polystyrene balls
+22488,Polystyrene balls,1,Polystyrene balls
+23124,Polystyrene balls,1,Polystyrene balls
+23128,Polystyrene balls,1,Polystyrene balls
+23134,Polystyrene balls,1,Polystyrene balls
+23156,Polystyrene balls,1,Polystyrene balls
+23078,Polystyrene balls,1,Polystyrene balls
+23112,Polystyrene balls,1,Polystyrene balls
+23232,Polystyrene balls,1,Polystyrene balls
+24726,Polystyrene balls,2,Polystyrene balls
+24676,Polystyrene balls,1,Polystyrene balls
+24683,Polystyrene balls,1,Polystyrene balls
+24687,Polystyrene balls,11,Polystyrene balls
+24688,Polystyrene balls,12,Polystyrene balls
+24689,Polystyrene balls,3,Polystyrene balls
+24691,Polystyrene balls,4,Polystyrene balls
+24694,Polystyrene balls,1,Polystyrene balls
+24695,Polystyrene balls,216,Polystyrene balls
+24696,Polystyrene balls,3,Polystyrene balls
+24527,Polystyrene balls,1,Polystyrene balls
+24533,Polystyrene balls,3,Polystyrene balls
+24535,Polystyrene balls,3,Polystyrene balls
+24536,Polystyrene balls,5,Polystyrene balls
+24543,Polystyrene balls,7,Polystyrene balls
+24546,Polystyrene balls,2,Polystyrene balls
+24658,Polystyrene balls,1000,Polystyrene balls
+24660,Polystyrene balls,1,Polystyrene balls
+24661,Polystyrene balls,8,Polystyrene balls
+24662,Polystyrene balls,22,Polystyrene balls
+24666,Polystyrene balls,2,Polystyrene balls
+24670,Polystyrene balls,2,Polystyrene balls
+24636,Polystyrene balls,1,Polystyrene balls
+24641,Polystyrene balls,1,Polystyrene balls
+24648,Polystyrene balls,2,Polystyrene balls
+24650,Polystyrene balls,1,Polystyrene balls
+24651,Polystyrene balls,12,Polystyrene balls
+24703,Polystyrene balls,5,Polystyrene balls
+24738,Plastic shards,11904,Secondary plastics
+24738,Plastic resin pellet,576,Primary plastics
+24739,Plastic resin pellet,3744,Primary plastics
+24739,Plastic shards,9936,Secondary plastics
+24692,Plastic resin pellet,1272,Primary plastics
+24693,Plastic resin pellet,3,Primary plastics
+24694,Plastic resin pellet,2,Primary plastics
+24695,Plastic resin pellet,790,Primary plastics
+24696,Plastic resin pellet,896,Primary plastics
+24537,Plastic resin pellet,5024,Primary plastics
+24701,Plastic resin pellet,2627,Primary plastics
+27190,Polystyrene balls,1,Polystyrene balls
+27193,Polystyrene balls,1,Polystyrene balls
+27053,Polystyrene balls,2,Polystyrene balls
+27054,Polystyrene balls,1,Polystyrene balls
+27057,Polystyrene balls,473,Polystyrene balls
+27067,Polystyrene balls,5,Polystyrene balls
+27072,Polystyrene balls,4,Polystyrene balls
+27193,Plastic chips,"10,000",Secondary plastics
+27070,Plastic resin pellet,3564,Primary plastics
+27070,Plastic chips,360,Secondary plastics
+27072,Plastic resin pellet,160,Primary plastics
+27072,Plastic shards,4864,Secondary plastics
+27195,Polystyrene balls,1,Polystyrene balls
+27199,Polystyrene balls,40,Polystyrene balls
+27196,Polystyrene balls,2,Polystyrene balls
+27007,Polystyrene balls,1,Polystyrene balls
+27008,Polystyrene balls,3,Polystyrene balls
+27010,Polystyrene balls,2,Polystyrene balls
+27013,Polystyrene balls,96,Polystyrene balls
+27014,Polystyrene balls,18,Polystyrene balls
+27015,Polystyrene balls,17,Polystyrene balls
+27016,Polystyrene balls,25,Polystyrene balls
+27017,Polystyrene balls,19,Polystyrene balls
+27018,Polystyrene balls,15,Polystyrene balls
+27019,Polystyrene balls,21,Polystyrene balls
+27020,Polystyrene balls,2,Polystyrene balls
+27199,Plastic chips,104,Secondary plastics
+27199,Plastic resin pellet,1688,Primary plastics
+27011,Plastic resin pellet,1,Primary plastics
+27012,Plastic resin pellet,9994,Primary plastics

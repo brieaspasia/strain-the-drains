@@ -174,12 +174,10 @@ item_per_cycle <- df %>%
   group_by(date, covid, LUZ, item) %>%
   summarise(cycle_sum = sum(sum))
 
-covid_lvl <- data.frame(name = c("1", "2", "3", "4", "5"),
-                   start = as.Date(c("2019-10-29", "2020-03-14", "2020-03-19", "2020-06-21",
-                             "2020-07-06")),
-                   end = as.Date(c("2020-03-14", "2020-03-19", "2020-06-21", "2020-07-06", 
-                           "2020-10-17")),
-                   level = c("No lockdown", "Moderate lockdown", "Strict lockdown", "Moderate lockdown", "Strict lockdown"),
+covid_lvl <- data.frame(name = c("1", "2"),
+                   start = as.Date(c("2019-10-29", "2020-04-12")),
+                   end = as.Date(c("2020-04-12", "2020-10-17")),
+                   level = c("Pre-Covid", "During Covid"),
                    stringsAsFactors = FALSE) %>%
   mutate(median_x = start + floor((end-start)/2))
 
@@ -236,8 +234,8 @@ nd$SE_upper <- exp(pred$fit + pred$se.fit)
 nd$SE_lower <- exp(pred$fit - pred$se.fit)
 
 # New facet label names for covid variable
-nd$covid <- factor(nd$covid, levels = c("1", "2", "3"),
-                  labels = c("No lockdown", "Moderate lockdown", "Strict lockdown"))
+nd$covid <- factor(nd$covid, levels = c("1", "2"),
+                  labels = c("Pre-Covid", "During Covid"))
 
 #create plot
 p <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
@@ -266,9 +264,9 @@ testZeroInflation(simulationOutput) #tests if there are more zeros than expected
 
 #Top 4 plus OH&S
 txt<- df %>%
-  filter(item %in% c("Plastic shards", 
-                     "Plastic chips",
-                     "Plastic resin pellet")) %>% 
+  filter(item %in% c("Primary plastics", 
+                     "Secondary plastics",
+                     "Polystyrene balls")) %>% 
   distinct(item)%>%
   pull(item) %>% 
   droplevels()
@@ -306,37 +304,30 @@ pred_df <- purrr::map_df(txt, function(x){
  pred_temp <- predict(object=m_temp,
                      newdata=nd_temp,
                      se.fit=T,
-                     re.form=NA,
-                     type="response")
+                     re.form=NA)
  
  #creating standard error for graphing
- nd_temp$Total <- pred_temp$fit
- nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
- nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
+ nd_temp$Total <- exp(pred_temp$fit)
+ nd_temp$SE_upper <- exp(pred_temp$fit + pred_temp$se.fit)
+ nd_temp$SE_lower <- exp(pred_temp$fit - pred_temp$se.fit)
  nd_temp$item <- x
  
  return(nd_temp)
  
  })
 
-#create columns for predictions by LUZ rather than by asset
-# pred_df <- pred_df %>%
-#   mutate(luz_tot = Total*5,
-#          LUZ_SE_upper = SE_upper*5,
-#          LUZ_SE_lower = SE_lower*5)
-
 # New facet label names for covid variable
-pred_df$covid <- factor(pred_df$covid, levels = c("1", "2", "3"),
-                  labels = c("No lockdown", "Moderate lockdown", "Strict lockdown"))
+pred_df$covid <- factor(pred_df$covid, levels = c("1", "2"),
+                  labels = c("Pre-Covid", "During Covid"))
 
  #create plot
-p_all <- ggplot(pred_df, aes(y=total, x=LUZ, fill=covid)) + 
+p_all <- ggplot(pred_df, aes(y=Total, x=item, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
-  geom_errorbar(aes(ymin=LUZ_SE_lower, ymax=LUZ_SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-  labs(title="Debris count (every 6 weeks per LGA)",
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+  labs(title="Debris count per asset (every 6)",
        subtitle="By covid restriction",
        x="", y="Total debris items per land use zone", tag="") +
-  # facet_wrap(~item, scales="free_y") +
+  facet_wrap(~LUZ, scales="free_y") +
   guides(x =  guide_axis(angle = 45)) 
 
 p_all

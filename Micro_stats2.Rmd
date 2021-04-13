@@ -228,13 +228,12 @@ nd <- expand.grid(covid = unique(mod$covid),
 pred <- predict(object=m,
                 newdata=nd,
                 se.fit=T,
-                re.form=NA,
-                type="response")
+                re.form=NA)
 
 #create standard error for graphing
-nd$Total <- pred$fit
-nd$SE_upper <- pred$fit + pred$se.fit
-nd$SE_lower <- pred$fit - pred$se.fit
+nd$Total <- exp(pred$fit)
+nd$SE_upper <- exp(pred$fit + pred$se.fit)
+nd$SE_lower <- exp(pred$fit - pred$se.fit)
 
 # New facet label names for covid variable
 nd$covid <- factor(nd$covid, levels = c("1", "2", "3"),

@@ -463,20 +463,15 @@ pred_df = purrr::map_df(top5_txt, function(x){
  
  })
 
-#create columns for predictions by LUZ rather than by asset
-pred_df <- pred_df %>%
-  mutate(luz_tot = Total*5,
-         LUZ_SE_upper = SE_upper*5,
-         LUZ_SE_lower = SE_lower*5)
 
 # New facet label names for covid variable
 pred_df$covid <- factor(pred_df$covid, levels = c("1", "2", "3"),
                   labels = c("No lockdown", "Moderate lockdown", "Strict lockdown"))
 
  #create plot
-p_all <- ggplot(pred_df, aes(y=luz_tot, x=LUZ, fill=covid)) + 
+p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
-  geom_errorbar(aes(ymin=LUZ_SE_lower, ymax=LUZ_SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
   labs(title="Debris count (every 6 weeks per LGA)",
        subtitle="By covid restriction",
        x="", y="Total debris items per land use zone", tag="") +

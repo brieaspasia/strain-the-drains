@@ -139,6 +139,11 @@ library(cowplot) #minimal backgrounds for ggplot
               final_sum = sum2 + combined_sum) %>%
       dplyr::select(-sum2, -sum, -combined_sum) %>%
       rename(sum = final_sum)
+    
+        t <- df %>%
+      group_by(LUZ) %>%
+      summarise(total=sum(sum)) %>%
+      mutate(pct = total/737651  * 100)
 ```
 
 ```{r micro-plot}

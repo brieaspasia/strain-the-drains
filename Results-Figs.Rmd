@@ -206,25 +206,28 @@ library(cowplot) #minimal backgrounds for ggplot
       dplyr::select(-sum2, -sum, -combined_sum) %>%
       rename(sum = final_sum)
     
-          
-str(df)
+    # t <- df %>%
+    #   group_by(item) %>%
+    #   summarise(total=sum(sum)) %>%
+    #   mutate(pct = total/87406 * 100)
 ```
 # Percentage of items by land use
 We'd discussed recreating this with errorbars, however I'm not sure how that would work as these values represent the sum total of items in each of these land uses?  We also discussed moving this to supplementary data, however I think it's actually a really important part of the story. While Covid impact may be a hot topic currently, I don't want the land use results to get lost in the Covid hype, especially because I haven't found any other papers about land use and stormwater debris. Also, the differences between land use are likely the most relevant part of this data in terms of implications for debris management efforts. 
 ```{r heatmap-item-top15, warning=FALSE, message=FALSE}
 
-top15 <- df %>%
+top10 <- df %>%
   filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
+  filter(item != "Metal scrap") %>% #removing outlier entry
   group_by(item) %>%
   summarise(total=sum(sum)) %>%
   arrange(desc(total)) %>%
-  top_n(15) %>%
+  top_n(10) %>%
   dplyr::select(item)
 
-top15 <- as.vector(unlist(top15))
+top10 <- as.vector(unlist(top10))
 
 top_LUZ <- df %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4"), item %in% top15) %>%
+  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
   group_by(LUZ) %>%
   mutate(total_LUZ=sum(sum)) %>%
   ungroup() %>%
@@ -232,10 +235,11 @@ top_LUZ <- df %>%
   mutate(total_itemLUZ = sum(sum)) %>%
   ungroup() %>%
   mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
+  filter(item %in% top10) %>%
   dplyr::select(item, LUZ, pct) %>%
   unique() %>%
   spread(item, pct) %>%
-  column_to_rownames(var="LUZ")
+  column_to_rownames(var="LUZ") 
 
 mat <- data.matrix(top_LUZ) #matrix for heatmap
 mat <- round(mat,0)
@@ -262,7 +266,7 @@ Heatmap(log10(mat+0.1),
         row_names_side = "left",
         show_column_names = FALSE,
         border = TRUE,
-        column_title = "Percentage of top 15 debris items per land use zone",
+        column_title = "Percentage of top 10 debris items per land use zone",
         #percentage label
         cell_fun = function(j, i, x, y, width, height, fill) {
         grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},

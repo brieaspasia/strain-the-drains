@@ -1,146 +1,146 @@
-item.type,A3,A4
-Aerosol cans,Aerosol cans,
-Aluminium cans,Aluminium cans,2
-"Anecdotal data, see cleanup note","Anecdotal data, see cleanup note",
-"Appliances, electronics & batteries","Appliances, electronics & batteries",
-Aquaculture items,Aquaculture items,
-"Bait containers & lids, bait savers",Bait containers & lids,
-"Rubber balloons, balls & toys, elastic straps & bands",Balloons & rubber toys,
-"Baskets, crates & trays","Baskets, crates & trays",
-Glass beer stubbies & pre-mixed alcohol bottles,Beer bottles (and similar),2
-Blasting items,Blasting items,
-Bleach & cleaner bottles,Bleach & cleaner bottles,
-Bleach bottle KKK type,Bleach bottles (Commercial),
-"Boat parts, wreckage & remnants",Boat parts (Misc),
-Remnants burnt plastic,Burnt plastic remnants,
-Cable ties & plastic fasteners,Cable ties,
-"Canvas, sailcloth & hessian materials","Canvas, sailcloth & hessian materials",
-"Carpet & lino household, boat deck & padding",Carpet & lino,
-Childcare items,Childcare items,
-Cigarette butts & filters,Cigarette butts,1
-Cigarette lighters,Cigarette lighters,
-Cleanup data not recorded,Cleanup data not recorded,
-"Cloth, clothing, hats & towels",Clothing & towels,
-Fishing line in metres commercial (monofilament),Commercial fishing line (in metres),
-"Commercial fishing remnants (float, pot, crate bits)",Commercial fishing remnants,
-"Commercial fishing traps, pots & intact parts",Commercial fishing traps & pots,
-"Construction material (brick, cement, pipe)",Construction materials,
-Container contents intact & spilt content,Container contents intact & spilt content,
-Cyalume glow sticks,Cyalume glow sticks,
-Drift net floats,Drift net floats,
-Tetra packs & drink cartons,Drink cartons,
-Drug paraphernalia,Drug paraphernalia,
-"Soap, dry lubricant & glue",Dry lubricant & glue,
-Shoes leather & fabric,Fabrics (Misc),
-Fibreglass fragments,Fibreglass fragments,
-Fishing line in metres (Recreation),Fishing line in metres (Recreation),
-Fishing net over 1 metre in metres,Fishing net (over 1 metre),
-Bait & tackle bags & packaging,Fishing packaging,
-Foam buoys,Foam buoys,
-Foam insulation & packaging (whole and remnants),Foam insulation & packaging,1
-Foam sponge sheeting (mattress & similar),Foam sponge sheeting (mattress & similar),
-"Foam cups, food packs & trays",Foam take-away,2
-"Foil wrappers, packets, bladders & alfoil",Foil (including bladders),1
-Food scraps,Food scraps,
-Gas bottles,Gas bottles,
-Gas & volatile liquid capsules & cans,Gas cans & capsules,
-Glass or ceramic broken,Glass / ceramic scrap,1
-Glass jars & sauce bottles,Glass jars,
-Glassware & ceramic items,Glassware & ceramic items,
-"Lids & tops, pump spray, flow restrictor & similar",Hard plastic lids,1
-Plastic bits & pieces hard & solid,Hard plastic remnants,1
-Dangerous & very hazardous items,Hazardous,
-Large item,Large item,
-Fluorescent light tubes and bulbs,Light bulbs,
-"Marine safety, survival & boating equipment",Marine safety equipment,
-Medical waste,Medical waste,
-"Mesh bags (vegetable, oyster & mussel bags)",Mesh bags,
-"Metal bicycle, shopping trolley and similar",Metal (Large),
-"Tins under 4 litres (food, drink tins and similar)",Metal cans (< 4L),
-"Metal building & trades materials, fixings & fittings",Metal construction materials,
-"Metal drums, cans & buckets over 4 litres",Metal drums (> 4L),
-Metal marine engine & boat parts & fittings,Metal engine & boat parts,
-"Metal outdoor equipment, implements, furniture",Metal equipment (outdoor),
-"Metal Fishing Items (Sinkers, lures, hooks, traps, pots)",Metal fishing items,
-Metal buoys & Floats,Metal floats,
-"Metal bottle caps, lids & pull tabs",Metal lids,
-Metal motor vehicle parts & batteries,Metal motor parts,
-Metal scrap & remnants,Metal scrap,
-Metal signs and sheeting,Metal signs and sheeting,
-Metal tools,Metal tools,
-Metal unspecified,Metal unspecified,
-Microplastic Survey,Microplastic Survey,
-Unspecified plastic items,Misc soft plastic,
-"Municipal activities (tree guard, barrier fence etc)",Municipal activities,
-"Newspaper, magazines & brochures","Newspaper, magazines & brochures",
+item.type,A3,material
 Admin no rubbish found,No rubbish found,
-Occupational health & safety items,OH & S,2
+Aerosol cans,Aerosol cans,metal
+Aluminium cans,Aluminium cans,metal
+"Anecdotal data, see cleanup note","Anecdotal data, see cleanup note",
+"Appliances, electronics & batteries","Appliances, electronics & batteries",metal
+Aquaculture items,Aquaculture items,hard & soft plastic
+Bait & tackle bags & packaging,Fishing packaging,hard & soft plastic
+"Bait containers & lids, bait savers",Bait containers & lids,hard & soft plastic
+"Baskets, crates & trays","Baskets, crates & trays",hard & soft plastic
+"Binding, thread, string & cord (natural fibre)",String (natural fibre),cloth
+Blasting items,Blasting items,hard & soft plastic
+Bleach & cleaner bottles,Bleach & cleaner bottles,hard & soft plastic
+Bleach bottle KKK type,Bleach bottles (Commercial),hard & soft plastic
+"Boat parts, wreckage & remnants",Boat parts (Misc),other
+"Brooms, brushes & paint brushes",Wooden brush,wood
+"Building & trades materials, fixings & fittings",Other construction material,glass & ceramic
+Cable ties & plastic fasteners,Cable ties,hard & soft plastic
+"Canvas, sailcloth & hessian materials","Canvas, sailcloth & hessian materials",cloth
+"Carpet & lino household, boat deck & padding",Carpet & lino,hard & soft plastic
+Childcare items,Childcare items,hard & soft plastic
+Cigarette butts & filters,Cigarette butts,hard & soft plastic
+Cigarette lighters,Cigarette lighters,hard & soft plastic
+Cleanup data not recorded,Cleanup data not recorded,
+"Cloth, clothing, hats & towels",Clothing & towels,cloth
+"Commercial fishing remnants (float, pot, crate bits)",Commercial fishing remnants,hard & soft plastic
+"Commercial fishing traps, pots & intact parts",Commercial fishing traps & pots,hard & soft plastic
+"Construction material (brick, cement, pipe)",Construction materials,glass & ceramic
+Container contents intact & spilt content,Container contents intact & spilt content,hard & soft plastic
+Cyalume glow sticks,Cyalume glow sticks,hard & soft plastic
+Dangerous & very hazardous items,Hazardous,other
+Drift net floats,Drift net floats,expanded plastics
+Drug paraphernalia,Drug paraphernalia,hard & soft plastic
+Fibreglass fragments,Fibreglass fragments,hard & soft plastic
+Fishing line in metres (Recreation),Fishing line in metres (Recreation),hard & soft plastic
+Fishing line in metres commercial (monofilament),Commercial fishing line (in metres),hard & soft plastic
+Fishing net over 1 metre in metres,Fishing net (over 1 metre),hard & soft plastic
+Fluorescent light tubes and bulbs,Light bulbs,glass & ceramic
+Foam buoys,Foam buoys,expanded plastics
+"Foam cups, food packs & trays",Foam take-away,expanded plastics
+Foam insulation & packaging (whole and remnants),Foam insulation & packaging,expanded plastics
+Foam sponge sheeting (mattress & similar),Foam sponge sheeting (mattress & similar),expanded plastics
+"Foil wrappers, packets, bladders & alfoil",Foil (including bladders),metal
+Food scraps,Food scraps,other
+Gas & volatile liquid capsules & cans,Gas cans & capsules,metal
+Gas bottles,Gas bottles,metal
+Glass beer stubbies & pre-mixed alcohol bottles,Beer bottles (and similar),glass & ceramic
+Glass jars & sauce bottles,Glass jars,glass & ceramic
+Glass or ceramic broken,Glass / ceramic scrap,glass & ceramic
+"Glass wine, spirit and similar bottles",Wine bottles (and similar),glass & ceramic
+Glassware & ceramic items,Glassware & ceramic items,glass & ceramic
+Large item,Large item,large
+"Lids & tops, pump spray, flow restrictor & similar",Hard plastic lids,hard & soft plastic
+"Marine safety, survival & boating equipment",Marine safety equipment,expanded plastics
+Medical waste,Medical waste,hard & soft plastic
+"Mesh bags (vegetable, oyster & mussel bags)",Mesh bags,hard & soft plastic
+"Metal bicycle, shopping trolley and similar",Metal (Large),metal
+"Metal bottle caps, lids & pull tabs",Metal lids,metal
+"Metal building & trades materials, fixings & fittings",Metal construction materials,metal
+Metal buoys & Floats,Metal floats,metal
+"Metal drums, cans & buckets over 4 litres",Metal drums (> 4L),metal
+"Metal Fishing Items (Sinkers, lures, hooks, traps, pots)",Metal fishing items,metal
+Metal marine engine & boat parts & fittings,Metal engine & boat parts,metal
+Metal motor vehicle parts & batteries,Metal motor parts,metal
+"Metal outdoor equipment, implements, furniture",Metal equipment (outdoor),metal
+Metal scrap & remnants,Metal scrap,metal
+Metal signs and sheeting,Metal signs and sheeting,metal
+Metal tools,Metal tools,metal
+Metal unspecified,Metal unspecified,metal
+Microplastic Survey,Microplastic Survey,
+"Miscellaneous paper, labels & tickets",Paper remnants,paper
+"Municipal activities (tree guard, barrier fence etc)",Municipal activities,hard & soft plastic
+"Newspaper, magazines & brochures","Newspaper, magazines & brochures",paper
+Occupational health & safety items,OH & S,hard & soft plastic
 Oil globules & tar-balls,Oil globules & tar-balls,
 Oil spill occurrence,Oil spill occurrence,
-Organic materials,Organic materials,
-"Building & trades materials, fixings & fittings",Other construction material,
-"Packaging accessories (seals, reels, spools, handles)",Packaging accessories,
-Paper & cardboard packaging,Paper  packaging,1
-"Miscellaneous paper, labels & tickets",Paper remnants,1
-Personal care & pharmaceutical packaging,Personal care & pharmaceutical packaging,
-"Personal effects (wallets, money, keys, jewellery)",Personal effects,
-Pets handling & care items,Pet items,
-"Plastic bags supermarket, garbage, dog poo, ice",Plastic bags,1
-"Plastic bottles, drums, jerrycans & buckets over 4 litres",Plastic bottles (> 4L),
-"Toothbrushes, brushes & combs, hair ties etc",Plastic brushes,
-Plastic buoys and floats,Plastic buoys and floats,
-"Plastic ceremonial & festive (wreaths, flowers)",Plastic ceremonial / festive,
-"Plastic containers non food (oil, sealant, chemical)",Plastic containers (non food),
-"Plastic drink bottles (water, juice, milk, soft drink)",Plastic drink bottles,1
-"Plastic drink package rings, six pack rings, ring carriers",Plastic drink packaging,
-"Plastic electrical cable, connectors & fittings",Plastic electrical items (e.g. cables),
-"Plastic farming implements, devices & fittings",Plastic farming items,
-Plastic first aid materials & equipment (band aids),Plastic first aid,
-Plastic furniture outdoor & camping,Plastic furniture (outdoor & camping),
-"Plastic gardening items, implements & fittings",Plastic gardening items,
-"Plastic housewares, tablewares, house fittings",Plastic housewares,
-Plastic oddments,Plastic oddments,
-"Plastic packaging food (wrap, packets, containers)",Plastic packaging (food),1
-"Plastic pipe PVC, irrigation & reticulation",Plastic pipes (PVC),
-"Plastic sheeting (tarpaulin, woven bags, pallet wrap)",Plastic sheeting,
-"Pens, markers & other plastic stationary",Plastic stationary,
-"Toys, party poppers, ribbons, clips & similar",Plastic toys,
-Plastic tubes & hoses,Plastic tubes & hoses,
-Plastic vehicle parts,Plastic vehicle parts,
-Plastic wrap non food (bubble wrap etc),Plastic wrap (non-food),1
+Organic materials,Organic materials,other
+"Packaging accessories (seals, reels, spools, handles)",Packaging accessories,hard & soft plastic
+Paper & cardboard packaging,Paper  packaging,paper
+"Pens, markers & other plastic stationary",Plastic stationary,hard & soft plastic
+Personal care & pharmaceutical packaging,Personal care & pharmaceutical packaging,hard & soft plastic
+"Personal effects (wallets, money, keys, jewellery)",Personal effects,other
+Pets handling & care items,Pet items,hard & soft plastic
+"Plastic bags supermarket, garbage, dog poo, ice",Plastic bags,hard & soft plastic
+Plastic bits & pieces hard & solid,Hard plastic remnants,hard & soft plastic
+"Plastic bottles, drums, jerrycans & buckets over 4 litres",Plastic bottles (> 4L),hard & soft plastic
+Plastic buoys and floats,Plastic buoys and floats,hard & soft plastic
+"Plastic ceremonial & festive (wreaths, flowers)",Plastic ceremonial / festive,hard & soft plastic
+"Plastic containers non food (oil, sealant, chemical)",Plastic containers (non food),hard & soft plastic
+"Plastic drink bottles (water, juice, milk, soft drink)",Plastic drink bottles,hard & soft plastic
+"Plastic drink package rings, six pack rings, ring carriers",Plastic drink packaging,hard & soft plastic
+"Plastic electrical cable, connectors & fittings",Plastic electrical items (e.g. cables),hard & soft plastic
+"Plastic farming implements, devices & fittings",Plastic farming items,hard & soft plastic
+"Plastic film remnants (bits of plastic bag, wrap etc)",Soft plastic remnants,hard & soft plastic
+Plastic first aid materials & equipment (band aids),Plastic first aid,hard & soft plastic
+Plastic furniture outdoor & camping,Plastic furniture (outdoor & camping),hard & soft plastic
+"Plastic gardening items, implements & fittings",Plastic gardening items,hard & soft plastic
+"Plastic housewares, tablewares, house fittings",Plastic housewares,hard & soft plastic
+Plastic oddments,Plastic oddments,hard & soft plastic
+"Plastic packaging food (wrap, packets, containers)",Plastic packaging (food),hard & soft plastic
+"Plastic pipe PVC, irrigation & reticulation",Plastic pipes (PVC),hard & soft plastic
+"Plastic sheeting (tarpaulin, woven bags, pallet wrap)",Plastic sheeting,hard & soft plastic
+Plastic tubes & hoses,Plastic tubes & hoses,hard & soft plastic
+Plastic vehicle parts,Plastic vehicle parts,hard & soft plastic
+Plastic wrap non food (bubble wrap etc),Plastic wrap (non-food),hard & soft plastic
 Pollution Rating,Pollution Rating,
-"Processed timber, pallets & other wood",Processed timber,
-Recreation & outdoor equipment,Recreation & outdoor equipment,
-"Recreation fishing items (lures, floats, rods, reels)",Recreation fishing items,
-Research items oceanic,Research items oceanic,
-Rope & net scraps less than 1 metre,Rope & net scraps (< 1 m),
-Rope (estimated length in metres),Rope (estimated length in metres),
-Rope natural (estimated length in metres),Rope natural (estimated length in metres),
-Rubber footwear & thongs,Rubber footwear,
-Rubber remnants,Rubber remnants,
-Rubber sheeting,Rubber sheeting,
-"Sanitary (tissues, nappies, condoms, cotton buds)",Sanitary items,1
-Shotgun cartridges and wadding,Shotgun cartridges and wadding,
-Small machinery & electric motors,Small machinery & electric motors,
-"Plastic film remnants (bits of plastic bag, wrap etc)",Soft plastic remnants,1
-Strapping band whole (record as single item),Strapping band (whole),
-Strapping band scraps,Strapping band scraps,
-"Straws, confection sticks, cups, plates & cutlery",Straws & plastic cutlery,1
-"Binding, thread, string & cord (natural fibre)",String (natural fibre),
+"Processed timber, pallets & other wood",Processed timber,wood
+Recreation & outdoor equipment,Recreation & outdoor equipment,hard & soft plastic
+"Recreation fishing items (lures, floats, rods, reels)",Recreation fishing items,hard & soft plastic
+Remnants burnt plastic,Burnt plastic remnants,hard & soft plastic
+Research items oceanic,Research items oceanic,hard & soft plastic
+Rope & net scraps less than 1 metre,Rope & net scraps (< 1 m),hard & soft plastic
+Rope (estimated length in metres),Rope (estimated length in metres),hard & soft plastic
+Rope natural (estimated length in metres),Rope natural (estimated length in metres),cloth
+"Rubber balloons, balls & toys, elastic straps & bands",Balloons & rubber toys,rubber
+"Rubber buffers, tyres, seals & similar",Tyres (and similar),rubber
+Rubber footwear & thongs,Rubber footwear,rubber
+Rubber remnants,Rubber remnants,rubber
+Rubber sheeting,Rubber sheeting,rubber
+"Sanitary (tissues, nappies, condoms, cotton buds)",Sanitary items,other
+Shoes leather & fabric,Fabrics (Misc),cloth
+Shotgun cartridges and wadding,Shotgun cartridges and wadding,hard & soft plastic
+Small machinery & electric motors,Small machinery & electric motors,metal
+"Soap, dry lubricant & glue",Dry lubricant & glue,other
+Strapping band scraps,Strapping band scraps,hard & soft plastic
+Strapping band whole (record as single item),Strapping band (whole),hard & soft plastic
+"Straws, confection sticks, cups, plates & cutlery",Straws & plastic cutlery,hard & soft plastic
 Substances unidentified,Substances unidentified,
-Synthetic cardboard (corflute) signs & packaging,Synthetic cardboard (corflute),
-Syringes medical,Syringes,
-Syringes veterinary,Syringes (Veterinary),
-Tags,Tags,
-"Tape adhesive, electrical, duct, hazard marker & rolls","Tape adhesive, electrical, duct, hazard marker & rolls",
-"Rubber buffers, tyres, seals & similar",Tyres (and similar),
+Synthetic cardboard (corflute) signs & packaging,Synthetic cardboard (corflute),hard & soft plastic
+Syringes medical,Syringes,hard & soft plastic
+Syringes veterinary,Syringes (Veterinary),hard & soft plastic
+Tags,Tags,hard & soft plastic
+"Tape adhesive, electrical, duct, hazard marker & rolls","Tape adhesive, electrical, duct, hazard marker & rolls",hard & soft plastic
+Tetra packs & drink cartons,Drink cartons,paper
+"Tins under 4 litres (food, drink tins and similar)",Metal cans (< 4L),metal
+"Toothbrushes, brushes & combs, hair ties etc",Plastic brushes,hard & soft plastic
+"Toys, party poppers, ribbons, clips & similar",Plastic toys,hard & soft plastic
 Unspecified non plastic items,Unspecified non plastic items,
-"Wax (surf wax, candles, paraffin and similar)",Wax,
-Weather balloon parts,Weather balloon parts,
-White goods,White goods,
-"Glass wine, spirit and similar bottles",Wine bottles (and similar),
-"Wire, metal stakes & pipes","Wire, metal stakes & pipes",
-"Brooms, brushes & paint brushes",Wooden brush,
-"Wooden confection sticks, pencils, matches etc",Wooden consumer items,
-Wooden Fishing Items,Wooden Fishing Items,
-Wooden furniture,Wooden furniture,
+Unspecified plastic items,Misc soft plastic,hard & soft plastic
+"Wax (surf wax, candles, paraffin and similar)",Wax,other
+Weather balloon parts,Weather balloon parts,expanded plastics
+White goods,White goods,metal
+"Wire, metal stakes & pipes","Wire, metal stakes & pipes",metal
+"Wooden confection sticks, pencils, matches etc",Wooden consumer items,wood
+Wooden Fishing Items,Wooden Fishing Items,wood
+Wooden furniture,Wooden furniture,wood

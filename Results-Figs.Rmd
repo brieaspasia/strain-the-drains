@@ -98,7 +98,7 @@ library(cowplot) #minimal backgrounds for ggplot
       #create full list of possible items
       AMDI <- AMDI_code %>%
         filter(item_code_id != "LSTD1") %>% #remove pollution rating / microplastics
-        dplyr::select(item.ex) #column of all possible item types
+        dplyr::select(item.ex, mat) #column of all possible item types
       
       
       #create a df of all possible items at all survey events, complete with zeros
@@ -107,7 +107,7 @@ library(cowplot) #minimal backgrounds for ggplot
       #data long to wide
       abund_wide <- abund %>%
         spread(item.ex, sum) %>%
-        dplyr::select(-Asset.ID, -Cycle, -covid, -date)
+        dplyr::select(-Asset.ID, -Cycle, -covid, -date, -mat)
       
       #replace na values with 0
       abund_wide[is.na(abund_wide)] <- 0
@@ -177,8 +177,8 @@ library(cowplot) #minimal backgrounds for ggplot
 #classify columns correctly    
       df <- df %>%
       mutate(item=as.factor(item),
-             covid=as.factor(covid)
-             )
+             covid=as.factor(covid),
+             material=as.factor(material))
 
 #Combine C8 and C9    
      #isolate C8
@@ -205,11 +205,12 @@ library(cowplot) #minimal backgrounds for ggplot
               final_sum = sum2 + combined_sum) %>%
       dplyr::select(-sum2, -sum, -combined_sum) %>%
       rename(sum = final_sum)
-    
-    # t <- df %>%
-    #   group_by(item) %>%
-    #   summarise(total=sum(sum)) %>%
-    #   mutate(pct = total/87406 * 100)
+
+# #overview numbers
+#     t <- df %>%
+#       group_by(material) %>%
+#       summarise(total=sum(sum)) %>%
+#       mutate(pct = total/87406 * 100)
 ```
 # Percentage of items by land use
 We'd discussed recreating this with errorbars, however I'm not sure how that would work as these values represent the sum total of items in each of these land uses?  We also discussed moving this to supplementary data, however I think it's actually a really important part of the story. While Covid impact may be a hot topic currently, I don't want the land use results to get lost in the Covid hype, especially because I haven't found any other papers about land use and stormwater debris. Also, the differences between land use are likely the most relevant part of this data in terms of implications for debris management efforts. 
@@ -340,7 +341,7 @@ mod <- df %>%
   ungroup() %>%
   # filter(cycle %in% paste0("C",1:7)) %>%
   mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(LUZ),
+         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
          covid = as.factor(covid),
          cycle = as.factor(cycle))
        

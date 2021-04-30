@@ -240,14 +240,17 @@ top_LUZ <- df %>%
   dplyr::select(item, LUZ, pct) %>%
   unique() %>%
   spread(item, pct) %>%
-  column_to_rownames(var="LUZ") 
-
+  mutate(LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct"))) %>%
+  arrange(LUZ) %>%
+  column_to_rownames(var="LUZ")
+  
 mat <- data.matrix(top_LUZ) #matrix for heatmap
+# mat <- reorder_mat(mat = mat, order = order)
 mat <- round(mat,0)
 mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
 
 
-col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat), location = 1, rot = 60, 
+col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat2), location = 1, rot = 60, 
                               just = "right"))
 
 Heatmap(log10(mat+0.1), 
@@ -258,8 +261,8 @@ Heatmap(log10(mat+0.1),
                       legend_height = unit(5, "cm"),
                       title_position = "leftcenter-rot"), 
         col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
-        row_dend_reorder = TRUE, 
-        row_order = sort(rownames(mat)),
+        row_dend_reorder = TRUE,
+        row_order = rownames(mat2),
         show_column_dend = FALSE,
         show_row_dend = FALSE,
         bottom_annotation = col_ha,
@@ -305,6 +308,20 @@ item_per_cycle <- df %>%
   group_by(date, covid, LUZ, item) %>%
   summarise(cycle_sum = sum(sum))
 
+item_order <- item_per_cycle %>%
+  group_by(item) %>%
+  mutate(total=sum(cycle_sum)) %>%
+  arrange(desc(total)) %>%
+  dplyr::select(item, total) %>%
+  distinct
+
+#create vector from order items
+order <- item_order$item 
+order <- unlist(order)
+
+item_per_cycle$item <- factor(item_per_cycle$item, levels = order)
+  
+
 covid_lvl <- data.frame(name = c("1", "2"),
                    start = as.Date(c("2019-10-29", "2020-03-15")),
                    end = as.Date(c("2020-03-15", "2020-10-17")),
@@ -321,10 +338,13 @@ p <- ggplot() +
   # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
   geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
-  facet_wrap(~item, scales="free_y") 
+  facet_wrap(~item, scales="free_y") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
 p
 
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
+
+unique(df$date)
 ```
 
 

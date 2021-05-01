@@ -175,9 +175,23 @@ p
 
 ```{r avg-items-per-lockdown, warning=FALSE, message=FALSE}
 
-item_per_cycle <- df %>%
+mic_item_per_cycle <- df %>%
   group_by(date, covid, LUZ, item) %>%
   summarise(cycle_sum = sum(sum))
+
+mic_item_order <- mic_item_per_cycle %>%
+  group_by(item) %>%
+  mutate(total=sum(cycle_sum)) %>%
+  arrange(desc(total)) %>%
+  dplyr::select(item, total) %>%
+  distinct
+
+#create vector from order items
+mic_order <- mic_item_order$item 
+mic_order <- unlist(mic_order)
+
+mic_item_per_cycle$item <- factor(mic_item_per_cycle$item, 
+                                  levels = mic_order)
 
 covid_lvl <- data.frame(name = c("1", "2"),
                    start = as.Date(c("2019-10-29", "2020-03-15")),
@@ -187,16 +201,17 @@ covid_lvl <- data.frame(name = c("1", "2"),
   mutate(median_x = start + floor((end-start)/2))
 
 
-p <- ggplot() +
+mic_p <- ggplot() +
   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
        x="Date", y="Debris count per survey cycle") +
   # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
-  geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
+  geom_line(data=mic_item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
-  facet_wrap(~item, scales="free_y") 
-p
+  facet_wrap(~item, scales="free_y") +
+  geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
+mic_p
 
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 ```
@@ -209,7 +224,7 @@ mod <- df %>%
   ungroup() %>%
   # filter(cycle %in% paste0("C",1:7)) %>%
   mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(LUZ),
+         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
          covid = as.factor(covid),
          cycle = as.factor(cycle))
        
@@ -246,7 +261,7 @@ nd$covid <- factor(nd$covid, levels = c("1", "2"),
 p <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-  labs(title="Debris count (every 6 weeks)",
+  labs(title="Micro debris count (every 6 weeks)",
        subtitle="By land use zone and covid restriction",
        x="", y="Total debris items per asset", tag="") 
 

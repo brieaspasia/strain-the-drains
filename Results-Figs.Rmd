@@ -351,7 +351,6 @@ unique(df$date)
 
 ##GLMM and predictions
 
-
 I had a note to recreate this as a line graph through time, but that would necessitate changing the model and adding cycle or date as a fixed effect, which seems like I shouldn't do.  I tried several versions of that model and of a line graph, but none really made sense...
 ```{r data-mod, warning=FALSE, message=FALSE}
 #aggregate data
@@ -398,7 +397,7 @@ nd$covid <- factor(nd$covid, levels = c("1", "2"),
 p <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-  labs(title="Debris count per asset (every 6 weeks)",
+  labs(title="Macro debris count (every 6 weeks)",
        subtitle="By land use zone and covid restriction",
        x="", y="Total debris items per asset", tag="") 
 
@@ -417,6 +416,7 @@ top5_txt<- df %>%
   filter(item %in% c("Cigarette butts", 
                      "Plastic packaging (food)",
                      "Plastic wrap (non-food)",
+                     "Paper remnants",
                      "Soft plastic remnants",
                      "OH & S")) %>% 
   distinct(item)%>%
@@ -474,13 +474,26 @@ pred_df = purrr::map_df(top5_txt, function(x){
 pred_df$covid <- factor(pred_df$covid, levels = c("1", "2"),
                   labels = c("Pre-Covid", "During Covid"))
 
+pred_item_order <- pred_df %>%
+  group_by(item) %>%
+  mutate(total=sum(Total)) %>%
+  arrange(desc(total)) %>%
+  dplyr::select(item, total) %>%
+  distinct
+
+#create vector from order items
+pred_order <- pred_item_order$item 
+pred_order <- unlist(pred_order)
+
+pred_df$item <- factor(pred_df$item, levels = pred_order)
+
  #create plot
 p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-  labs(title="Debris count per asset (every 6 weeks)",
-       subtitle="By covid restriction",
-       x="", y="Total debris items per land use zone", tag="") +
+  labs(title="Debris count (every 6 weeks)",
+       subtitle="By land use and covid restriction",
+       x="", y="Total debris items per asset", tag="") +
   facet_wrap(~item, scales="free_y") +
   guides(x =  guide_axis(angle = 45)) 
 
@@ -562,24 +575,62 @@ cov.hull.data
 # New facet label names for covid variable
 data.scores$covid <- factor(data.scores$covid, levels = c("1", "2"),
                   labels = c("Pre-Covid", "During Covid"))
+
+#creating ellipses
+
+#add group column to data.scores
+NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.scores$LUZ)
+
+ veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+  {
+    theta <- (0:npoints) * 2 * pi/npoints
+    Circle <- cbind(cos(theta), sin(theta))
+    t(center + scale * t(Circle %*% chol(cov)))
+  }
+
+  df_ell <- data.frame()
+  for(g in levels(NMDS$group)){
+    df_ell <- rbind(df_ell, cbind(as.data.frame(with(NMDS[NMDS$group==g,],
+                    veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+                    ,group=g))
+  }
+# #ellipses for covid  
+#   #add group column to data.scores
+# cov_NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.scores$covid)
+# 
+#  veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+#   {
+#     theta <- (0:npoints) * 2 * pi/npoints
+#     Circle <- cbind(cos(theta), sin(theta))
+#     t(center + scale * t(Circle %*% chol(cov)))
+#   }
+# 
+#   df_ell_cov <- data.frame()
+#   for(g in levels(cov_NMDS$group)){
+#     df_ell_cov <- rbind(df_ell_cov, cbind(as.data.frame(with(cov_NMDS[cov_NMDS$group==g,],
+#                     veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+#                     ,group=g))
+#   }
 ```
 
 ```{r MDS-plot, warning=FALSE, message=FALSE}
-#MDS plot
+#MDS plot LUZ
 ggplot() +
-  geom_polygon(data=LUZ.hull.data,aes(x=NMDS1,y=NMDS2,fill=LUZ,group=LUZ),alpha=0.1) +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
   geom_point(data=data.scores, 
              aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group), 
+            size=1, linetype=2) +
   coord_equal() +
   theme_bw()
 
+## MDS plot covid
 # ggplot() +
-#   geom_polygon(data=cov.hull.data,
-#                aes(x=NMDS1,y=NMDS2,fill=covid,group=covid),alpha=0.1) +
 #   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
-#   geom_point(data=data.scores, 
-#              aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ), alpha=0.8) + 
+#   geom_point(data=data.scores,
+#              aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ), alpha=0.8) +
+#     geom_path(data=df_ell_cov, aes(x=NMDS1, y=NMDS2,colour=group), 
+#             size=1, linetype=2) +
 #   coord_equal() +
 #   theme_bw()
 ```
@@ -604,4 +655,6 @@ df.dis <- vegdist(com, method = "bray") # make a distance matrix
 df.betadisper.cov <- betadisper(df.dis, data.scores$covid) # test dispersion
 df.betadisper.cov
 permutest(df.betadisper.cov) #dispersion not significant
+
+citation("pairwiseAdonis")
 ```

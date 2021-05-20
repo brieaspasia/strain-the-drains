@@ -204,6 +204,25 @@ library(cowplot) #minimal backgrounds for ggplot
               final_sum = sum2 + combined_sum) %>%
       dplyr::select(-sum2, -sum, -combined_sum) %>%
       rename(sum = final_sum)
+    
+#find days since last survey at each asset
+diff <- df %>%
+  distinct(event_id, .keep_all = T) %>%
+  dplyr::select(-item,-sum) %>%
+  group_by(asset_id) %>% #looking at each event
+  arrange(date) %>%
+  mutate(days = date - lag(date)) %>% #days since last survey event
+  filter(days != "NA") %>% #remove first survey date
+  ungroup()
+
+unique(diff$days)
+
+diff_red <- diff %>% dplyr::select(event_id, asset_id, days)
+
+df <- df %>%
+  left_join(diff_red, by="event_id") %>%
+  dplyr::select(-asset_id.y) %>%
+  rename(asset_id = asset_id.x)
 
 # #overview numbers
 #     t <- df %>%
@@ -307,8 +326,11 @@ item_per_cycle <- df %>%
   filter(item %in% top15 | item %in% pol_items) %>%
   group_by(date, covid, LUZ, item) %>%
   summarise(cycle_sum = sum(sum)) %>%
-  mutate(LGAcycle=ifelse(date=="2020-10-12", 2, 6),
-         LGAsum=cycle_sum/LGAcycle)
+  mutate(LGAcycle=ifelse(date=="2020-10-12", 2, 6), #create column of # of participating LGAs
+         LGAsum=cycle_sum/LGAcycle, #divide by number of participating LGAs
+         LGA_helper=ifelse(LGAcycle == 2, 2, 1), #take into consideration days between survey
+         LGA_final_sum = LGAsum/LGA_helper #last survey round twice as long, so divide in half
+         )
 
 item_order <- item_per_cycle %>%
   group_by(item) %>%
@@ -323,7 +345,7 @@ order <- unlist(order)
 
 item_per_cycle$item <- factor(item_per_cycle$item, levels = order)
   
-
+#set dates for covid levels
 covid_lvl <- data.frame(name = c("1", "2"),
                    start = as.Date(c("2019-10-29", "2020-03-15")),
                    end = as.Date(c("2020-03-15", "2020-10-17")),
@@ -338,7 +360,7 @@ p <- ggplot() +
   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
        x="Date", y="Debris count per survey cycle") +
   # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
-  geom_line(data=item_per_cycle, aes(date, LGAsum, linetype=LUZ, color=LUZ)) +
+  geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
   facet_wrap(~item, scales="free_y") +
   geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
@@ -349,128 +371,128 @@ p
 #Need to loop every LGA separately with the land uses for supplementary, then choose one to talk about in results.  For Hollywood Squares, use LGA as line, not land use.
 ```
 ```{r avg-items-per-lockdown-LGA, warning=FALSE, message=FALSE}
-#find top 15 items
-top15 <- df %>%
-  filter(item != "Metal scrap") %>% #removing outlier entry
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  top_n(15, sum)
-  
-#create vector from top 15 items
-top15 <- top15$item 
-top15 <- unlist(top15)
-
-pol_items <- df %>%
-  filter(item == "OH & S" | item=="Aluminium cans" | item=="Beer bottles (and similar)" | item == "Foam take-away")
-
-#create vector from policy items
-pol_items <- pol_items$item 
-pol_items <- unlist(pol_items)
-
-item_per_cycle <- df %>%
-  filter(item %in% top15 | item %in% pol_items) %>%
-  group_by(date, covid, LGA, item) %>%
-  summarise(cycle_sum = sum(sum)) 
-
-item_order <- item_per_cycle %>%
-  group_by(item) %>%
-  mutate(total=sum(cycle_sum)) %>%
-  arrange(desc(total)) %>%
-  dplyr::select(item, total) %>%
-  distinct
-
-#create vector from order items
-order <- item_order$item 
-order <- unlist(order)
-
-item_per_cycle$item <- factor(item_per_cycle$item, levels = order)
-  
-
-covid_lvl <- data.frame(name = c("1", "2"),
-                   start = as.Date(c("2019-10-29", "2020-03-15")),
-                   end = as.Date(c("2020-03-15", "2020-10-17")),
-                   level = c("Pre-Covid", "During Covid"),
-                   stringsAsFactors = FALSE) %>%
-  mutate(median_x = start + floor((end-start)/2))
-
-
-p <- ggplot() +
-  geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
-                                ymin= -Inf, ymax=Inf), alpha=0.1) +
-  labs(fill="Covid-19 lockdown", linetype="LGAs", colour="LGAs",
-       x="Date", y="Debris count per survey cycle") +
-  # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
-  geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LGA, color=LGA)) +
-  theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
-  facet_wrap(~item, scales="free_y") +
-  geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
-p
-
-#reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
+# #find top 15 items
+# top15 <- df %>%
+#   filter(item != "Metal scrap") %>% #removing outlier entry
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   top_n(15, sum)
+#   
+# #create vector from top 15 items
+# top15 <- top15$item 
+# top15 <- unlist(top15)
+# 
+# pol_items <- df %>%
+#   filter(item == "OH & S" | item=="Aluminium cans" | item=="Beer bottles (and similar)" | item == "Foam take-away")
+# 
+# #create vector from policy items
+# pol_items <- pol_items$item 
+# pol_items <- unlist(pol_items)
+# 
+# item_per_cycle <- df %>%
+#   filter(item %in% top15 | item %in% pol_items) %>%
+#   group_by(date, covid, LGA, item) %>%
+#   summarise(cycle_sum = sum(sum)) 
+# 
+# item_order <- item_per_cycle %>%
+#   group_by(item) %>%
+#   mutate(total=sum(cycle_sum)) %>%
+#   arrange(desc(total)) %>%
+#   dplyr::select(item, total) %>%
+#   distinct
+# 
+# #create vector from order items
+# order <- item_order$item 
+# order <- unlist(order)
+# 
+# item_per_cycle$item <- factor(item_per_cycle$item, levels = order)
+#   
+# 
+# covid_lvl <- data.frame(name = c("1", "2"),
+#                    start = as.Date(c("2019-10-29", "2020-03-15")),
+#                    end = as.Date(c("2020-03-15", "2020-10-17")),
+#                    level = c("Pre-Covid", "During Covid"),
+#                    stringsAsFactors = FALSE) %>%
+#   mutate(median_x = start + floor((end-start)/2))
+# 
+# 
+# p <- ggplot() +
+#   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+#                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
+#   labs(fill="Covid-19 lockdown", linetype="LGAs", colour="LGAs",
+#        x="Date", y="Debris count per survey cycle") +
+#   # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
+#   geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LGA, color=LGA)) +
+#   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+#   facet_wrap(~item, scales="free_y") +
+#   geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
+# p
+# 
+# #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 ```
 
 ```{r avg-items-per-lockdown-endcycle7, warning=FALSE, message=FALSE}
-#find top 15 items
-top15 <- df %>%
-  filter(item != "Metal scrap") %>% #removing outlier entry
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  top_n(15, sum)
-  
-#create vector from top 15 items
-top15 <- top15$item 
-top15 <- unlist(top15)
-
-pol_items <- df %>%
-  filter(item == "OH & S" | item=="Aluminium cans" | item=="Beer bottles (and similar)" | item == "Foam take-away")
-
-#create vector from policy items
-pol_items <- pol_items$item 
-pol_items <- unlist(pol_items)
-
-item_per_cycle <- df %>%
-  filter(item %in% top15 | item %in% pol_items) %>%
-  filter(date != "2020-10-12") %>% #removing last survey cycle
-  group_by(date, covid, LUZ, item) %>%
-  summarise(cycle_sum = sum(sum)) 
-
-item_order <- item_per_cycle %>%
-  group_by(item) %>%
-  mutate(total=sum(cycle_sum)) %>%
-  arrange(desc(total)) %>%
-  dplyr::select(item, total) %>%
-  distinct
-
-#create vector from order items
-order <- item_order$item 
-order <- unlist(order)
-
-item_per_cycle$item <- factor(item_per_cycle$item, levels = order)
-  
-
-covid_lvl <- data.frame(name = c("1", "2"),
-                   start = as.Date(c("2019-10-29", "2020-03-15")),
-                   end = as.Date(c("2020-03-15", "2020-07-12")),
-                   level = c("Pre-Covid", "During Covid"),
-                   stringsAsFactors = FALSE) %>%
-  mutate(median_x = start + floor((end-start)/2))
-
-
-p <- ggplot() +
-  geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
-                                ymin= -Inf, ymax=Inf), alpha=0.1) +
-  labs(fill="Covid-19 lockdown", linetype="Land use", colour="Land use",
-       x="Date", y="Debris count per survey cycle") +
-  # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
-  geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
-  theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
-  facet_wrap(~item, scales="free_y") +
-  geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
-p
-
-#reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
+# #find top 15 items
+# top15 <- df %>%
+#   filter(item != "Metal scrap") %>% #removing outlier entry
+#   group_by(item) %>%
+#   summarise(sum=sum(sum)) %>%
+#   arrange(desc(sum)) %>%
+#   top_n(15, sum)
+#   
+# #create vector from top 15 items
+# top15 <- top15$item 
+# top15 <- unlist(top15)
+# 
+# pol_items <- df %>%
+#   filter(item == "OH & S" | item=="Aluminium cans" | item=="Beer bottles (and similar)" | item == "Foam take-away")
+# 
+# #create vector from policy items
+# pol_items <- pol_items$item 
+# pol_items <- unlist(pol_items)
+# 
+# item_per_cycle <- df %>%
+#   filter(item %in% top15 | item %in% pol_items) %>%
+#   filter(date != "2020-10-12") %>% #removing last survey cycle
+#   group_by(date, covid, LUZ, item) %>%
+#   summarise(cycle_sum = sum(sum)) 
+# 
+# item_order <- item_per_cycle %>%
+#   group_by(item) %>%
+#   mutate(total=sum(cycle_sum)) %>%
+#   arrange(desc(total)) %>%
+#   dplyr::select(item, total) %>%
+#   distinct
+# 
+# #create vector from order items
+# order <- item_order$item 
+# order <- unlist(order)
+# 
+# item_per_cycle$item <- factor(item_per_cycle$item, levels = order)
+#   
+# 
+# covid_lvl <- data.frame(name = c("1", "2"),
+#                    start = as.Date(c("2019-10-29", "2020-03-15")),
+#                    end = as.Date(c("2020-03-15", "2020-07-12")),
+#                    level = c("Pre-Covid", "During Covid"),
+#                    stringsAsFactors = FALSE) %>%
+#   mutate(median_x = start + floor((end-start)/2))
+# 
+# 
+# p <- ggplot() +
+#   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+#                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
+#   labs(fill="Covid-19 lockdown", linetype="Land use", colour="Land use",
+#        x="Date", y="Debris count per survey cycle") +
+#   # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
+#   geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
+#   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+#   facet_wrap(~item, scales="free_y") +
+#   geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
+# p
+# 
+# #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 ```
 
 
@@ -496,6 +518,9 @@ m  <- glmmTMB(sum ~ #Debris count per survey event
                  (1|LGA/asset_id) + (1|cycle), #suburb random effect
                family=nbinom2(), #negative binomial to deal with count data and zeros
                data = mod)
+
+# emmeans(m, ~covid|LUZ)
+# emmeans(m, pairwise~covid|LUZ, type="response")
 
 #create predictor df
 nd <- expand.grid(covid = unique(mod$covid),

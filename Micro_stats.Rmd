@@ -235,6 +235,8 @@ m  <- glmmTMB(sum ~ #Debris count per survey event
                family=nbinom2(), #negative binomial to deal with count data and zeros
                data = mod)
 
+emmeans(m, pairwise~covid|LUZ, type="response")
+
 #create predictor df
 nd <- expand.grid(covid = unique(mod$covid),
                   LUZ = unique(mod$LUZ),

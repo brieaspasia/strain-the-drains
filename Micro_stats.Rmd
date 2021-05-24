@@ -142,7 +142,7 @@ library(cowplot) #minimal backgrounds for ggplot
     
         t <- df %>%
       group_by(LUZ) %>%
-      summarise(total=sum(sum)) %>%
+      summarise(total=sum(sum)) %>% #>90% in industrial
       mutate(pct = total/737651  * 100)
 ```
 

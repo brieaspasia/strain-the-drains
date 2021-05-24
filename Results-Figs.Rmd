@@ -364,7 +364,7 @@ p <- ggplot() +
   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
-       x="Date", y="Debris count per survey cycle") +
+       x="Date", y="Debris count per LGA") +
   # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
   geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
@@ -443,6 +443,7 @@ The above graph shows total debris count per asset every 6 weeks.  Because of lo
 ```{r data-mod-top5, warning=FALSE, message=FALSE}
 # Function loop: each item
 
+# Function loop: each item
 #Top 4 plus OH&S
 top5_txt<- df %>%
   filter(item %in% c("Cigarette butts", 
@@ -456,7 +457,6 @@ top5_txt<- df %>%
   droplevels()
  
 # Purrr
-
 pred_df = purrr::map_df(top5_txt, function(x){
   
   temp_df = df %>% 
@@ -477,7 +477,6 @@ pred_df = purrr::map_df(top5_txt, function(x){
                    (1|LGA/asset_id) + (1|cycle), #suburb random effect
                    family=nbinom2(), #negative binomial to deal with count data and zeros
                    data = temp_df)
-
  nd_temp <- expand.grid(covid = unique(temp_df$covid),
                        LUZ = unique(temp_df$LUZ),
                        LGA = NA,
@@ -504,20 +503,16 @@ pred_df = purrr::map_df(top5_txt, function(x){
 # New facet label names for covid variable
 pred_df$covid <- factor(pred_df$covid, levels = c("1", "2"),
                   labels = c("Pre-Covid", "During Covid"))
-
 pred_item_order <- pred_df %>%
   group_by(item) %>%
   mutate(total=sum(Total)) %>%
   arrange(desc(total)) %>%
   dplyr::select(item, total) %>%
   distinct
-
 #create vector from order items
 pred_order <- pred_item_order$item 
 pred_order <- unlist(pred_order)
-
 pred_df$item <- factor(pred_df$item, levels = pred_order)
-
  #create plot
 p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
@@ -527,7 +522,87 @@ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) +
        x="", y="Total debris items per asset", tag="") +
   facet_wrap(~item, scales="free_y") +
   guides(x =  guide_axis(angle = 45)) 
+p_all
+ 
+```
 
+
+```{r data-mod-all-top, warning=FALSE, message=FALSE}
+# Function loop: each item
+
+# Function loop: each item
+#All top + items of interest
+top_txt<- df %>%
+  filter(item %in% top15 | item %in% pol_items) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+ 
+# Purrr
+pred_df = purrr::map_df(top_txt, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    # filter(cycle %in% paste0("C",1:7)) %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ nd_temp <- expand.grid(covid = unique(temp_df$covid),
+                       LUZ = unique(temp_df$LUZ),
+                       LGA = NA,
+                       asset_id = NA,
+                       cycle = NA)
+ 
+ #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+ pred_temp <- predict(object=m_temp,
+                     newdata=nd_temp,
+                     se.fit=T,
+                     re.form=NA,
+                     type="response")
+ 
+ #creating standard error for graphing
+ nd_temp$Total <- pred_temp$fit
+ nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
+ nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
+ nd_temp$item = x
+ 
+ return(nd_temp)
+ 
+ })
+# New facet label names for covid variable
+pred_df$covid <- factor(pred_df$covid, levels = c("1", "2"),
+                  labels = c("Pre-Covid", "During Covid"))
+pred_item_order <- pred_df %>%
+  group_by(item) %>%
+  mutate(total=sum(Total)) %>%
+  arrange(desc(total)) %>%
+  dplyr::select(item, total) %>%
+  distinct
+#create vector from order items
+pred_order <- pred_item_order$item 
+pred_order <- unlist(pred_order)
+pred_df$item <- factor(pred_df$item, levels = pred_order)
+ #create plot
+p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+  labs(title="Debris count (every 6 weeks)",
+       subtitle="By land use and covid restriction",
+       x="", y="Total debris items per asset", tag="") +
+  facet_wrap(~item, scales="free_y") +
+  guides(x =  guide_axis(angle = 45)) 
 p_all
  
 ```
@@ -537,14 +612,14 @@ p_all
 
 I've found that the MDS plot changes a lot depending on what variables I use to aggregate.  Here I've used all the variables from the model except asset_ID, as the unique assets created a lot of background noise.
 ```{r MDS-LGA-top15, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
-#find top 20 items
+#find top 15 items
 top15 <- df %>%
   group_by(item) %>%
   summarise(sum=sum(sum)) %>%
   arrange(desc(sum)) %>%
   top_n(15, sum)
   
-#create vector from top 20 items
+#create vector from top 15 items
 top15 <- top15$item 
 top15 <- unlist(top15)
 

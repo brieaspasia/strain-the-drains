@@ -278,7 +278,7 @@ mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
 col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat2), location = 1, rot = 60, 
                               just = "right"))
 
-Heatmap(log10(mat+0.1), 
+heatmap <- Heatmap(log10(mat+0.1), 
         name = "Debris count (percentage per land use zone)", 
         heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
                       title = "Debris counts (% total)",labels = c("Low", "High"),
@@ -300,6 +300,10 @@ Heatmap(log10(mat+0.1),
         cell_fun = function(j, i, x, y, width, height, fill) {
         grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
         )
+
+svg(filename="images/heatmap.svg")
+draw(heatmap, width=unit(12, "in"), height=unit(7, "in"))
+dev.off()
 
 ```
 
@@ -360,17 +364,38 @@ covid_lvl <- data.frame(name = c("1", "2"),
   mutate(median_x = start + floor((end-start)/2))
 
 
-p <- ggplot() +
+# p_timeseries <- ggplot() +
+#   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+#                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
+#   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
+#        x="Date", y="Debris count per LGA") +
+#   # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
+#   geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
+#   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+#   facet_wrap(~item, scales="free_y") +
+#   geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
+# 
+# p_timeseries
+
+p_timeseries <- ggplot() +
   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
        x="Date", y="Debris count per LGA") +
-  # geom_point(data=item_per_cycle, aes(date, cycle_sum, color=LUZ)) +
   geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
   facet_wrap(~item, scales="free_y") +
-  geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
-p
+  geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4) +
+  theme(legend.position = "none",
+      panel.grid = element_blank(),
+      axis.title = element_blank(),
+      panel.background = element_blank())
+  
+  p_timeseries
+  
+svg("images/p_timeseries.svg")
+plot(p_timeseries, height=7, width=12, units="in")
+dev.off()
 
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 
@@ -425,15 +450,34 @@ nd$SE_lower <- exp(pred$fit - pred$se.fit)
 nd$covid <- factor(nd$covid, levels = c("1", "2"),
                   labels = c("Pre-Covid", "During Covid"))
 
+# #create plot
+# p_glmmtotal <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
+#   geom_bar(position="dodge", stat="identity") +
+#   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+#   labs(title="Macro debris count (every 6 weeks)",
+#        subtitle="By land use zone and covid restriction",
+#        x="", y="Total debris items per asset", tag="") 
+# 
+# p_glmmtotal
+
 #create plot
-p <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
+p_glmmtotal <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
   labs(title="Macro debris count (every 6 weeks)",
        subtitle="By land use zone and covid restriction",
-       x="", y="Total debris items per asset", tag="") 
+       x="", y="Total debris items per asset", tag="") +
+    theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())
 
-p
+p_glmmtotal
+
+svg("images/p_glmmtotal.svg")
+plot(p_glmmtotal, height=7, width=12, units="in")
+dev.off()
 ```
 
 # GLMM for top four items and OH&S
@@ -513,6 +557,18 @@ pred_item_order <- pred_df %>%
 pred_order <- pred_item_order$item 
 pred_order <- unlist(pred_order)
 pred_df$item <- factor(pred_df$item, levels = pred_order)
+
+#  #create plot
+# p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
+#   geom_bar(position="dodge", stat="identity") +
+#   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+#   labs(title="Debris count (every 6 weeks)",
+#        subtitle="By land use and covid restriction",
+#        x="", y="Total debris items per asset", tag="") +
+#   facet_wrap(~item, scales="free_y") +
+#   guides(x =  guide_axis(angle = 45)) 
+# p_all
+
  #create plot
 p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
@@ -521,8 +577,17 @@ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) +
        subtitle="By land use and covid restriction",
        x="", y="Total debris items per asset", tag="") +
   facet_wrap(~item, scales="free_y") +
-  guides(x =  guide_axis(angle = 45)) 
+  guides(x =  guide_axis(angle = 45)) +
+      theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())
 p_all
+
+svg("images/p_all.svg")
+plot(p_all, height=7, width=12, units="in")
+dev.off()
  
 ```
 
@@ -721,7 +786,19 @@ NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.sco
 
 ```{r MDS-plot, warning=FALSE, message=FALSE}
 #MDS plot LUZ
-ggplot() +
+p_mds <- ggplot() +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group), 
+            size=1, linetype=2) +
+  coord_equal() +
+  theme_bw()
+
+svg("images/p_mds.svg", height=7, width=11)
+plot(p_mds, height=7, width=11, units="in")
+dev.off()
+
+p_mds_txt <- ggplot() +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
   geom_point(data=data.scores, 
              aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
@@ -729,6 +806,10 @@ ggplot() +
             size=1, linetype=2) +
   coord_equal() +
   theme_bw()
+
+svg("images/p_mds_txt.svg", height=7, width=11)
+plot(p_mds_txt, height=7, width=11, units="in")
+dev.off()
 
 ## MDS plot covid
 # ggplot() +

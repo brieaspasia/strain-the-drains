@@ -260,14 +260,31 @@ nd$covid <- factor(nd$covid, levels = c("1", "2"),
                   labels = c("Pre-Covid", "During Covid"))
 
 #create plot
-p <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
+p_micro <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
   geom_bar(position="dodge", stat="identity") +
   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
   labs(title="Micro debris count (every 6 weeks)",
        subtitle="By land use zone and covid restriction",
        x="", y="Total debris items per asset", tag="") 
 
-p
+p_micro
+
+#create plot
+p_micro <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+  labs(title="Micro debris count (every 6 weeks)",
+       subtitle="By land use zone and covid restriction",
+       x="", y="Total debris items per asset", tag="") +
+      theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())
+
+svg("images/p_micro.svg")
+plot(p_micro, height=7, width=12, units="in")
+dev.off()
 ```
 
 ```{r dharma-effect}

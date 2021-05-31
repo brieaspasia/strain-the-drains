@@ -282,8 +282,8 @@ p_micro <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) +
         axis.text = element_blank(),
         panel.background = element_blank())
 
-svg("images/p_micro.svg")
-plot(p_micro, height=7, width=12, units="in")
+svg("images/p_micro.svg", height=7, width=12)
+plot(p_micro)
 dev.off()
 ```
 

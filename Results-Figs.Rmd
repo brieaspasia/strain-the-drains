@@ -239,7 +239,7 @@ df <- df %>%
 ```
 # Percentage of items by land use
 We'd discussed recreating this with errorbars, however I'm not sure how that would work as these values represent the sum total of items in each of these land uses?  We also discussed moving this to supplementary data, however I think it's actually a really important part of the story. While Covid impact may be a hot topic currently, I don't want the land use results to get lost in the Covid hype, especially because I haven't found any other papers about land use and stormwater debris. Also, the differences between land use are likely the most relevant part of this data in terms of implications for debris management efforts. 
-```{r heatmap-item-top15, warning=FALSE, message=FALSE}
+```{r heatmap-item-top10, warning=FALSE, message=FALSE}
 
 top10 <- df %>%
   filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
@@ -301,8 +301,76 @@ heatmap <- Heatmap(log10(mat+0.1),
         grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
         )
 
-svg(filename="images/heatmap.svg")
-draw(heatmap, width=unit(12, "in"), height=unit(7, "in"))
+svg(filename="images/heatmap.svg", width = 12, height = 7)
+draw(heatmap)
+dev.off()
+
+```
+
+```{r heatmapcovid-item-top10, warning=FALSE, message=FALSE}
+
+top10 <- df %>%
+  filter(item != "Metal scrap") %>% #removing outlier entry
+  filter(cycle %in% c("C5", "C6", "C7", "C9")) %>%
+  group_by(item) %>%
+  summarise(total=sum(sum)) %>%
+  arrange(desc(total)) %>%
+  top_n(10) %>%
+  dplyr::select(item)
+
+top10 <- as.vector(unlist(top10))
+
+top_LUZ <- df %>%
+  filter(cycle %in% c("C5", "C6", "C7", "C9")) %>%
+  group_by(LUZ) %>%
+  mutate(total_LUZ=sum(sum)) %>%
+  ungroup() %>%
+  group_by(LUZ, item) %>%
+  mutate(total_itemLUZ = sum(sum)) %>%
+  ungroup() %>%
+  mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
+  filter(item %in% top10) %>%
+  dplyr::select(item, LUZ, pct) %>%
+  unique() %>%
+  spread(item, pct) %>%
+  mutate(LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct"))) %>%
+  arrange(LUZ) %>%
+  column_to_rownames(var="LUZ")
+  
+mat <- data.matrix(top_LUZ) #matrix for heatmap
+# mat <- reorder_mat(mat = mat, order = order)
+mat <- round(mat,0)
+mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
+
+
+col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat2), location = 1, rot = 60, 
+                              just = "right"))
+
+heatmapcovid <- Heatmap(log10(mat+0.1), 
+        name = "Debris count (percentage per land use zone)", 
+        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
+                      title = "Debris counts (% total)",labels = c("Low", "High"),
+                      grid_width = unit(0.8, "cm"),
+                      legend_height = unit(5, "cm"),
+                      title_position = "leftcenter-rot"), 
+        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
+        row_dend_reorder = TRUE,
+        row_order = rownames(mat2),
+        show_column_dend = FALSE,
+        show_row_dend = FALSE,
+        bottom_annotation = col_ha,
+        show_row_names = TRUE,
+        row_names_side = "left",
+        show_column_names = FALSE,
+        border = TRUE,
+        column_title = "Percentage of top 10 debris items per land use zone",
+        #percentage label
+        cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
+        )
+
+svg(filename="images/heatmapcovid.svg", width = 12, height = 7)
+draw(heatmapcovid)
 dev.off()
 
 ```
@@ -386,23 +454,21 @@ p_timeseries <- ggplot() +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
   facet_wrap(~item, scales="free_y") +
   geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4) +
-  theme(legend.position = "none",
-      panel.grid = element_blank(),
+  theme(panel.grid = element_blank(),
+        # legend.position = "none",
       axis.title = element_blank(),
       panel.background = element_blank())
   
   p_timeseries
   
-svg("images/p_timeseries.svg")
-plot(p_timeseries, height=7, width=12, units="in")
+svg("images/p_timeseries.svg", height=7, width=12)
+plot(p_timeseries)
 dev.off()
 
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 
 #Need to loop every LGA separately with the land uses for supplementary
 ```
-
-
 ##GLMM and predictions
 
 I had a note to recreate this as a line graph through time, but that would necessitate changing the model and adding cycle or date as a fixed effect, which seems like I shouldn't do.  I tried several versions of that model and of a line graph, but none really made sense...
@@ -421,7 +487,7 @@ mod <- df %>%
 #create model
 m  <- glmmTMB(sum ~ #Debris count per survey event
                 LUZ * covid + #predicted by land use effected by covid
-                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                (1|LGA/asset_id) + (1|cycle), #suburb random effect
                family=nbinom2(), #negative binomial to deal with count data and zeros
                data = mod)
 
@@ -475,8 +541,8 @@ p_glmmtotal <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) +
 
 p_glmmtotal
 
-svg("images/p_glmmtotal.svg")
-plot(p_glmmtotal, height=7, width=12, units="in")
+svg("images/p_glmmtotal.svg", height=7, width=12)
+plot(p_glmmtotal)
 dev.off()
 ```
 
@@ -485,8 +551,6 @@ dev.off()
 
 The above graph shows total debris count per asset every 6 weeks.  Because of lower numbers, here I've shown total debris count per LGA land use zone every 6 weeks. 
 ```{r data-mod-top5, warning=FALSE, message=FALSE}
-# Function loop: each item
-
 # Function loop: each item
 #Top 4 plus OH&S
 top5_txt<- df %>%
@@ -585,16 +649,14 @@ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) +
         panel.background = element_blank())
 p_all
 
-svg("images/p_all.svg")
-plot(p_all, height=7, width=12, units="in")
+svg("images/p_all.svg", height=7, width=12)
+plot(p_all)
 dev.off()
  
 ```
 
 
 ```{r data-mod-all-top, warning=FALSE, message=FALSE}
-# Function loop: each item
-
 # Function loop: each item
 #All top + items of interest
 top_txt<- df %>%
@@ -671,6 +733,60 @@ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) +
 p_all
  
 ```
+# Percent change
+
+```{r percent-change}
+pct_change <- df %>%
+  filter(item %in% top15 | item %in% pol_items) %>%
+  group_by(covid,item, LUZ) %>%
+  summarise(Total=sum(sum)) %>%
+  spread(covid, Total) %>%
+  rename(precovid=3, duringcovid=4) %>%
+  mutate(diff=precovid-duringcovid,
+         pct_decrease=diff/precovid*100)
+
+change <- pct_change %>%
+  dplyr::select(item, LUZ, pct_decrease) %>%
+  unique() %>%
+  spread(item, pct_decrease) %>%
+  mutate(LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct"))) %>%
+  arrange(LUZ) %>%
+  column_to_rownames(var="LUZ")
+
+mat <- data.matrix(change) #matrix for heatmap
+# mat <- reorder_mat(mat = mat, order = order)
+mat <- round(mat,0)
+# mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
+
+
+col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat2), location = 1, rot = 60, 
+                              just = "right"))
+
+heatmap_change <- Heatmap(log10(mat), 
+        name = "Debris count (percentage change per land use zone)", 
+        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
+                      title = "Debris counts (% total)",labels = c("Low", "High"),
+                      grid_width = unit(0.8, "cm"),
+                      legend_height = unit(5, "cm"),
+                      title_position = "leftcenter-rot"), 
+        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
+        row_dend_reorder = TRUE,
+        row_order = rownames(mat),
+        show_column_dend = FALSE,
+        show_row_dend = FALSE,
+        bottom_annotation = col_ha,
+        show_row_names = TRUE,
+        row_names_side = "left",
+        show_column_names = FALSE,
+        border = TRUE,
+        column_title = "Percentage of top 10 debris items per land use zone",
+        #percentage label
+        cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf("%s", mat[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
+        )
+  
+```
+
 
 # MDS plot
 
@@ -794,8 +910,8 @@ p_mds <- ggplot() +
   coord_equal() +
   theme_bw()
 
-svg("images/p_mds.svg", height=7, width=11)
-plot(p_mds, height=7, width=11, units="in")
+svg("images/p_mds.svg", height=7, width=7)
+plot(p_mds)
 dev.off()
 
 p_mds_txt <- ggplot() +
@@ -807,8 +923,8 @@ p_mds_txt <- ggplot() +
   coord_equal() +
   theme_bw()
 
-svg("images/p_mds_txt.svg", height=7, width=11)
-plot(p_mds_txt, height=7, width=11, units="in")
+svg("images/p_mds_txt.svg", height=7, width=7)
+plot(p_mds_txt)
 dev.off()
 
 ## MDS plot covid

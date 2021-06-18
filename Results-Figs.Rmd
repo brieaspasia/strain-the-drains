@@ -736,17 +736,9 @@ p_all
 # Percent change
 
 ```{r percent-change}
-# pct_change <- df %>%
-#   filter(item %in% top15 | item %in% pol_items) %>%
-#   group_by(covid,item, LUZ) %>%
-#   summarise(Total=sum(sum)) %>%
-#   spread(covid, Total) %>%
-#   rename(precovid=3, duringcovid=4) %>%
-#   mutate(diff=precovid-duringcovid,
-#          pct_decrease=diff/precovid*100)
 
 pct_change <- df %>%
-  filter(item %in% top15 | item %in% pol_items) %>%
+  filter(item %in% top15 | item == "OH & S") %>%
   group_by(covid,item) %>%
   summarise(Total=sum(sum)) %>%
   spread(covid, Total) %>%
@@ -762,16 +754,6 @@ change_plot <- pct_change %>%
   geom_bar(stat="identity")
 
 change_plot
-
-p_top_lol <- top_lol %>% 
-  ungroup() %>%
-  mutate(Label=as.factor(Label),
-  Label=fct_reorder(Label, mean)) %>%
-  dplyr::select(-P, -SS) %>%
-  ggplot( aes(x=sum, y=Label)) +
-  scale_x_log10() +
-  geom_linerange( aes(xmin=0, xmax=sum, y=Label, colour=Habitat), position=position_dodge(.5)) +
-  geom_point( aes(colour=Habitat), position=position_dodge(.5), size=2)
 
   
 ```

@@ -532,12 +532,12 @@ p_glmmtotal <- ggplot(nd, aes(y=Total, x=LUZ, fill=covid)) +
   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
   labs(title="Macro debris count (every 6 weeks)",
        subtitle="By land use zone and covid restriction",
-       x="", y="Total debris items per asset", tag="") +
-    theme(legend.position = "none",
-        panel.grid = element_blank(),
-        axis.title = element_blank(),
-        axis.text = element_blank(),
-        panel.background = element_blank())
+       x="", y="Total debris items per asset", tag="")
+    # theme(legend.position = "none",
+    #     panel.grid = element_blank(),
+    #     axis.title = element_blank(),
+    #     axis.text = element_blank(),
+    #     panel.background = element_blank())
 
 p_glmmtotal
 
@@ -640,7 +640,7 @@ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) +
   labs(title="Debris count (every 6 weeks)",
        subtitle="By land use and covid restriction",
        x="", y="Total debris items per asset", tag="") +
-  facet_wrap(~item, scales="free_y") +
+  facet_wrap(~item) +
   guides(x =  guide_axis(angle = 45)) +
       theme(legend.position = "none",
         panel.grid = element_blank(),
@@ -747,13 +747,22 @@ pct_change <- df %>%
          pct_change=diff/precovid*100) %>%
   mutate(pos = diff >= 0)
 
-change_plot <- pct_change %>%
+p_change <- pct_change %>%
   mutate(item=as.factor(item),
          item=fct_reorder(item, pct_change)) %>%
   ggplot( aes(x=pct_change, y=item, fill=pos)) +
   geom_bar(stat="identity")
+  # theme(legend.position = "none",
+  #       panel.grid = element_blank(),
+  #       axis.title = element_blank(),
+  #       axis.text = element_blank(),
+  #       panel.background = element_blank()) 
 
-change_plot
+p_change
+
+svg("images/p_change.svg", height=7, width=12)
+plot(p_change)
+dev.off()
 
   
 ```
@@ -766,6 +775,7 @@ I've found that the MDS plot changes a lot depending on what variables I use to 
 ```{r MDS-LGA-top15, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
 #find top 15 items
 top15 <- df %>%
+  filter(item!="Metal scrap") %>%
   group_by(item) %>%
   summarise(sum=sum(sum)) %>%
   arrange(desc(sum)) %>%
@@ -869,6 +879,9 @@ NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.sco
 #                     veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
 #                     ,group=g))
 #   }
+  
+  #The first method is calculating the ellipse paths using standard deviation and no scaling. The second method is using standard error and is also scaling the data. Thus, the plot produced with the first method can also be achieved with the second method by making the necessary changes to the ordiellipse function (kind='sd', not 'se'), and removing the scale (ord[[g]]$scale) from the veganCovEllipse function.
+  #https://stackoverflow.com/questions/42799838/follow-up-plotting-ordiellipse-function-from-vegan-package-onto-nmds-plot-creat
 ```
 
 ```{r MDS-plot, warning=FALSE, message=FALSE}
@@ -897,6 +910,9 @@ p_mds_txt <- ggplot() +
 svg("images/p_mds_txt.svg", height=7, width=7)
 plot(p_mds_txt)
 dev.off()
+
+p_mds
+p_mds_txt
 
 ## MDS plot covid
 # ggplot() +

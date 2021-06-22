@@ -465,6 +465,26 @@ svg("images/p_timeseries.svg", height=7, width=12)
 plot(p_timeseries)
 dev.off()
 
+# p_timeseries_scale <- ggplot() +
+#   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+#                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
+#   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
+#        x="Date", y="Debris count per LGA") +
+#   geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
+#   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+#   facet_wrap(~item)
+#   # geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
+#   # theme(panel.grid = element_blank(),
+#   #       # legend.position = "none",
+#   #     axis.title = element_blank(),
+#   #     panel.background = element_blank())
+#   
+#   p_timeseries_scale
+#   
+# svg("images/p_timeseries_scale.svg", height=7, width=12)
+# plot(p_timeseries_scale)
+# dev.off()
+
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 
 #Need to loop every LGA separately with the land uses for supplementary
@@ -806,6 +826,8 @@ df_top15 <- df %>%
   
   ord <- metaMDS(com)
   
+  ord$stress
+  
   data.scores <- as.data.frame(scores(ord)) #create df of ord points
   data.scores$LUZ <- abund$LUZ
   data.scores$covid <- abund$covid
@@ -817,28 +839,28 @@ df_top15 <- df %>%
   species.scores$item <- rownames(species.scores) #create item id column
   
   
-#Hull data LUZ
-CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
-    "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
-Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
-    "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
-Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
-Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
-    "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
-
-#create polygons
-LUZ.hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
-LUZ.hull.data
-
-#Hull data covid
-covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
-    "1", c("NMDS1", "NMDS2")]), ]  # hull values for Pre-Covid
-covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
-    "2", c("NMDS1", "NMDS2")]), ]  # hull values for During Covid
-
-#create polygons
-cov.hull.data <- rbind(covid1,covid2)  #combine groups
-cov.hull.data
+# #Hull data LUZ
+# CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+#     "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+# Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+#     "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+# Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+# Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+#     "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
+# 
+# #create polygons
+# LUZ.hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
+# LUZ.hull.data
+# 
+# #Hull data covid
+# covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
+#     "1", c("NMDS1", "NMDS2")]), ]  # hull values for Pre-Covid
+# covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
+#     "2", c("NMDS1", "NMDS2")]), ]  # hull values for During Covid
+# 
+# #create polygons
+# cov.hull.data <- rbind(covid1,covid2)  #combine groups
+# cov.hull.data
 
 # New facet label names for covid variable
 data.scores$covid <- factor(data.scores$covid, levels = c("1", "2"),
@@ -889,10 +911,12 @@ NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.sco
 p_mds <- ggplot() +
   geom_point(data=data.scores, 
              aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
-  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group), 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group),
             size=1, linetype=2) +
   coord_equal() +
   theme_bw()
+
+p_mds
 
 svg("images/p_mds.svg", height=7, width=7)
 plot(p_mds)

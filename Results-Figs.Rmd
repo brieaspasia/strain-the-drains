@@ -43,6 +43,8 @@ library(ComplexHeatmap)
 library(RColorBrewer)
 library(cowplot) #minimal backgrounds for ggplot
 library(purrr) #looping
+library(boot) #bootstrap confidence intervals
+library(matrixStats) #rowSds
 ```
 
 ```{r create-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
@@ -755,7 +757,7 @@ p_all
 ```
 # Percent change
 
-```{r percent-change}
+```{r percent-change-sum}
 
 pct_change <- df %>%
   filter(item %in% top15 | item == "OH & S") %>%
@@ -785,6 +787,159 @@ plot(p_change)
 dev.off()
 
   
+```
+```{r percent-change-bootstrap}
+
+pct_change <- df %>%
+  filter(item %in% top15 | item == "OH & S") %>% #select items
+  group_by(covid, asset_id, item) %>% #look at items per asset both cov
+  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
+  ungroup() %>%
+  dplyr::select(covid, asset_id, item, assetMean) %>% #select vars
+  unique() #COMMENTED HERE %>% #remove duplicates
+  # spread(asset_id, assetMean) %>% #assets to cols
+  # mutate(itemMean = 
+  #          rowMeans(.[,3:122])) %>% #mean items btwn asset means per covid
+  # pivot_longer(
+  #   cols = DC01:WC20,
+  # names_to = "asset_id", 
+  # values_to = "assetMean") # %>%
+  
+# Split data into each item
+pct_change = droplevels(pct_change)
+ls.data_split = split(pct_change, f = pct_change$item)
+
+# Library
+library(boot)
+set.seed(42)
+
+# Custom function
+mean.fnc = function(x,i){mean(x[i])}
+
+# Loop per item
+item_bootstrap = purrr::map_df(ls.data_split, function(x){
+
+x1 = x %>% filter(covid == 1)
+x1$assetMean = ifelse(x1$assetMean == 0, 0.00001, x1$assetMean)
+
+x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean)
+x2$assetMean = ifelse(x2$assetMean == 0, 0.00001, x2$assetMean)
+
+x_mean = left_join(x1, x2, by = "asset_id") %>% 
+  mutate(pc = ((assetMean.y - assetMean.x)/assetMean.x)*100)
+
+# Calculate standard error per item
+item.boot = boot(x_mean$pc, mean.fnc, 1000, stype = "i")
+
+# Output array
+item = unique(x$item) %>% droplevels()
+avg = sum(x_mean$pc)/240
+ci = sd(item.boot$t)
+
+out = data.frame(item, avg, ci)
+
+return(out)
+
+})
+
+
+  # rename(precovid=2, duringcovid=3) %>%
+  # mutate(diff=duringcovid-precovid,
+  #        pct_change=diff/precovid*100) %>%
+  # mutate(pos = diff >= 0)
+
+
+p_change <- pct_change %>%
+  mutate(item=as.factor(item),
+         item=fct_reorder(item, pct_change)) %>%
+  ggplot( aes(x=pct_change, y=item, fill=pos)) +
+  geom_bar(stat="identity")
+  # theme(legend.position = "none",
+  #       panel.grid = element_blank(),
+  #       axis.title = element_blank(),
+  #       axis.text = element_blank(),
+  #       panel.background = element_blank()) 
+
+p_change
+
+# svg("images/p_change.svg", height=7, width=12)
+# plot(p_change)
+# dev.off()
+
+```
+
+```{r percent-change-delta}
+#refer to delta method
+#https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
+pct_change <- df %>%
+  filter(item %in% top15 | item == "OH & S") %>% #select items
+  group_by(covid, asset_id, item) %>% #look at items per asset both cov
+  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
+  ungroup() %>%
+  dplyr::select(covid, asset_id, item, assetMean) %>% #select vars
+  unique() #COMMENTED HERE %>% #remove duplicates
+  
+# Split data into each item
+pct_change = droplevels(pct_change)
+ls.data_split = split(pct_change, f = pct_change$item)
+
+
+item_delta = purrr::map_df(ls.data_split, function(x){
+
+x1 = x %>% filter(covid == 1)
+# x1$assetMean = ifelse(x1$assetMean == 0, 0.00001, x1$assetMean)
+
+x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean)
+# x2$assetMean = ifelse(x2$assetMean == 0, 0.00001, x2$assetMean)
+
+xV = var(x1$assetMean)
+x_mean = mean(x1$assetMean)
+
+yV = var(x2$assetMean)
+y_mean = mean(x2$assetMean)
+
+num = (yV*x_mean^2) - 2*cov(x1$assetMean, x2$assetMean)*x_mean*y_mean + (xV*y_mean^2)
+denom = x_mean^4
+
+se_pcc = 100*sqrt(num/denom)
+
+pcc = ((y_mean - x_mean)/x_mean) *100
+
+# Output array
+item = unique(x$item) %>% droplevels()
+avg = pcc
+se = se_pcc
+
+out = data.frame(item, avg, se)
+
+return(out)
+
+})
+
+item_delta <- item_delta %>%
+  mutate(pos = avg >= 0,
+         SE_lower = avg-se,
+         SE_upper = avg+se)
+
+p_change <- item_delta %>%
+  mutate(item=as.factor(item),
+         item=fct_reorder(item, avg)) %>%
+  ggplot( aes(x=avg, y=item, fill=pos)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width=0.2))
+
+
+
+  
+  
+  # theme(legend.position = "none",
+  #       panel.grid = element_blank(),
+  #       axis.title = element_blank(),
+  #       axis.text = element_blank(),
+  #       panel.background = element_blank()) 
+
+p_change
+
 ```
 
 

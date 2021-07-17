@@ -215,6 +215,78 @@ mic_p
 
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 ```
+```{r percent-change-delta-micro}
+#refer to delta method
+#https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
+pct_change <- df %>%
+  group_by(covid, asset_id, LUZ) %>% #look at items per asset both cov
+  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
+  ungroup() %>%
+  dplyr::select(covid, asset_id, LUZ, assetMean) %>% #select vars
+  unique() #remove duplicates from survey cycle
+  
+# Split data into each item
+pct_change <- droplevels(pct_change)
+ls.data_split <- split(pct_change, f = pct_change$LUZ)
+
+
+delta_LUZ_micro = purrr::map_df(ls.data_split, function(x){
+
+x1 = x %>% filter(covid == 1)
+# x1$assetMean = ifelse(x1$assetMean == 0, 0.00001, x1$assetMean)
+
+x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean)
+# x2$assetMean = ifelse(x2$assetMean == 0, 0.00001, x2$assetMean)
+
+xV = var(x1$assetMean)
+x_mean = mean(x1$assetMean)
+
+yV = var(x2$assetMean)
+y_mean = mean(x2$assetMean)
+
+num = (yV*x_mean^2) - 2*cov(x1$assetMean, x2$assetMean)*x_mean*y_mean + (xV*y_mean^2)
+denom = x_mean^4
+
+se_pcc = 100*sqrt(num/denom)
+
+pcc = ((y_mean - x_mean)/x_mean) *100
+
+# Output array
+LUZ = unique(x$LUZ)
+avg = pcc
+se = se_pcc
+
+out = data.frame(LUZ, avg, se)
+
+
+})
+
+delta_LUZ_micro <- delta_LUZ_micro %>%
+  mutate(pos = avg >= 0,
+         SE_lower = avg-se,
+         SE_upper = avg+se)
+
+p_delta_LUZ_micro <- delta_LUZ_micro %>%
+  mutate(LUZ=as.factor(LUZ),
+         LUZ=fct_reorder(LUZ, avg)) %>%
+  ggplot( aes(x=avg, y=LUZ, fill=pos)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width=0.2)) 
+  # theme(legend.position = "none",
+  #       panel.grid = element_blank(),
+  #       axis.title = element_blank(),
+  #       axis.text = element_blank(),
+  #       panel.background = element_blank())
+
+p_delta_LUZ_micro
+
+# svg("images/p_change_delta.svg", height=7, width=12)
+# plot(p_change_delta)
+# dev.off()
+
+```
+```
+
 
 ```{r data-mod, warning=FALSE, message=FALSE}
 #aggregate data

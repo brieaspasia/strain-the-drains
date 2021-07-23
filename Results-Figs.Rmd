@@ -491,7 +491,6 @@ dev.off()
 ```
 ##GLMM and predictions
 
-I had a note to recreate this as a line graph through time, but that would necessitate changing the model and adding cycle or date as a fixed effect, which seems like I shouldn't do.  I tried several versions of that model and of a line graph, but none really made sense...
 ```{r data-mod, warning=FALSE, message=FALSE}
 #aggregate data
 mod <- df %>%
@@ -774,10 +773,8 @@ ls.data_split <- split(pct_change, f = pct_change$item)
 item_delta = purrr::map_df(ls.data_split, function(x){
 
 x1 = x %>% filter(covid == 1)
-# x1$assetMean = ifelse(x1$assetMean == 0, 0.00001, x1$assetMean)
 
 x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean)
-# x2$assetMean = ifelse(x2$assetMean == 0, 0.00001, x2$assetMean)
 
 xV = var(x1$assetMean)
 x_mean = mean(x1$assetMean)
@@ -1126,4 +1123,257 @@ df.betadisper.cov
 permutest(df.betadisper.cov) #dispersion not significant
 
 citation("pairwiseAdonis")
+```
+
+# Micro debris
+
+```{r create-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
+#create survey count  
+
+        #load item counts
+        micro <- read.csv(file="Data/200630_micro.csv", 
+                         header=T, sep=",") 
+
+        #remove duplicate entries
+        micro <- unique(micro[!duplicated(micro),])
+        
+        micro$tot <- as.integer(micro$tot)
+        
+        micro <- micro %>%
+        group_by(event_id, item) %>%
+        summarise(sum=sum(tot)) %>%
+        ungroup()
+        
+        #load events
+        micro_event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        micro_survey_count <- left_join(micro_event, micro, by="event_id")
+        
+        micro_survey_count <- micro_survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, event_date)
+        
+#create abundance data with all possible debris items and zero values
+      
+      #create full list of possible items (only four micro categories)
+     micro_item <- as.data.frame(unique(micro$item))
+      
+      
+      #create a df of all possible items at all survey events, complete with zeros
+      micro_abund <- full_join(micro_survey_count, 
+                               micro_item, by=c("item" = "unique(micro$item)"))
+      
+      #data long to wide
+      micro_abund_wide <- spread(micro_abund, item, sum)
+      
+      micro_abund_wide <- micro_abund_wide %>%
+        dplyr::select(event_id, "Glass beads", "Secondary plastics", "Primary plastics", "Polystyrene balls")
+      
+      #replace na values with 0
+      micro_abund_wide[is.na(micro_abund_wide)] <- 0
+      
+      #transform back to long but now with the full items list and zero data
+      micro_abund_long <- melt(micro_abund_wide, id.vars="event_id")
+     
+      micro_df <- left_join(micro_abund_long, micro_event, by="event_id")
+      
+      #load sites
+          micro_site <- read.csv(file="Data/200619_site.csv", 
+                           header=T, sep=",") 
+      
+            #join LGA and luz to df
+          micro_df <- left_join(micro_df, micro_site, by = "Asset.ID")
+      
+      
+      micro_df <- micro_df %>%
+        dplyr::select(-event_date, -event.tot, -event.wt, -vol, -hr, -Site, -Latitude, -Longitude) %>% #remove duplicate columns
+        rename(item=variable, #rename columns
+               sum=value,
+               asset_id = Asset.ID,
+               cycle=Cycle,
+               LUZ = Land.use.zone) %>% 
+        mutate(asset_id=as.factor(asset_id), #classify columns correctly  
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ),
+             event_id=as.factor(event_id),
+             cycle=as.factor(cycle),
+             date=dmy(date)
+             )
+      
+      
+#Combine C8 and C9    
+     #isolate C8
+    micro_C8 <- micro_df %>%
+      filter(cycle == "C8")
+    
+    #isolate C9
+    micro_C9 <- micro_df %>%
+      filter(cycle == "C9")
+    
+    #join C8 and C9 by unique drain and item to capture double surveys
+    micro_t <- left_join(micro_C9, micro_C8, by=c("asset_id"="asset_id", "item" = "item"))
+    micro_t$sum.y[is.na(micro_t$sum.y)] <- 0 #change na to 0
+    
+    micro_t <- micro_t %>%
+      mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+      dplyr::select(event_id.x, item, combined_sum)
+    
+    micro_df <- micro_df %>% 
+      left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+      filter(cycle != "C8") %>%
+      mutate(combined_sum = replace_na(combined_sum, 0),
+              sum2 = ifelse(cycle != "C9", sum, 0),
+              final_sum = sum2 + combined_sum) %>%
+      dplyr::select(-sum2, -sum, -combined_sum) %>%
+      rename(sum = final_sum)
+    
+        micro_t <- micro_df %>%
+      group_by(LUZ) %>%
+      summarise(total=sum(sum)) %>% #>90% in industrial
+      mutate(pct = total/737651  * 100)
+```
+
+```{r micro-glmm, warning=FALSE, message=FALSE}
+#aggregate data
+micro_mod <- micro_df %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  # filter(cycle %in% paste0("C",1:7)) %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+       
+#create model
+micro_m  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = micro_mod)
+
+emmeans(micro_m, pairwise~covid|LUZ, type="response")
+
+#create predictor df
+micro_nd <- expand.grid(covid = unique(micro_mod$covid),
+                  LUZ = unique(micro_mod$LUZ),
+                  LGA = NA,
+                  asset_id = NA,
+                  cycle = NA)
+
+#predict mean values of response variable
+micro_pred <- predict(object=micro_m,
+                newdata=micro_nd,
+                se.fit=T,
+                re.form=NA)
+
+#create standard error for graphing
+micro_nd$Total <- exp(micro_pred$fit)
+micro_nd$SE_upper <- exp(micro_pred$fit + micro_pred$se.fit)
+micro_nd$SE_lower <- exp(micro_pred$fit - micro_pred$se.fit)
+
+# New facet label names for covid variable
+micro_nd$covid <- factor(micro_nd$covid, levels = c("1", "2"),
+                  labels = c("Pre-Covid", "During Covid"))
+
+#create plot
+micro_p_glmm <- ggplot(micro_nd, aes(y=Total, x=LUZ, fill=covid)) + 
+  geom_bar(position="dodge", stat="identity") +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+  labs(title="Micro debris count (every 6 weeks)",
+       subtitle="By land use zone and covid restriction",
+       x="", y="Total debris items per asset", tag="") 
+
+micro_p_glmm
+
+#create plot
+# micro_p_glmm <- ggplot(micro_nd, aes(y=Total, x=LUZ, fill=covid)) + 
+#   geom_bar(position="dodge", stat="identity") +
+#   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+#   labs(title="Micro debris count (every 6 weeks)",
+#        subtitle="By land use zone and covid restriction",
+#        x="", y="Total debris items per asset", tag="") +
+#       theme(legend.position = "none",
+#         panel.grid = element_blank(),
+#         axis.title = element_blank(),
+#         axis.text = element_blank(),
+#         panel.background = element_blank())
+# 
+# svg("images/micro_p_glmm.svg", height=7, width=12)
+# plot(micro_p_glmm)
+# dev.off()
+```
+
+
+```{r percent-change-delta-micro}
+#refer to delta method
+#https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
+micro_pct_change <- micro_df %>%
+  group_by(covid, asset_id, LUZ) %>% #look at items per asset both cov
+  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
+  ungroup() %>%
+  dplyr::select(covid, asset_id, LUZ, assetMean) %>% #select vars
+  unique() #remove duplicates from survey cycle
+  
+# Split data into each item
+micro_pct_change <- droplevels(micro_pct_change)
+micro_ls.data_split <- split(micro_pct_change, f = micro_pct_change$LUZ)
+
+
+micro_delta_LUZ = purrr::map_df(micro_ls.data_split, function(x){
+
+micro_x1 = x %>% filter(covid == 1) #x1 pre-covid
+
+micro_x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean) #x2 during covid
+
+micro_xV = var(micro_x1$assetMean) #variance of pre-covid mean per asset
+micro_x_mean = mean(micro_x1$assetMean) #mean of pre-covid mean per asset
+
+micro_yV = var(micro_x2$assetMean) #variance of during covid mean per asset
+micro_y_mean = mean(micro_x2$assetMean) #mean of during covid mean per asset
+
+#referencing the second to last equation in the stack exchange answer linked above
+micro_num = (micro_yV*micro_x_mean^2) - 2*cov(micro_x1$assetMean, micro_x2$assetMean) * micro_x_mean * micro_y_mean + (micro_xV*micro_y_mean^2) 
+
+micro_denom = micro_x_mean^4
+
+micro_se_pcc = 100*sqrt(micro_num/micro_denom) #se pct change 
+
+micro_pcc = ((micro_y_mean - micro_x_mean)/micro_x_mean) *100 #mean pct change based on averaged asset means
+
+# Output array
+LUZ = unique(x$LUZ)
+micro_avg = micro_pcc
+micro_se = micro_se_pcc
+
+micro_out = data.frame(LUZ, micro_avg, micro_se)
+
+
+})
+
+micro_delta_LUZ <- micro_delta_LUZ %>%
+  mutate(pos = micro_avg >= 0,
+         micro_SE_lower = micro_avg-micro_se,
+         micro_SE_upper = micro_avg+micro_se)
+
+micro_p_delta_LUZ <- micro_delta_LUZ %>%
+  mutate(LUZ=as.factor(LUZ),
+         LUZ=fct_reorder(LUZ, micro_avg)) %>%
+  ggplot( aes(x=micro_avg, y=LUZ, fill=pos)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(xmin=micro_SE_lower, xmax=micro_SE_upper, width=0.2)) 
+  # theme(legend.position = "none",
+  #       panel.grid = element_blank(),
+  #       axis.title = element_blank(),
+  #       axis.text = element_blank(),
+  #       panel.background = element_blank())
+
+micro_p_delta_LUZ
+
+# svg("images/p_change_delta.svg", height=7, width=12)
+# plot(p_change_delta)
+# dev.off()
+
 ```

@@ -288,7 +288,7 @@ p_delta_LUZ_micro
 ```
 
 
-```{r data-mod, warning=FALSE, message=FALSE}
+```{r micro-glmm, warning=FALSE, message=FALSE}
 #aggregate data
 mod <- df %>%
   group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables

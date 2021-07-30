@@ -510,8 +510,15 @@ m  <- glmmTMB(sum ~ #Debris count per survey event
                family=nbinom2(), #negative binomial to deal with count data and zeros
                data = mod)
 
-emmeans(m, ~covid|LUZ)
-emmeans(m, pairwise~covid|LUZ, type="response")
+pairs.cl.emm <- emmeans(m, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
+pairs.lc.emm <- emmeans(m, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
+pairs.cl.emm
+pairs.lc.emm
+test(pairs.emm, delta=log(1.05))
+
+Anova(m)
+joint_tests(m)
+
 
 #create predictor df
 nd <- expand.grid(covid = unique(mod$covid),
@@ -705,6 +712,7 @@ pred_df = purrr::map_df(top_txt, function(x){
                    (1|LGA/asset_id) + (1|cycle), #suburb random effect
                    family=nbinom2(), #negative binomial to deal with count data and zeros
                    data = temp_df)
+ 
  nd_temp <- expand.grid(covid = unique(temp_df$covid),
                        LUZ = unique(temp_df$LUZ),
                        LGA = NA,
@@ -727,6 +735,8 @@ pred_df = purrr::map_df(top_txt, function(x){
  return(nd_temp)
  
  })
+
+
 # New facet label names for covid variable
 pred_df$covid <- factor(pred_df$covid, levels = c("1", "2"),
                   labels = c("Pre-Covid", "During Covid"))
@@ -750,8 +760,162 @@ p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) +
   facet_wrap(~item, scales="free_y") +
   guides(x =  guide_axis(angle = 45)) 
 p_all
+
+pred_df10 <- pred_df %>%
+  group_by(item) %>%
+  summarise(Total=sum(Total)) %>%
+  arrange(desc(Total)) %>%
+  top_n(10, Total)
+
+#create vector from top 15 items
+pred_df10 <- pred_df10$item 
+pred_df10 <- unlist(pred_df10)
+
+pred_df_hm <- pred_df %>% 
+  filter(item %in% pred_df10) %>%
+  ungroup() %>%
+  mutate(item=as.factor(item),
+  item=fct_reorder(item, Total))
+ 
+ p_pred_df_hm <- ggplot(pred_df_hm, aes(x=Total, y=item, fill=covid)) +
+  geom_bar(position = position_dodge2(reverse=T), stat="identity") +
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9), 
+                position=position_dodge2(reverse = T, width = 0.9)) +
+  facet_wrap(~LUZ) +
+    guides(x =  guide_axis(angle = 45)) +
+      theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())
+
+p_pred_df_hm
+
+svg("images/p_heatmap-replace.svg", height=7, width=12)
+plot(p_pred_df_hm)
+dev.off()
+
  
 ```
+```{r emmeans-top-items-TRIAL}
+# https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+# Function loop: each item
+#All top + items of interest
+top_txt<- df %>%
+  filter(item %in% top15 | item %in% pol_items) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+ 
+# Purrr
+emmeans_item = purrr::map_df(top_txt, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+j <- joint_tests(m_temp)
+j$item = x
+
+return(j)
+
+ })
+
+emmeans_item
+# joint_tests() obtains and tests the interaction contrasts for all effects in the model and compiles them in one Type-III-ANOVA-like table
+j<- joint_tests(m)
+# model term df1 df2 F.ratio p.value
+#  LUZ          3 867   5.771 0.0007 
+#  covid        1 867   8.529 0.0036 
+#  LUZ:covid    3 867  11.117 <.0001 
+```
+
+```{r emmeans-interactions-foam}
+mod_foam <- df %>%
+  filter(item=="Foam insulation & packaging") %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+       
+#create model
+m_foam  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+               (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = mod_foam)
+
+emmeans(m_foam, pairwise~covid|LUZ, type="response")
+
+joint_tests(m_foam)
+
+emmip(m_foam, ~covid | LUZ)
+
+foam.rg <- ref_grid(m_foam)
+foam.rg
+plot(foam.rg, by = "LUZ")
+
+emmeans(m_foam, type="response")
+
+```
+```{r emmeans-interactions-cigs}
+mod_cigs <- df %>%
+  filter(item=="Cigarette butts") %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+       
+#create model
+m_cigs  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+               (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = mod_cigs)
+
+summary(m_cigs)
+
+cig.emm <- emmeans(m_cigs, pairwise~covid|LUZ, level=0.95, infer=T)
+summary(cig.emm)
+joint_tests(m_cigs)
+
+emmip(m_cigs, ~covid | LUZ)
+plot(cigs.rg, by = "covid")
+
+ci <- confint(cigs.rg, level = 0.95)
+xport <- print(ci, export = TRUE)
+cat("<font color = 'blue'>\n")
+knitr::kable(xport$summary, align = "r")
+for (a in xport$annotations) cat(paste(a, "<br>"))
+cat("</font>\n")
+
+predict(cigs.rg, interval = "prediction")
+plot(cigs.rg, PIs = TRUE)
+
+
+```
+
 # Percent change
 
 ```{r percent-change-delta-item}
@@ -759,10 +923,10 @@ p_all
 #https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
 pct_change <- df %>%
   filter(item %in% top15 | item == "OH & S") %>% #select items
-  group_by(covid, asset_id, item) %>% #look at items per asset both cov
-  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
+  group_by(covid, LUZ, item) %>% #look at items per asset both cov
+  mutate(luzMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
   ungroup() %>%
-  dplyr::select(covid, asset_id, item, assetMean) %>% #select vars
+  dplyr::select(covid, LUZ, item, luzMean) %>% #select vars
   unique() #remove duplicates from survey cycle
   
 # Split data into each item
@@ -770,19 +934,19 @@ pct_change <- droplevels(pct_change)
 ls.data_split <- split(pct_change, f = pct_change$item)
 
 
-item_delta = purrr::map_df(ls.data_split, function(x){
+luz_delta = purrr::map_df(ls.data_split, function(x){
 
 x1 = x %>% filter(covid == 1)
 
-x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean)
+x2 = x %>% filter(covid == 2) %>% dplyr::select(LUZ, luzMean)
 
-xV = var(x1$assetMean)
-x_mean = mean(x1$assetMean)
+xV = var(x1$luzMean)
+x_mean = mean(x1$luzMean)
 
-yV = var(x2$assetMean)
-y_mean = mean(x2$assetMean)
+yV = var(x2$luzMean)
+y_mean = mean(x2$luzMean)
 
-num = (yV*x_mean^2) - 2*cov(x1$assetMean, x2$assetMean)*x_mean*y_mean + (xV*y_mean^2)
+num = (yV*x_mean^2) - 2*cov(x1$luzMean, x2$luzMean)*x_mean*y_mean + (xV*y_mean^2)
 denom = x_mean^4
 
 se_pcc = 100*sqrt(num/denom)
@@ -800,12 +964,12 @@ return(out)
 
 })
 
-item_delta <- item_delta %>%
+luz_delta <- luz_delta %>%
   mutate(pos = avg >= 0,
          SE_lower = avg-se,
          SE_upper = avg+se)
 
-p_change_delta <- item_delta %>%
+p_change_delta <- luz_delta %>%
   mutate(item=as.factor(item),
          item=fct_reorder(item, avg)) %>%
   ggplot( aes(x=avg, y=item, fill=pos)) +
@@ -878,7 +1042,7 @@ delta_LUZ <- delta_LUZ %>%
          SE_lower = avg-se,
          SE_upper = avg+se)
 
-p_change_delta_LUZ <- item_delta_LUZ %>%
+p_change_delta_LUZ <- delta_LUZ %>%
   mutate(LUZ=as.factor(LUZ),
          LUZ=fct_reorder(LUZ, avg)) %>%
   ggplot( aes(x=avg, y=LUZ, fill=pos)) +

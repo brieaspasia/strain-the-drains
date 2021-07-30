@@ -237,144 +237,6 @@ df <- df %>%
 #       mutate(pct = total/87406 * 100) #cigarettes >25% of macro debris
     
 ```
-# Percentage of items by land use
-We'd discussed recreating this with errorbars, however I'm not sure how that would work as these values represent the sum total of items in each of these land uses?  We also discussed moving this to supplementary data, however I think it's actually a really important part of the story. While Covid impact may be a hot topic currently, I don't want the land use results to get lost in the Covid hype, especially because I haven't found any other papers about land use and stormwater debris. Also, the differences between land use are likely the most relevant part of this data in terms of implications for debris management efforts. 
-```{r heatmap-item-top10, warning=FALSE, message=FALSE}
-
-top10 <- df %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
-  filter(item != "Metal scrap") %>% #removing outlier entry
-  group_by(item) %>%
-  summarise(total=sum(sum)) %>%
-  arrange(desc(total)) %>%
-  top_n(10) %>%
-  dplyr::select(item)
-
-top10 <- as.vector(unlist(top10))
-
-top_LUZ <- df %>%
-  filter(cycle %in% c("C1", "C2", "C3", "C4")) %>%
-  group_by(LUZ) %>%
-  mutate(total_LUZ=sum(sum)) %>%
-  ungroup() %>%
-  group_by(LUZ, item) %>%
-  mutate(total_itemLUZ = sum(sum)) %>%
-  ungroup() %>%
-  mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
-  filter(item %in% top10) %>%
-  dplyr::select(item, LUZ, pct) %>%
-  unique() %>%
-  spread(item, pct) %>%
-  mutate(LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct"))) %>%
-  arrange(LUZ) %>%
-  column_to_rownames(var="LUZ")
-  
-mat <- data.matrix(top_LUZ) #matrix for heatmap
-# mat <- reorder_mat(mat = mat, order = order)
-mat <- round(mat,0)
-mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
-
-
-col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat2), location = 1, rot = 60, 
-                              just = "right"))
-
-heatmap <- Heatmap(log10(mat+0.1), 
-        name = "Debris count (percentage per land use zone)", 
-        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
-                      title = "Debris counts (% total)",labels = c("Low", "High"),
-                      grid_width = unit(0.8, "cm"),
-                      legend_height = unit(5, "cm"),
-                      title_position = "leftcenter-rot"), 
-        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
-        row_dend_reorder = TRUE,
-        row_order = rownames(mat2),
-        show_column_dend = FALSE,
-        show_row_dend = FALSE,
-        bottom_annotation = col_ha,
-        show_row_names = TRUE,
-        row_names_side = "left",
-        show_column_names = FALSE,
-        border = TRUE,
-        column_title = "Percentage of top 10 debris items per land use zone",
-        #percentage label
-        cell_fun = function(j, i, x, y, width, height, fill) {
-        grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
-        )
-
-svg(filename="images/heatmap.svg", width = 12, height = 7)
-draw(heatmap)
-dev.off()
-
-```
-
-```{r heatmapcovid-item-top10, warning=FALSE, message=FALSE}
-
-top10 <- df %>%
-  filter(item != "Metal scrap") %>% #removing outlier entry
-  filter(cycle %in% c("C5", "C6", "C7", "C9")) %>%
-  group_by(item) %>%
-  summarise(total=sum(sum)) %>%
-  arrange(desc(total)) %>%
-  top_n(10) %>%
-  dplyr::select(item)
-
-top10 <- as.vector(unlist(top10))
-
-top_LUZ <- df %>%
-  filter(cycle %in% c("C5", "C6", "C7", "C9")) %>%
-  group_by(LUZ) %>%
-  mutate(total_LUZ=sum(sum)) %>%
-  ungroup() %>%
-  group_by(LUZ, item) %>%
-  mutate(total_itemLUZ = sum(sum)) %>%
-  ungroup() %>%
-  mutate(pct = (total_itemLUZ/total_LUZ)*100) %>%
-  filter(item %in% top10) %>%
-  dplyr::select(item, LUZ, pct) %>%
-  unique() %>%
-  spread(item, pct) %>%
-  mutate(LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct"))) %>%
-  arrange(LUZ) %>%
-  column_to_rownames(var="LUZ")
-  
-mat <- data.matrix(top_LUZ) #matrix for heatmap
-# mat <- reorder_mat(mat = mat, order = order)
-mat <- round(mat,0)
-mat2 = ifelse(mat <= 0.99,"<1",as.character(round(mat,2))) #matrix for labels
-
-
-col_ha <- HeatmapAnnotation(Region = anno_text(colnames(mat2), location = 1, rot = 60, 
-                              just = "right"))
-
-heatmapcovid <- Heatmap(log10(mat+0.1), 
-        name = "Debris count (percentage per land use zone)", 
-        heatmap_legend_param  = list(color_bar = "continuous", at = c(-2.6,3.5),
-                      title = "Debris counts (% total)",labels = c("Low", "High"),
-                      grid_width = unit(0.8, "cm"),
-                      legend_height = unit(5, "cm"),
-                      title_position = "leftcenter-rot"), 
-        col= colorRampPalette(brewer.pal(8, "PRGn"))(25),
-        row_dend_reorder = TRUE,
-        row_order = rownames(mat2),
-        show_column_dend = FALSE,
-        show_row_dend = FALSE,
-        bottom_annotation = col_ha,
-        show_row_names = TRUE,
-        row_names_side = "left",
-        show_column_names = FALSE,
-        border = TRUE,
-        column_title = "Percentage of top 10 debris items per land use zone",
-        #percentage label
-        cell_fun = function(j, i, x, y, width, height, fill) {
-        grid.text(sprintf("%s", mat2[i, j],"%"), x, y, gp = gpar(fontsize = 10))},
-        )
-
-svg(filename="images/heatmapcovid.svg", width = 12, height = 7)
-draw(heatmapcovid)
-dev.off()
-
-```
-
 
 ## Timeline of debris item count
 
@@ -453,7 +315,7 @@ p_timeseries <- ggplot() +
   geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
   facet_wrap(~item, scales="free_y") +
-  geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4) +
+  # geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4) +
   theme(panel.grid = element_blank(),
         # legend.position = "none",
       axis.title = element_blank(),
@@ -461,28 +323,8 @@ p_timeseries <- ggplot() +
   
   p_timeseries
   
-svg("images/p_timeseries.svg", height=7, width=12)
-plot(p_timeseries)
-dev.off()
-
-# p_timeseries_scale <- ggplot() +
-#   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
-#                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
-#   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
-#        x="Date", y="Debris count per LGA") +
-#   geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
-#   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
-#   facet_wrap(~item)
-#   # geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4)
-#   # theme(panel.grid = element_blank(),
-#   #       # legend.position = "none",
-#   #     axis.title = element_blank(),
-#   #     panel.background = element_blank())
-#   
-#   p_timeseries_scale
-#   
-# svg("images/p_timeseries_scale.svg", height=7, width=12)
-# plot(p_timeseries_scale)
+# svg("images/p_timeseries.svg", height=7, width=12)
+# plot(p_timeseries)
 # dev.off()
 
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
@@ -573,7 +415,6 @@ dev.off()
 ```
 
 # GLMM for top four items and OH&S
-
 
 The above graph shows total debris count per asset every 6 weeks.  Because of lower numbers, here I've shown total debris count per LGA land use zone every 6 weeks. 
 ```{r data-mod-top5, warning=FALSE, message=FALSE}
@@ -797,7 +638,7 @@ dev.off()
 
  
 ```
-```{r emmeans-top-items-TRIAL}
+```{r emmeans-loop}
 # https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
 
 # Function loop: each item
@@ -845,37 +686,7 @@ j<- joint_tests(m)
 #  LUZ:covid    3 867  11.117 <.0001 
 ```
 
-```{r emmeans-interactions-foam}
-mod_foam <- df %>%
-  filter(item=="Foam insulation & packaging") %>%
-  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-  summarise(sum=sum(sum)) %>%
-  ungroup() %>%
-  mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
-         covid = as.factor(covid),
-         cycle = as.factor(cycle))
-       
-#create model
-m_foam  <- glmmTMB(sum ~ #Debris count per survey event
-                LUZ * covid + #predicted by land use effected by covid
-               (1|LGA/asset_id) + (1|cycle), #suburb random effect
-               family=nbinom2(), #negative binomial to deal with count data and zeros
-               data = mod_foam)
 
-emmeans(m_foam, pairwise~covid|LUZ, type="response")
-
-joint_tests(m_foam)
-
-emmip(m_foam, ~covid | LUZ)
-
-foam.rg <- ref_grid(m_foam)
-foam.rg
-plot(foam.rg, by = "LUZ")
-
-emmeans(m_foam, type="response")
-
-```
 ```{r emmeans-interactions-cigs}
 mod_cigs <- df %>%
   filter(item=="Cigarette butts") %>%
@@ -888,30 +699,24 @@ mod_cigs <- df %>%
          cycle = as.factor(cycle))
        
 #create model
-m_cigs  <- glmmTMB(sum ~ #Debris count per survey event
+m_temp  <- glmmTMB(sum ~ #Debris count per survey event
                 LUZ * covid + #predicted by land use effected by covid
                (1|LGA/asset_id) + (1|cycle), #suburb random effect
                family=nbinom2(), #negative binomial to deal with count data and zeros
                data = mod_cigs)
 
-summary(m_cigs)
+summary(m_temp)
+
+pairs.cl.temp <- emmeans(m_temp, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
+pairs.lc.temp <- emmeans(m_temp, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
+
+
+as.data.frame(pairs.cl.temp)
+pairs.lc.temp
 
 cig.emm <- emmeans(m_cigs, pairwise~covid|LUZ, level=0.95, infer=T)
 summary(cig.emm)
-joint_tests(m_cigs)
 
-emmip(m_cigs, ~covid | LUZ)
-plot(cigs.rg, by = "covid")
-
-ci <- confint(cigs.rg, level = 0.95)
-xport <- print(ci, export = TRUE)
-cat("<font color = 'blue'>\n")
-knitr::kable(xport$summary, align = "r")
-for (a in xport$annotations) cat(paste(a, "<br>"))
-cat("</font>\n")
-
-predict(cigs.rg, interval = "prediction")
-plot(cigs.rg, PIs = TRUE)
 
 
 ```
@@ -975,133 +780,21 @@ p_change_delta <- luz_delta %>%
   ggplot( aes(x=avg, y=item, fill=pos)) +
   geom_bar(stat="identity") +
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width=0.2)) 
-  # theme(legend.position = "none",
-  #       panel.grid = element_blank(),
-  #       axis.title = element_blank(),
-  #       axis.text = element_blank(),
-  #       panel.background = element_blank())
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())
 
 p_change_delta
 
-# svg("images/p_change_delta.svg", height=7, width=12)
-# plot(p_change_delta)
-# dev.off()
+svg("images/p_change_delta.svg", height=7, width=12)
+plot(p_change_delta)
+dev.off()
 
 ```
 
 
-```{r percent-change-delta-LUZ}
-#refer to delta method
-#https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
-pct_change <- df %>%
-  group_by(covid, asset_id, LUZ) %>% #look at items per asset both cov
-  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
-  ungroup() %>%
-  dplyr::select(covid, asset_id, LUZ, assetMean) %>% #select vars
-  unique() #remove duplicates from survey cycle
-  
-# Split data into each item
-pct_change <- droplevels(pct_change)
-ls.data_split <- split(pct_change, f = pct_change$LUZ)
-
-
-delta_LUZ = purrr::map_df(ls.data_split, function(x){
-
-x1 = x %>% filter(covid == 1)
-# x1$assetMean = ifelse(x1$assetMean == 0, 0.00001, x1$assetMean)
-
-x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean)
-# x2$assetMean = ifelse(x2$assetMean == 0, 0.00001, x2$assetMean)
-
-xV = var(x1$assetMean)
-x_mean = mean(x1$assetMean)
-
-yV = var(x2$assetMean)
-y_mean = mean(x2$assetMean)
-
-num = (yV*x_mean^2) - 2*cov(x1$assetMean, x2$assetMean)*x_mean*y_mean + (xV*y_mean^2)
-denom = x_mean^4
-
-se_pcc = 100*sqrt(num/denom)
-
-pcc = ((y_mean - x_mean)/x_mean) *100
-
-# Output array
-LUZ = unique(x$LUZ)
-avg = pcc
-se = se_pcc
-
-out = data.frame(LUZ, avg, se)
-
-return(out)
-
-})
-
-delta_LUZ <- delta_LUZ %>%
-  mutate(pos = avg >= 0,
-         SE_lower = avg-se,
-         SE_upper = avg+se)
-
-p_change_delta_LUZ <- delta_LUZ %>%
-  mutate(LUZ=as.factor(LUZ),
-         LUZ=fct_reorder(LUZ, avg)) %>%
-  ggplot( aes(x=avg, y=LUZ, fill=pos)) +
-  geom_bar(stat="identity") +
-  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width=0.2)) 
-  # theme(legend.position = "none",
-  #       panel.grid = element_blank(),
-  #       axis.title = element_blank(),
-  #       axis.text = element_blank(),
-  #       panel.background = element_blank())
-
-p_change_delta_LUZ
-
-# svg("images/p_change_delta.svg", height=7, width=12)
-# plot(p_change_delta)
-# dev.off()
-
-```
-
-```{r percent-change-delta-macro}
-#refer to delta method
-#https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
-pct_change <- df %>%
-  group_by(covid, asset_id, LGA) %>% #look at items per asset both cov
-  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
-  ungroup() %>%
-  dplyr::select(covid, asset_id, assetMean) %>% #select vars
-  unique() #remove duplicates from survey cycle
-
-# delta = purrr::map_df(pct_change, function(x){
-
-x1 = pct_change %>% filter(covid == 1)
-# x1$assetMean = ifelse(x1$assetMean == 0, 0.00001, x1$assetMean)
-
-x2 = pct_change %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean)
-# x2$assetMean = ifelse(x2$assetMean == 0, 0.00001, x2$assetMean)
-
-xV = var(x1$assetMean)
-x_mean = mean(x1$assetMean)
-
-yV = var(x2$assetMean)
-y_mean = mean(x2$assetMean)
-
-num = (yV*x_mean^2) - 2*cov(x1$assetMean, x2$assetMean)*x_mean*y_mean + (xV*y_mean^2)
-denom = x_mean^4
-
-se_pcc = 100*sqrt(num/denom)
-
-pcc = ((y_mean - x_mean)/x_mean) *100
-
-# Output array
-avg = pcc
-se = se_pcc
-
-out = data.frame(avg, se)
-
-return(out)
-
-```
 # MDS plot
 
 

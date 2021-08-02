@@ -623,7 +623,7 @@ pred_df_hm <- pred_df %>%
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9), 
                 position=position_dodge2(reverse = T, width = 0.9)) +
   facet_wrap(~LUZ) +
-    guides(x =  guide_axis(angle = 45)) +
+    guides(x =  guide_axis(angle = 45)) + 
       theme(legend.position = "none",
         panel.grid = element_blank(),
         axis.title = element_blank(),
@@ -723,7 +723,7 @@ summary(cig.emm)
 
 # Percent change
 
-```{r percent-change-delta-item}
+```{r percent-change-delta-luz}
 #refer to delta method
 #https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
 pct_change <- df %>%
@@ -785,12 +785,15 @@ p_change_delta <- luz_delta %>%
         axis.title = element_blank(),
         axis.text = element_blank(),
         panel.background = element_blank())
+  
 
 p_change_delta
 
 svg("images/p_change_delta.svg", height=7, width=12)
 plot(p_change_delta)
 dev.off()
+
+getwd()
 
 ```
 

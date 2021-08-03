@@ -622,19 +622,21 @@ pred_df_hm <- pred_df %>%
   geom_bar(position = position_dodge2(reverse=T), stat="identity") +
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9), 
                 position=position_dodge2(reverse = T, width = 0.9)) +
-  facet_wrap(~LUZ) +
-    guides(x =  guide_axis(angle = 45)) + 
-      theme(legend.position = "none",
-        panel.grid = element_blank(),
-        axis.title = element_blank(),
-        axis.text = element_blank(),
-        panel.background = element_blank())
+  facet_wrap(~LUZ, scales = "free_x") +
+    guides(x =  guide_axis(angle = 45))
+      # theme(legend.position = "none",
+      #   panel.grid = element_blank(),
+      #   axis.title = element_blank(),
+      #   axis.text = element_blank(),
+      #   panel.background = element_blank())
 
 p_pred_df_hm
 
 svg("images/p_heatmap-replace.svg", height=7, width=12)
 plot(p_pred_df_hm)
 dev.off()
+
+display.brewer.all()
 
  
 ```

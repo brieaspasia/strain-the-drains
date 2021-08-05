@@ -44,6 +44,8 @@ library(RColorBrewer)
 library(cowplot) #minimal backgrounds for ggplot
 library(purrr) #looping
 library(tidytext) # reordering
+
+
 ```
 
 ```{r create-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
@@ -580,28 +582,30 @@ pred_df = purrr::map_df(top_txt, function(x){
 
 
 # New facet label names for covid variable
-pred_df$covid <- factor(pred_df$covid, levels = c("1", "2"),
-                  labels = c("Pre-Covid", "During Covid"))
-pred_item_order <- pred_df %>%
-  group_by(item) %>%
-  mutate(total=sum(Total)) %>%
-  arrange(desc(total)) %>%
-  dplyr::select(item, total) %>%
-  distinct
-#create vector from order items
-pred_order <- pred_item_order$item 
-pred_order <- unlist(pred_order)
-pred_df$item <- factor(pred_df$item, levels = pred_order)
- #create plot
-p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
-  geom_bar(position="dodge", stat="identity") +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-  labs(title="Debris count (every 6 weeks)",
-       subtitle="By land use and covid restriction",
-       x="", y="Total debris items per asset", tag="") +
-  facet_wrap(~item, scales="free_y") +
-  guides(x =  guide_axis(angle = 45)) 
-p_all
+pred_df$covid <- factor(pred_df$covid, levels = c("2", "1"), 
+                        labels = c("During Covid", "Before Covid"), ordered = T)
+
+# pred_item_order <- pred_df %>%
+#   group_by(item) %>%
+#   mutate(total=sum(Total)) %>%
+#   arrange(desc(total)) %>%
+#   dplyr::select(item, total) %>%
+#   distinct
+# #create vector from order items
+# pred_order <- pred_item_order$item 
+# pred_order <- unlist(pred_order)
+# pred_df$item <- factor(pred_df$item, levels = pred_order)
+# 
+#  #create plot
+# p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
+#   geom_bar(position="dodge", stat="identity") +
+#   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
+#   labs(title="Debris count (every 6 weeks)",
+#        subtitle="By land use and covid restriction",
+#        x="", y="Total debris items per asset", tag="") +
+#   facet_wrap(~item, scales="free_y") +
+#   guides(x =  guide_axis(angle = 45)) 
+# p_all
 
 pred_df10 <- pred_df %>%
   group_by(item) %>%
@@ -609,34 +613,37 @@ pred_df10 <- pred_df %>%
   arrange(desc(Total)) %>%
   top_n(10, Total)
 
+
+# scale_fill_manual(values=c('#18BDC3','#F3756E'))
+
+
 #create vector from top 15 items
 pred_df10 <- pred_df10$item 
 pred_df10 <- unlist(pred_df10)
 
 pred_df_hm <- pred_df %>% 
   filter(item %in% pred_df10) %>%
-  group_by(LUZ) %>%
-  mutate(item=as.factor(item),
-  item=fct_reorder(item, Total)) %>%
-  ungroup()
+  mutate(LUZ = as.factor(LUZ),
+  item=as.factor(item),
+  item=reorder_within(item, Total, LUZ))
 
- 
- p_pred_df_hm <- ggplot(pred_df_hm, aes(x=Total, reorder_within(item, Total, LUZ), fill=covid)) +
-  geom_bar(position = position_dodge2(reverse=T), stat="identity") +
-  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9), 
-                position=position_dodge2(reverse = T, width = 0.9)) +
-  scale_y_reordered() +
-  facet_wrap(~LUZ, scales = "free_x") +
-    guides(x =  guide_axis(angle = 45))
+p_pred_df_hm <- 
+  ggplot(pred_df_hm, aes(x=Total, y=item, fill=covid)) +
+  geom_bar(position = "dodge", stat="identity") +
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9),
+                position = "dodge", width = 0.9) +
+  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
+  facet_wrap(~LUZ, scales = "free") +
+  scale_y_reordered() 
+    # guides(x =  guide_axis(angle = 45))
       # theme(legend.position = "none",
       #   panel.grid = element_blank(),
       #   axis.title = element_blank(),
       #   axis.text = element_blank(),
       #   panel.background = element_blank())
 
-p_pred_df_hm
 
-??scale_y_reordered
+p_pred_df_hm
 
 # svg("images/p_heatmap-replace.svg", height=7, width=12)
 # plot(p_pred_df_hm)

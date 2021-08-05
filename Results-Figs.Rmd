@@ -43,6 +43,7 @@ library(ComplexHeatmap)
 library(RColorBrewer)
 library(cowplot) #minimal backgrounds for ggplot
 library(purrr) #looping
+library(tidytext) # reordering
 ```
 
 ```{r create-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
@@ -614,14 +615,17 @@ pred_df10 <- unlist(pred_df10)
 
 pred_df_hm <- pred_df %>% 
   filter(item %in% pred_df10) %>%
-  ungroup() %>%
+  group_by(LUZ) %>%
   mutate(item=as.factor(item),
-  item=fct_reorder(item, Total))
+  item=fct_reorder(item, Total)) %>%
+  ungroup()
+
  
- p_pred_df_hm <- ggplot(pred_df_hm, aes(x=Total, y=item, fill=covid)) +
+ p_pred_df_hm <- ggplot(pred_df_hm, aes(x=Total, reorder_within(item, Total, LUZ), fill=covid)) +
   geom_bar(position = position_dodge2(reverse=T), stat="identity") +
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9), 
                 position=position_dodge2(reverse = T, width = 0.9)) +
+  scale_y_reordered() +
   facet_wrap(~LUZ, scales = "free_x") +
     guides(x =  guide_axis(angle = 45))
       # theme(legend.position = "none",
@@ -632,12 +636,11 @@ pred_df_hm <- pred_df %>%
 
 p_pred_df_hm
 
-svg("images/p_heatmap-replace.svg", height=7, width=12)
-plot(p_pred_df_hm)
-dev.off()
+??scale_y_reordered
 
-display.brewer.all()
-
+# svg("images/p_heatmap-replace.svg", height=7, width=12)
+# plot(p_pred_df_hm)
+# dev.off()
  
 ```
 ```{r emmeans-loop}
@@ -1083,7 +1086,7 @@ citation("pairwiseAdonis")
       dplyr::select(event_id.x, item, combined_sum)
     
     micro_df <- micro_df %>% 
-      left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+      left_join(micro_t, by = c("event_id"="event_id.x", "item"="item")) %>%
       filter(cycle != "C8") %>%
       mutate(combined_sum = replace_na(combined_sum, 0),
               sum2 = ifelse(cycle != "C9", sum, 0),
@@ -1173,10 +1176,10 @@ micro_p_glmm
 #refer to delta method
 #https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
 micro_pct_change <- micro_df %>%
-  group_by(covid, asset_id, LUZ) %>% #look at items per asset both cov
-  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each asset per covid level
+  group_by(covid, LUZ, asset_id) %>% #look at items per asset both cov
+  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each LUZ per covid level
   ungroup() %>%
-  dplyr::select(covid, asset_id, LUZ, assetMean) %>% #select vars
+  dplyr::select(covid, LUZ, asset_id, assetMean) %>% #select vars
   unique() #remove duplicates from survey cycle
   
 # Split data into each item
@@ -1214,6 +1217,7 @@ micro_out = data.frame(LUZ, micro_avg, micro_se)
 
 
 })
+
 
 micro_delta_LUZ <- micro_delta_LUZ %>%
   mutate(pos = micro_avg >= 0,

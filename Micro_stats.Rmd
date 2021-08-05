@@ -294,7 +294,7 @@ mod <- df %>%
   group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
   summarise(sum=sum(sum)) %>%
   ungroup() %>%
-  # filter(cycle %in% paste0("C",1:7)) %>%
+  filter(cycle %in% paste0("C",1:7)) %>%
   mutate(LGA = as.factor(LGA),
          LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
          covid = as.factor(covid),

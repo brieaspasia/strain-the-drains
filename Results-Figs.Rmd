@@ -653,6 +653,8 @@ p_pred_df_hm
 ```{r emmeans-loop}
 # https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
 
+options(scipen = 999)
+
 # Function loop: each item
 #All top + items of interest
 top_txt<- df %>%
@@ -662,7 +664,7 @@ top_txt<- df %>%
   droplevels()
  
 # Purrr
-emmeans_item = purrr::map_df(top_txt, function(x){
+drop1_item = purrr::map_df(top_txt, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -682,14 +684,32 @@ emmeans_item = purrr::map_df(top_txt, function(x){
                    family=nbinom2(), #negative binomial to deal with count data and zeros
                    data = temp_df)
  
-j <- joint_tests(m_temp)
-j$item = x
+d <- drop1(m_temp, test="Chisq")
+d$item = x
 
-return(j)
+return(d)
 
  })
 
-emmeans_item
+drop1_item <- drop1_item %>%
+  filter(LRT != "NA") %>%
+  rename(chi = 'Pr(>Chi)')
+
+if(this_team != "") {
+  newdf <- mydf %>%    
+      filter(team == this_team) %>%
+      mutate(totalrows = nrow(.)) %>%
+      group_by(x1, y1) %>%
+      summarize(dosomestuff)
+} else {
+  newdf <- mydf %>%    
+      filter(firstname == this_name & lastname == that_name) %>%
+      mutate(totalrows = nrow(.)) %>%
+      group_by(x1, y1) %>%
+      summarize(dosomestuff)
+}
+  
+  
 # joint_tests() obtains and tests the interaction contrasts for all effects in the model and compiles them in one Type-III-ANOVA-like table
 j<- joint_tests(m)
 # model term df1 df2 F.ratio p.value
@@ -719,8 +739,14 @@ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
 
 summary(m_temp)
 
+d <- drop1(m_temp, test="Chisq")
+
+d
+
 pairs.cl.temp <- emmeans(m_temp, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
 pairs.lc.temp <- emmeans(m_temp, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
+
+drop1(m_temp, test="Chisq")
 
 
 as.data.frame(pairs.cl.temp)

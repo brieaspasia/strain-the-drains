@@ -355,14 +355,14 @@ m  <- glmmTMB(sum ~ #Debris count per survey event
                family=nbinom2(), #negative binomial to deal with count data and zeros
                data = mod)
 
-pairs.cl.emm <- emmeans(m, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
-pairs.lc.emm <- emmeans(m, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
-pairs.cl.emm
-pairs.lc.emm
-test(pairs.emm, delta=log(1.05))
-
-Anova(m)
-joint_tests(m)
+# pairs.cl.emm <- emmeans(m, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
+# pairs.lc.emm <- emmeans(m, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
+# pairs.cl.emm
+# pairs.lc.emm
+# test(pairs.emm, delta=log(1.05))
+# 
+# Anova(m)
+# joint_tests(m)
 
 
 #create predictor df
@@ -415,6 +415,25 @@ p_glmmtotal
 svg("images/p_glmmtotal.svg", height=7, width=12)
 plot(p_glmmtotal)
 dev.off()
+```
+```{r glmm-tables}
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+
+tab_model(
+  m,
+  show.est=TRUE, show.ci=FALSE, show.se=TRUE, show.p=TRUE,
+  col.order = c("est", "se", "p"),
+  pred.labels = c("City Centre (pre-covid)", "Shopping Centre", "Public Transport Hub", "Industrial Precinct", "City Centre (during covid)", "Shopping Centre", "Public Transport Hub", "Industrial Precinct"),
+  # dv.labels = c("Habitat"),
+  string.p = "P-Value",
+          string.est = "Estimate",
+          string.se = "Standard Error",
+          string.ci = "Conf. Int (95%)"
+)
+
+tab_model(m)
 ```
 
 # GLMM for top four items and OH&S
@@ -663,7 +682,46 @@ top_txt<- df %>%
   pull(item) %>% 
   droplevels()
  
-# Purrr
+# Purrr to determine interaction between covid and luz
+joint_item = purrr::map_df(top_txt, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+j<- joint_tests(m_temp)
+j$item = x
+
+return(j)
+
+ })
+
+joint_item
+write.csv(joint_item,"joint_item.csv", row.names = FALSE)
+
+# Function loop: each item
+#All top + items of interest
+top_txt<- df %>%
+  filter(item %in% top15 | item %in% pol_items) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+ 
+# Purrr to determine interaction between covid and luz
 drop1_item = purrr::map_df(top_txt, function(x){
   
   temp_df = df %>% 
@@ -691,27 +749,70 @@ return(d)
 
  })
 
+#create dataframe to determine if interaction effect is significant
 drop1_item <- drop1_item %>%
   filter(LRT != "NA") %>%
-  rename(chi = 'Pr(>Chi)')
+  rename(p.value = 'Pr(>Chi)')
 
-if(this_team != "") {
-  newdf <- mydf %>%    
-      filter(team == this_team) %>%
-      mutate(totalrows = nrow(.)) %>%
-      group_by(x1, y1) %>%
-      summarize(dosomestuff)
-} else {
-  newdf <- mydf %>%    
-      filter(firstname == this_name & lastname == that_name) %>%
-      mutate(totalrows = nrow(.)) %>%
-      group_by(x1, y1) %>%
-      summarize(dosomestuff)
-}
+#dataframe of items where covid and luz interaction is significant
+d_effect <- drop1_item %>%
+  filter(p.value < 0.05)
+
+d_effect_vec <- drop1_item %>%
+  filter(p.value < 0.05) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+
+#create vector of items to test 
+d_terms_vec <- drop1_item %>%
+  filter(p.value>0.05) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+
+# Purrr to look at influence of covid and luz without interaction
+drop1_terms = purrr::map_df(d_terms_vec, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ + covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+d <- drop1(m_temp, test="Chisq")
+d$item = x
+
+return(d)
+
+ })
+
+#create dataframe to determine which terms are significant
+drop1_terms <- drop1_terms %>%
+  filter(LRT != "NA") %>%
+  rename(p.value = 'Pr(>Chi)')
+
+d_terms <- drop1_terms
+
+d <- rbind(d_effect, d_terms)
+
+write.csv(d,"drop1_item.csv", row.names = T)
   
   
 # joint_tests() obtains and tests the interaction contrasts for all effects in the model and compiles them in one Type-III-ANOVA-like table
-j<- joint_tests(m)
+# j<- joint_tests(m)
 # model term df1 df2 F.ratio p.value
 #  LUZ          3 867   5.771 0.0007 
 #  covid        1 867   8.529 0.0036 
@@ -719,45 +820,146 @@ j<- joint_tests(m)
 ```
 
 
-```{r emmeans-interactions-cigs}
-mod_cigs <- df %>%
-  filter(item=="Cigarette butts") %>%
-  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-  summarise(sum=sum(sum)) %>%
-  ungroup() %>%
-  mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
-         covid = as.factor(covid),
-         cycle = as.factor(cycle))
-       
-#create model
-m_temp  <- glmmTMB(sum ~ #Debris count per survey event
-                LUZ * covid + #predicted by land use effected by covid
-               (1|LGA/asset_id) + (1|cycle), #suburb random effect
-               family=nbinom2(), #negative binomial to deal with count data and zeros
-               data = mod_cigs)
+```{r emmeans}
+#https://aosmith.rbind.io/2019/03/25/getting-started-with-emmeans/
+options(scipen = 999)
 
-summary(m_temp)
+# Function loop: each item
+ 
+# Purrr to determine interaction between covid and luz
+emm_effect_cl = purrr::map_df(d_effect_vec, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+emm_temp <- emmeans(m_temp, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
 
-d <- drop1(m_temp, test="Chisq")
+p <- summary(emm_temp$contrasts)
+p$item = x
+p$model = "effect"
 
-d
+return(p)
 
-pairs.cl.temp <- emmeans(m_temp, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
-pairs.lc.temp <- emmeans(m_temp, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
+ })
 
-drop1(m_temp, test="Chisq")
+# Purrr to determine interaction between covid and luz
+emm_effect_lc = purrr::map_df(d_effect_vec, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+emm_temp <- emmeans(m_temp, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
+
+p <- summary(emm_temp$contrasts)
+p$item = x
+p$model = "effect"
+
+return(p)
+
+ })
+
+# Purrr to determine terms covid and luz
+emm_terms_cl = purrr::map_df(d_terms_vec, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ + covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+emm_temp <- emmeans(m_temp, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
+
+p <- summary(emm_temp$contrasts)
+p$item = x
+p$model = "terms"
+
+return(p)
+
+ })
+
+# Purrr to determine interaction between covid and luz
+emm_terms_lc = purrr::map_df(d_terms_vec, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ + covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+emm_temp <- emmeans(m_temp, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
+
+p <- summary(emm_temp$contrasts)
+p$item = x
+p$model = "terms"
+
+return(p)
+
+ })
 
 
-as.data.frame(pairs.cl.temp)
-pairs.lc.temp
+emm_lc <- rbind(emm_effect_lc, emm_terms_lc)
+emm_cl <- rbind(emm_effect_cl, emm_terms_cl)
 
-cig.emm <- emmeans(m_cigs, pairwise~covid|LUZ, level=0.95, infer=T)
-summary(cig.emm)
-
+write.csv(emm_lc,"emm_lc.csv", row.names = T)
+write.csv(emm_cl,"emm_cl.csv", row.names = T)
 
 
 ```
+
 
 # Percent change
 
@@ -1202,77 +1404,4 @@ micro_p_glmm
 # svg("images/micro_p_glmm.svg", height=7, width=12)
 # plot(micro_p_glmm)
 # dev.off()
-```
-
-
-```{r percent-change-delta-micro}
-#refer to delta method
-#https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
-micro_pct_change <- micro_df %>%
-  group_by(covid, LUZ, asset_id) %>% #look at items per asset both cov
-  mutate(assetMean=mean(sum)) %>% #mean of item btwn 8 cycles at each LUZ per covid level
-  ungroup() %>%
-  dplyr::select(covid, LUZ, asset_id, assetMean) %>% #select vars
-  unique() #remove duplicates from survey cycle
-  
-# Split data into each item
-micro_pct_change <- droplevels(micro_pct_change)
-micro_ls.data_split <- split(micro_pct_change, f = micro_pct_change$LUZ)
-
-
-micro_delta_LUZ = purrr::map_df(micro_ls.data_split, function(x){
-
-micro_x1 = x %>% filter(covid == 1) #x1 pre-covid
-
-micro_x2 = x %>% filter(covid == 2) %>% dplyr::select(asset_id, assetMean) #x2 during covid
-
-micro_xV = var(micro_x1$assetMean) #variance of pre-covid mean per asset
-micro_x_mean = mean(micro_x1$assetMean) #mean of pre-covid mean per asset
-
-micro_yV = var(micro_x2$assetMean) #variance of during covid mean per asset
-micro_y_mean = mean(micro_x2$assetMean) #mean of during covid mean per asset
-
-#referencing the second to last equation in the stack exchange answer linked above
-micro_num = (micro_yV*micro_x_mean^2) - 2*cov(micro_x1$assetMean, micro_x2$assetMean) * micro_x_mean * micro_y_mean + (micro_xV*micro_y_mean^2) 
-
-micro_denom = micro_x_mean^4
-
-micro_se_pcc = 100*sqrt(micro_num/micro_denom) #se pct change 
-
-micro_pcc = ((micro_y_mean - micro_x_mean)/micro_x_mean) *100 #mean pct change based on averaged asset means
-
-# Output array
-LUZ = unique(x$LUZ)
-micro_avg = micro_pcc
-micro_se = micro_se_pcc
-
-micro_out = data.frame(LUZ, micro_avg, micro_se)
-
-
-})
-
-
-micro_delta_LUZ <- micro_delta_LUZ %>%
-  mutate(pos = micro_avg >= 0,
-         micro_SE_lower = micro_avg-micro_se,
-         micro_SE_upper = micro_avg+micro_se)
-
-micro_p_delta_LUZ <- micro_delta_LUZ %>%
-  mutate(LUZ=as.factor(LUZ),
-         LUZ=fct_reorder(LUZ, micro_avg)) %>%
-  ggplot( aes(x=micro_avg, y=LUZ, fill=pos)) +
-  geom_bar(stat="identity") +
-  geom_errorbar(aes(xmin=micro_SE_lower, xmax=micro_SE_upper, width=0.2)) 
-  # theme(legend.position = "none",
-  #       panel.grid = element_blank(),
-  #       axis.title = element_blank(),
-  #       axis.text = element_blank(),
-  #       panel.background = element_blank())
-
-micro_p_delta_LUZ
-
-# svg("images/p_change_delta.svg", height=7, width=12)
-# plot(p_change_delta)
-# dev.off()
-
 ```

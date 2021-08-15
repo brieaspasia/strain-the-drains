@@ -950,9 +950,32 @@ return(p)
 
  })
 
-
 emm_lc <- rbind(emm_effect_lc, emm_terms_lc)
 emm_cl <- rbind(emm_effect_cl, emm_terms_cl)
+
+pemm_cl <- emm_cl %>% 
+  rowwise() %>% 
+  arrange(upper.CL)
+
+ggplot(pemm_cl) +
+  geom_segment( aes(x=lower.CL, xend=upper.CL, y=item, yend=item)) +
+  geom_point( aes(x=lower.CL, y=item), size=3 ) +
+  geom_point( aes(x=upper.CL, y=item), size=3 ) +
+  theme_ipsum() +
+  facet_wrap(~LUZ, scales = "free")
+  
+
+ggplot(data) +
+  geom_segment( aes(x=x, xend=x, y=value1, yend=value2), color="grey") +
+  geom_point( aes(x=x, y=value1), color=rgb(0.2,0.7,0.1,0.5), size=3 ) +
+  geom_point( aes(x=x, y=value2), color=rgb(0.7,0.2,0.1,0.5), size=3 ) +
+  coord_flip()+
+  theme_ipsum() +
+  theme(
+    legend.position = "none",
+  ) +
+  xlab("") +
+  ylab("Value of Y")
 
 write.csv(emm_lc,"emm_lc.csv", row.names = T)
 write.csv(emm_cl,"emm_cl.csv", row.names = T)

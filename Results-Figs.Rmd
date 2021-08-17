@@ -205,7 +205,7 @@ library(sjlabelled) #glmm tables
     df <- df %>% 
       left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
       filter(cycle != "C8") %>%
-      mutate(combined_sum = replace_na(combined_sum, 0),
+      mutate(combined_sum = tidyr::replace_na(combined_sum, 0),
               sum2 = ifelse(cycle != "C9", sum, 0),
               final_sum = sum2 + combined_sum) %>%
       dplyr::select(-sum2, -sum, -combined_sum) %>%
@@ -256,6 +256,13 @@ top15 <- df %>%
   summarise(sum=sum(sum)) %>%
   arrange(desc(sum)) %>%
   top_n(15, sum)
+
+top10 <- df %>%
+  filter(item != "Metal scrap") %>% #removing outlier entry
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(10, sum)
   
 #create vector from top 15 items
 top15 <- top15$item 
@@ -341,22 +348,6 @@ p_timeseries <- ggplot() +
 
 ```{r data-mod, warning=FALSE, message=FALSE}
 #aggregate data
-mod <- df %>%
-  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-  summarise(sum=sum(sum)) %>%
-  ungroup() %>%
-  # filter(cycle %in% paste0("C",1:7)) %>%
-  mutate(LGA = as.factor(LGA),
-         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
-         covid = as.factor(covid),
-         cycle = as.factor(cycle))
-       
-#create model
-m  <- glmmTMB(sum ~ #Debris count per survey event
-                LUZ * covid + #predicted by land use effected by covid
-                (1|LGA/asset_id) + (1|cycle), #suburb random effect
-               family=nbinom2(), #negative binomial to deal with count data and zeros
-               data = mod)
 
 # pairs.cl.emm <- emmeans(m, pairwise~covid|LUZ, type="response", level=0.95, infer=T)
 # pairs.lc.emm <- emmeans(m, pairwise~LUZ|covid, type="response", level=0.95, infer=T)
@@ -439,32 +430,45 @@ tab_model(
 
 ```
 
-# GLMM for top four items and OH&S
+# GLMM summaries for top items and items of interest such as OH&S
 
 The above graph shows total debris count per asset every 6 weeks.  Because of lower numbers, here I've shown total debris count per LGA land use zone every 6 weeks. 
-```{r data-mod-top5, warning=FALSE, message=FALSE}
-# Function loop: each item
-#Top 4 plus OH&S
-top5_txt<- df %>%
-  filter(item %in% c("Cigarette butts", 
-                     "Plastic packaging (food)",
-                     "Plastic wrap (non-food)",
-                     "Paper remnants",
-                     "Soft plastic remnants",
-                     "OH & S")) %>% 
+```{r glmm-items, warning=FALSE, message=FALSE}
+# GLMM summary: each item
+
+#find top 15 items
+top15 <- df %>%
+  filter(item != "Metal scrap") %>% #removing outlier entry
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(15, sum)
+  
+#create vector from top 15 items
+top15 <- top15$item 
+top15 <- unlist(top15)
+
+pol_items <- df %>%
+  filter(item == "OH & S" | item=="Aluminium cans" | item=="Beer bottles (and similar)" | item == "Foam take-away")
+
+#create vector from policy items
+pol_items <- pol_items$item 
+pol_items <- unlist(pol_items)
+
+top_txt<- df %>%
+  filter(item %in% top15 | item %in% pol_items) %>%
   distinct(item)%>%
   pull(item) %>% 
   droplevels()
  
 # Purrr
-pred_df = purrr::map_df(top5_txt, function(x){
+summary_item = purrr::map_df(top_txt, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
     group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
     summarise(sum=sum(sum)) %>%
     ungroup() %>%
-    # filter(cycle %in% paste0("C",1:7)) %>%
     mutate(LGA = as.factor(LGA),
            LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
            covid = as.factor(covid),
@@ -477,74 +481,29 @@ pred_df = purrr::map_df(top5_txt, function(x){
                    (1|LGA/asset_id) + (1|cycle), #suburb random effect
                    family=nbinom2(), #negative binomial to deal with count data and zeros
                    data = temp_df)
- nd_temp <- expand.grid(covid = unique(temp_df$covid),
-                       LUZ = unique(temp_df$LUZ),
-                       LGA = NA,
-                       asset_id = NA,
-                       cycle = NA)
  
- #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
- pred_temp <- predict(object=m_temp,
-                     newdata=nd_temp,
-                     se.fit=T,
-                     re.form=NA,
-                     type="response")
  
- #creating standard error for graphing
- nd_temp$Total <- pred_temp$fit
- nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
- nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
- nd_temp$item = x
+coef <- summary(m_temp)
+
+temp_summary <- as.data.frame(coef$coefficients$cond)
+
+temp_summary <- temp_summary %>%
+  dplyr::rename(est = Estimate,
+                se = 'Std. Error',
+                p.value = 'Pr(>|z|)') %>%
+  dplyr::select(-'z value')
+
+temp_summary$item = x
+
  
- return(nd_temp)
+ return(temp_summary)
  
  })
 
-# New facet label names for covid variable
-pred_df$covid <- factor(pred_df$covid, levels = c("1", "2"),
-                  labels = c("Pre-Covid", "During Covid"))
-pred_item_order <- pred_df %>%
-  group_by(item) %>%
-  mutate(total=sum(Total)) %>%
-  arrange(desc(total)) %>%
-  dplyr::select(item, total) %>%
-  distinct
-#create vector from order items
-pred_order <- pred_item_order$item 
-pred_order <- unlist(pred_order)
-pred_df$item <- factor(pred_df$item, levels = pred_order)
+summary_item
 
-#  #create plot
-# p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
-#   geom_bar(position="dodge", stat="identity") +
-#   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-#   labs(title="Debris count (every 6 weeks)",
-#        subtitle="By land use and covid restriction",
-#        x="", y="Total debris items per asset", tag="") +
-#   facet_wrap(~item, scales="free_y") +
-#   guides(x =  guide_axis(angle = 45)) 
-# p_all
+write.csv(summary_item,"glmm_item.csv", row.names = T)
 
- #create plot
-p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
-  geom_bar(position="dodge", stat="identity") +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-  labs(title="Debris count (every 6 weeks)",
-       subtitle="By land use and covid restriction",
-       x="", y="Total debris items per asset", tag="") +
-  facet_wrap(~item) +
-  guides(x =  guide_axis(angle = 45)) +
-      theme(legend.position = "none",
-        panel.grid = element_blank(),
-        axis.title = element_blank(),
-        axis.text = element_blank(),
-        panel.background = element_blank())
-p_all
-
-svg("images/p_all.svg", height=7, width=12)
-plot(p_all)
-dev.off()
- 
 ```
 
 
@@ -1332,6 +1291,166 @@ p_mds_txt
 #   theme_bw()
 ```
 
+```{r MDS-LGA-top10, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
+#find top 10 items
+top10 <- df %>%
+  filter(item!="Metal scrap") %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(10, sum)
+
+  
+#create vector from top 15 items
+top10 <- top10$item 
+top10 <- unlist(top10)
+
+
+df_top10 <- df %>%
+  filter(item %in% top10)
+
+
+#create abundance long format
+ abund_long <- df_top10 %>%
+    group_by(LGA, LUZ, covid, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  
+  com <- abund[4:13]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+  
+  ord <- metaMDS(com)
+  
+  ord$stress
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$LUZ <- abund$LUZ
+  data.scores$covid <- abund$covid
+  data.scores <- data.scores %>%
+    mutate(covid = as.factor(covid),
+           LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+  
+  
+# #Hull data LUZ
+# CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
+#     "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
+# Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
+#     "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
+# Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
+# Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
+#     "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
+# 
+# #create polygons
+# LUZ.hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
+# LUZ.hull.data
+# 
+# #Hull data covid
+# covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
+#     "1", c("NMDS1", "NMDS2")]), ]  # hull values for Pre-Covid
+# covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
+#     "2", c("NMDS1", "NMDS2")]), ]  # hull values for During Covid
+# 
+# #create polygons
+# cov.hull.data <- rbind(covid1,covid2)  #combine groups
+# cov.hull.data
+
+# New facet label names for covid variable
+data.scores$covid <- factor(data.scores$covid, levels = c("1", "2"),
+                  labels = c("Pre-Covid", "During Covid"))
+
+#creating ellipses
+
+#add group column to data.scores
+NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.scores$LUZ)
+
+ veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+  {
+    theta <- (0:npoints) * 2 * pi/npoints
+    Circle <- cbind(cos(theta), sin(theta))
+    t(center + scale * t(Circle %*% chol(cov)))
+  }
+
+  df_ell <- data.frame()
+  for(g in levels(NMDS$group)){
+    df_ell <- rbind(df_ell, cbind(as.data.frame(with(NMDS[NMDS$group==g,],
+                    veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+                    ,group=g))
+    
+
+  }
+# #ellipses for covid  
+#   #add group column to data.scores
+# cov_NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.scores$covid)
+# 
+#  veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+#   {
+#     theta <- (0:npoints) * 2 * pi/npoints
+#     Circle <- cbind(cos(theta), sin(theta))
+#     t(center + scale * t(Circle %*% chol(cov)))
+#   }
+# 
+#   df_ell_cov <- data.frame()
+#   for(g in levels(cov_NMDS$group)){
+#     df_ell_cov <- rbind(df_ell_cov, cbind(as.data.frame(with(cov_NMDS[cov_NMDS$group==g,],
+#                     veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+#                     ,group=g))
+#   }
+  
+  #The first method is calculating the ellipse paths using standard deviation and no scaling. The second method is using standard error and is also scaling the data. Thus, the plot produced with the first method can also be achieved with the second method by making the necessary changes to the ordiellipse function (kind='sd', not 'se'), and removing the scale (ord[[g]]$scale) from the veganCovEllipse function.
+  #https://stackoverflow.com/questions/42799838/follow-up-plotting-ordiellipse-function-from-vegan-package-onto-nmds-plot-creat
+```
+
+```{r MDS-plot, warning=FALSE, message=FALSE}
+#MDS plot LUZ
+p_mds <- ggplot() +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group),
+            size=1, linetype=2) +
+  coord_equal() +
+  theme_bw()
+
+p_mds
+
+svg("images/p_mds10.svg", height=7, width=7)
+plot(p_mds)
+dev.off()
+
+p_mds_txt <- ggplot() +
+  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group), 
+            size=1, linetype=2) +
+  coord_equal() +
+  theme_bw()
+
+svg("images/p_mds_txt10.svg", height=7, width=7)
+plot(p_mds_txt)
+dev.off()
+
+p_mds
+p_mds_txt
+
+## MDS plot covid
+# ggplot() +
+#   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+#   geom_point(data=data.scores,
+#              aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ), alpha=0.8) +
+#     geom_path(data=df_ell_cov, aes(x=NMDS1, y=NMDS2,colour=group), 
+#             size=1, linetype=2) +
+#   coord_equal() +
+#   theme_bw()
+```
 # Testing community data
 
 

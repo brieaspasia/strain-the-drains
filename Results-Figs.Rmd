@@ -516,9 +516,9 @@ summary_item
 write.csv(summary_item,"glmm_item.csv", row.names = T)
 
 ```
+# GLMM summaries for top 10 items and figure 6 graph
 
-
-```{r data-mod-all-top, warning=FALSE, message=FALSE}
+```{r data-mod-10-top, warning=FALSE, message=FALSE}
 # Function loop: each item
 #All top + items of interest
 top_txt<- df %>%
@@ -642,49 +642,14 @@ p_pred_df_hm
 # dev.off()
  
 ```
-```{r emmeans-loop}
+# Drop1 tests
+
+```{r item-drop-levels}
 # https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
 
 options(scipen = 999)
 
-# Function loop: each item
-#All top + items of interest
-top_txt<- df %>%
-  filter(item %in% top15 | item %in% pol_items) %>%
-  distinct(item)%>%
-  pull(item) %>% 
-  droplevels()
- 
-# Purrr to determine interaction between covid and luz
-joint_item = purrr::map_df(top_txt, function(x){
-  
-  temp_df = df %>% 
-    filter(item == paste0(x)) %>%
-    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-    summarise(sum=sum(sum)) %>%
-    ungroup() %>%
-    mutate(LGA = as.factor(LGA),
-           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
-           covid = as.factor(covid),
-           cycle = droplevels(as.factor(cycle)),
-           item = x)
- 
- #create model
- m_temp  <- glmmTMB(sum ~ #Debris count per survey event
-                   LUZ * covid + #predicted by land use effected by covid
-                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
-                   family=nbinom2(), #negative binomial to deal with count data and zeros
-                   data = temp_df)
- 
-j<- joint_tests(m_temp)
-j$item = x
 
-return(j)
-
- })
-
-joint_item
-write.csv(joint_item,"joint_item.csv", row.names = FALSE)
 
 # Function loop: each item
 #All top + items of interest
@@ -727,27 +692,27 @@ drop1_item <- drop1_item %>%
   filter(LRT != "NA") %>%
   rename(p.value = 'Pr(>Chi)')
 
-write.csv(drop1_item,"drop1_effect.csv", row.names = FALSE)
+write.csv(drop1_item,"drop1_interaction.csv", row.names = FALSE)
 
 #dataframe of items where covid and luz interaction is significant
-d_effect <- drop1_item %>%
+d_int <- drop1_item %>%
   filter(p.value < 0.05)
 
-d_effect_vec <- drop1_item %>%
+d_int_vec <- drop1_item %>%
   filter(p.value < 0.05) %>%
   distinct(item)%>%
   pull(item) %>% 
   droplevels()
 
 #create vector of items to test 
-d_terms_vec <- drop1_item %>%
+d_main_vec <- drop1_item %>%
   filter(p.value>0.05) %>%
   distinct(item)%>%
   pull(item) %>% 
   droplevels()
 
 # Purrr to look at influence of covid and luz without interaction
-drop1_terms = purrr::map_df(d_terms_vec, function(x){
+drop1_main = purrr::map_df(d_main_vec, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -775,15 +740,15 @@ return(d)
  })
 
 #create dataframe to determine which terms are significant
-drop1_terms <- drop1_terms %>%
+drop1_main <- drop1_main %>%
   filter(LRT != "NA") %>%
   rename(p.value = 'Pr(>Chi)')
 
-d_terms <- drop1_terms
+d_main <- drop1_main
 
-d <- rbind(d_effect, d_terms)
+d <- rbind(d_int, d_main)
 
-write.csv(d,"drop1_item.csv", row.names = T)
+write.csv(d,"drop1_main.csv", row.names = T)
   
   
 # joint_tests() obtains and tests the interaction contrasts for all effects in the model and compiles them in one Type-III-ANOVA-like table
@@ -794,6 +759,7 @@ write.csv(d,"drop1_item.csv", row.names = T)
 #  LUZ:covid    3 867  11.117 <.0001 
 ```
 
+# Emmeans pairwise bar
 
 ```{r emmeans}
 #https://aosmith.rbind.io/2019/03/25/getting-started-with-emmeans/
@@ -801,7 +767,7 @@ options(scipen = 999)
 
 # Function loop: each item top txt effect
     # Purrr to determine interaction between covid and luz
-    emm_effect_cl_top = purrr::map_df(top_txt, function(x){
+    emm_int_cl_top = purrr::map_df(top_txt, function(x){
       
       temp_df = df %>% 
         filter(item == paste0(x)) %>%
@@ -832,7 +798,7 @@ options(scipen = 999)
      })
     
     # Purrr to determine interaction between covid and luz
-    emm_effect_lc_top = purrr::map_df(top_txt, function(x){
+    emm_int_lc_top = purrr::map_df(top_txt, function(x){
       
       temp_df = df %>% 
         filter(item == paste0(x)) %>%
@@ -862,11 +828,11 @@ options(scipen = 999)
     
      })
     
-  write.csv(emm_effect_lc_top,"emm_lc_top.csv", row.names = T)
-  write.csv(emm_effect_cl_top,"emm_cl_top.csv", row.names = T)
+  write.csv(emm_int_lc_top,"emm_lc_top.csv", row.names = T)
+  write.csv(emm_int_cl_top,"emm_cl_top.csv", row.names = T)
  
 # Purrr to determine interaction between covid and luz
-emm_effect_cl = purrr::map_df(d_effect_vec, function(x){
+emm_int_cl = purrr::map_df(d_int_vec, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -897,7 +863,7 @@ return(p)
  })
 
 # Purrr to determine interaction between covid and luz
-emm_effect_lc = purrr::map_df(d_effect_vec, function(x){
+emm_int_lc = purrr::map_df(d_int_vec, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -928,7 +894,7 @@ return(p)
  })
 
 # Purrr to determine terms covid and luz
-emm_terms_cl = purrr::map_df(d_terms_vec, function(x){
+emm_main_cl = purrr::map_df(d_main_vec, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -959,7 +925,7 @@ return(p)
  })
 
 # Purrr to determine interaction between covid and luz
-emm_terms_lc = purrr::map_df(d_terms_vec, function(x){
+emm_main_lc = purrr::map_df(d_main_vec, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -989,8 +955,8 @@ return(p)
 
  })
 
-emm_lc <- rbind(emm_effect_lc, emm_terms_lc)
-emm_cl <- rbind(emm_effect_cl, emm_terms_cl)
+emm_lc <- rbind(emm_int_lc, emm_main_lc)
+emm_cl <- rbind(emm_int_cl, emm_main_cl)
 
 # pemm_cl <- emm_cl %>% 
 #   rowwise() %>% 
@@ -1019,13 +985,14 @@ emm_cl <- rbind(emm_effect_cl, emm_terms_cl)
 # write.csv(emm_lc,"emm_lc.csv", row.names = T)
 # write.csv(emm_cl,"emm_cl.csv", row.names = T)
 ```
+# Emmeans main effect LUZ
 
 ```{r emmeans-top10}
 options(scipen = 999)
 
 # Function loop: each item top txt effect
     # Purrr to determine interaction between covid and luz
-    emm_top15_luz = purrr::map_df(top15, function(x){
+    emm_main_luz = purrr::map_df(d_main_vec, function(x){
       
       temp_df = df %>% 
         filter(item == paste0(x)) %>%
@@ -1040,7 +1007,7 @@ options(scipen = 999)
      
      #create model
      m_temp  <- glmmTMB(sum ~ #Debris count per survey event
-                       LUZ * covid + #predicted by land use effected by covid
+                       LUZ + covid + #predicted by land use effected by covid
                        (1|LGA/asset_id) + (1|cycle), #suburb random effect
                        family=nbinom2(), #negative binomial to deal with count data and zeros
                        data = temp_df)
@@ -1049,17 +1016,93 @@ options(scipen = 999)
     
     p <- summary(emm_temp$contrasts)
     p$item = x
-    p$model = "interaction"
+    p$model = "main"
     
     return(p)
     
      })
 
     
-  # write.csv(emm_top15_luz,"emm_top15_luz.csv", row.names = T)
+  write.csv(emm_main_luz,"emm_main_luz.csv", row.names = T)
 
 ```
 
+```{r main-effect-luz-graph}
+# Purrr
+pred_main_df = purrr::map_df(d_main_vec, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    # filter(cycle %in% paste0("C",1:7)) %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ + covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+ nd_temp <- expand.grid(covid = unique(temp_df$covid),
+                       LUZ = unique(temp_df$LUZ),
+                       LGA = NA,
+                       asset_id = NA,
+                       cycle = NA)
+ 
+ #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+ pred_temp <- predict(object=m_temp,
+                     newdata=nd_temp,
+                     se.fit=T,
+                     re.form=NA,
+                     type="response")
+ 
+ #creating standard error for graphing
+ nd_temp$Total <- pred_temp$fit
+ nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
+ nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
+ nd_temp$item = x
+ 
+ return(nd_temp)
+ 
+ })
+
+
+# New facet label names for covid variable
+pred_main_df$covid <- factor(pred_main_df$covid, levels = c("2", "1"), 
+                        labels = c("During Covid", "Before Covid"), ordered = T)
+
+
+main_df <- pred_main_df %>% 
+  filter(!item %in% c("Beer bottles (and similar)", "Foam take-away", "Plastic drink bottles")) %>%
+  mutate(LUZ = as.factor(LUZ),
+  item=as.factor(item),
+  order=reorder_within(item, Total, LUZ))
+
+p_pred_main_df <- 
+  ggplot(main_df, aes(x=covid, y=Total, fill=LUZ)) +
+  geom_bar(position = "dodge", stat="identity") +
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width = 0.9),
+                position = "dodge", width = 0.9) +
+  # scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
+  facet_wrap(~item, scales = "free") +
+  scale_x_reordered() 
+    # guides(x =  guide_axis(angle = 45))
+      # theme(legend.position = "none",
+      #   panel.grid = element_blank(),
+      #   axis.title = element_blank(),
+      #   axis.text = element_blank(),
+      #   panel.background = element_blank())
+
+
+p_pred_main_df
+```
 
 
 # Percent change

@@ -422,7 +422,12 @@ plot(p_glmmtotal)
 dev.off()
 
 summary(m)
+
+#renamed as luz_pct.xlsx and used to find percent total in each land use
+write.csv(nd, "nd.csv", row.names = T)
+
 ```
+
 
 ```{r glmm-tables}
 
@@ -642,6 +647,7 @@ p_pred_df_hm
 # dev.off()
  
 ```
+
 # Drop1 tests
 
 ```{r item-drop-levels}

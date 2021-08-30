@@ -430,8 +430,6 @@ write.csv(nd, "nd.csv", row.names = T)
 
 
 ```{r glmm-tables}
-
-
 tab_model(
   m,
   show.est=TRUE, show.ci=FALSE, show.se=TRUE, show.p=TRUE,
@@ -443,7 +441,6 @@ tab_model(
           string.se = "Standard Error",
           string.ci = "Conf. Int (95%)"
 )
-
 ```
 
 # GLMM summaries for top items and items of interest such as OH&S
@@ -1079,32 +1076,30 @@ pred_main_df = purrr::map_df(d_main_vec, function(x){
  
  })
 
-
 # New facet label names for covid variable
 pred_main_df$covid <- factor(pred_main_df$covid, levels = c("2", "1"), 
                         labels = c("During Covid", "Before Covid"), ordered = T)
-
 
 main_df <- pred_main_df %>% 
   filter(!item %in% c("Beer bottles (and similar)", "Foam take-away", "Plastic drink bottles")) %>%
   mutate(LUZ = as.factor(LUZ),
   item=as.factor(item),
-  order=reorder_within(item, Total, LUZ))
+  item=reorder_within(item, Total, LUZ))
 
 p_pred_main_df <- 
-  ggplot(main_df, aes(x=covid, y=Total, fill=LUZ)) +
+  ggplot(main_df, aes(x=Total, y=item, fill=covid)) +
   geom_bar(position = "dodge", stat="identity") +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width = 0.9),
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9),
                 position = "dodge", width = 0.9) +
-  # scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
-  facet_wrap(~item, scales = "free") +
-  scale_x_reordered() 
+  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
+  facet_wrap(~LUZ, scales = "free") +
+  scale_y_reordered() 
     # guides(x =  guide_axis(angle = 45))
       # theme(legend.position = "none",
       #   panel.grid = element_blank(),
       #   axis.title = element_blank(),
       #   axis.text = element_blank(),
-      #   panel.background = element_blank())
+      #   panel.background = element_blank()
 
 
 p_pred_main_df

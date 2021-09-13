@@ -39,7 +39,7 @@ library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
 library(emmeans)
-library(ComplexHeatmap)
+# library(ComplexHeatmap)
 library(RColorBrewer)
 library(cowplot) #minimal backgrounds for ggplot
 library(purrr) #looping
@@ -715,7 +715,7 @@ d_main_vec <- drop1_item %>%
   droplevels()
 
 # Purrr to look at influence of covid and luz without interaction
-drop1_main = purrr::map_df(d_main_vec, function(x){
+drop1_main = purrr::map_df(top_txt, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -1032,7 +1032,7 @@ options(scipen = 999)
 
 ```{r main-effect-luz-graph}
 # Purrr
-pred_main_df = purrr::map_df(d_main_vec, function(x){
+pred_main_df = purrr::map_df(top_txt, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -1076,24 +1076,36 @@ pred_main_df = purrr::map_df(d_main_vec, function(x){
  
  })
 
+covid_effect_vec <- drop1_main %>%
+  filter(item %in% c("Paper  packaging", "OH & S", "Glass / ceramic scrap", "Hard plastic lids", "Hard plastic remnants", "Aluminium cans", "Foil (including bladders)")) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+
+luz_effect_vec <- drop1_main %>%
+  filter(item %in% c("Hard plastic remnants", "Foil (including bladders)", "Sanitary items", "Plastic bags")) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+
 # New facet label names for covid variable
 pred_main_df$covid <- factor(pred_main_df$covid, levels = c("2", "1"), 
                         labels = c("During Covid", "Before Covid"), ordered = T)
 
-main_df <- pred_main_df %>% 
-  filter(!item %in% c("Beer bottles (and similar)", "Foam take-away", "Plastic drink bottles")) %>%
-  mutate(LUZ = as.factor(LUZ),
-  item=as.factor(item),
-  item=reorder_within(item, Total, LUZ))
+covid_effect_df <- pred_main_df %>%
+  filter(item %in% covid_effect_vec) %>%
+  group_by(item, covid) %>%
+  mutate(Total = mean(Total),
+      covid = as.factor(covid),
+      item=as.factor(item),
+      item=reorder(item, Total))
 
-p_pred_main_df <- 
-  ggplot(main_df, aes(x=Total, y=item, fill=covid)) +
+p_pred_covid_df <- 
+  ggplot(covid_effect_df, aes(x=item, y=Total, fill=covid)) +
   geom_bar(position = "dodge", stat="identity") +
-  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width = 0.9),
+  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width = 0.9),
                 position = "dodge", width = 0.9) +
-  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
-  facet_wrap(~LUZ, scales = "free") +
-  scale_y_reordered() 
+  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E"))
     # guides(x =  guide_axis(angle = 45))
       # theme(legend.position = "none",
       #   panel.grid = element_blank(),
@@ -1102,7 +1114,7 @@ p_pred_main_df <-
       #   panel.background = element_blank()
 
 
-p_pred_main_df
+p_pred_covid_df
 ```
 
 

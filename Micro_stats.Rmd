@@ -32,9 +32,9 @@ library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
 library(emmeans)
-library(ComplexHeatmap)
+# library(ComplexHeatmap)
 library(RColorBrewer)
-library(heatmaply)
+# library(heatmaply)
 library(cowplot) #minimal backgrounds for ggplot
 
 ```

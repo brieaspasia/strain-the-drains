@@ -47,6 +47,7 @@ library(tidytext) # reordering
 library(sjPlot) #glmm tables
 library(sjmisc) #glmm tables
 library(sjlabelled) #glmm tables
+library(wesanderson)
 
 
 ```
@@ -644,7 +645,7 @@ write.csv(d,"drop1_main.csv", row.names = T)
 ```
 # GLMM summaries for interaction items and figure 6 graph
 
-```{r data-mod-10-top, warning=FALSE, message=FALSE}
+```{r items-interaction, warning=FALSE, message=FALSE}
 ### Run chunk 8 first to get vector of interaction items ###
  
 # Purrr
@@ -753,7 +754,7 @@ p_pred_int_items
  
 ```
 
-```{r data-mod-10-top, warning=FALSE, message=FALSE}
+```{r items-covid-effect, warning=FALSE, message=FALSE}
 ### Run chunk 8 first to get vector of main effect items ###
  
 # Purrr Covid
@@ -843,7 +844,7 @@ p_pred_cov_items
  
 ```
 
-```{r data-mod-10-top, warning=FALSE, message=FALSE}
+```{r items-luz-effect, warning=FALSE, message=FALSE}
 ### Run chunk 8 first to get vector of main effect items ###
  
 # Purrr Land Use
@@ -1932,4 +1933,88 @@ mic_p
 
 #reference: https://plotly.com/ggplot2/geom_rect/ tutorial for geom_rect background
 ```
+
+```{r micro-plot-item}
+micro_sum = micro_df %>% group_by(LUZ, item) %>% summarise(total = sum(sum), sd = sd(sum))
+
+# df_item = df_item %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
+
+p <- ggplot(micro_sum, aes(x = LUZ, y = total, fill = item)) +
+        geom_bar(stat="identity", position="dodge") +
+        geom_text(aes(y = total + sd, label = round(total,2)), 
+                  position = position_dodge(width =0.9), 
+                  vjust = -0.5, color = "black", size = 3) +
+        geom_errorbar(aes(ymin = total - sd, ymax = total + sd), 
+                      width = .2, position = position_dodge(.9)) +
+        theme_hc() + 
+        scale_fill_brewer(
+          type = "qual", palette = 8,
+          direction = 2, aesthetics = "fill"
+        ) + 
+        # theme(axis.text.x = element_text(angle = 70)) +
+        ggtitle("Counts of microplastics (< 5mm) by Land Use") +
+        labs(y = "Microplastic counts (thousands)", x="") +
+        theme(axis.text.x=element_text(color = "black", size=11, 
+                                 vjust=.8, angle=30, hjust=0.8))
+
+p
+```
+```{r micro-plot-LGA}
+micro_sum = micro_df %>% group_by(LUZ, LGA) %>% summarise(total = sum(sum), sd = sd(sum))
+
+# df_item = df_item %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
+
+p <- ggplot(micro_sum, aes(x = LUZ, y = total, fill = LGA)) +
+        geom_bar(stat="identity", position="dodge") +
+        geom_text(aes(y = total + sd, label = round(total,2)), 
+                  position = position_dodge(width =0.9), 
+                  vjust = -0.5, color = "black", size = 3) +
+        geom_errorbar(aes(ymin = total - sd, ymax = total + sd), 
+                      width = .2, position = position_dodge(.9)) +
+        theme_hc() + 
+        scale_fill_brewer(
+          type = "qual", palette = 8,
+          direction = 2, aesthetics = "fill"
+        ) + 
+        # theme(axis.text.x = element_text(angle = 70)) +
+        ggtitle("Counts of microplastics (< 5mm) by Land Use") +
+        labs(y = "Microplastic counts (thousands)", x="") +
+        theme(axis.text.x=element_text(color = "black", size=11, 
+                                 vjust=.8, angle=30, hjust=0.8))
+
+p
+```
+
+
+```{r ggplot}
+df.plot = df.LU %>% ungroup()
+#df.plot = df.Type %>% ungroup()
+
+df.plot = df.plot %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
+
+
+p_sum = ggplot(df.plot, aes(x = LGA, y = sum, fill = LGA)) +
+        geom_bar(stat="identity", position="dodge") +
+        geom_text(aes(y = sum + sd, label = round(sum,2)), position = position_dodge(width =0.9), vjust = -0.5, color = "black", size = 3) +
+        geom_errorbar(aes(ymin = sum - sd, ymax = sum + sd), width = .2,
+                        position = position_dodge(.9)) +
+        theme_hc() + 
+        scale_fill_brewer(
+          type = "qual", palette = 8,
+          direction = 2, aesthetics = "fill"
+        ) + 
+        # theme(axis.text.x = element_text(angle = 70)) +
+        ggtitle("Counts of microplastics (< 5mm) by Land Use") +
+        labs(y = "Microplastic counts (thousands)", x="") +
+        theme(axis.text.x=element_text(color = "black", size=11, 
+                                 vjust=.8, angle=30, hjust=0.8)) +
+        facet_wrap(~Land.use.zone, scales="free_y")
+  
+
+p_sum
+
+ggsave(filename = paste0(here("Output"),"/", "LU_micro.png"), plot = p_sum, dpi = 600)
+
+```
+
 

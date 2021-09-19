@@ -1977,8 +1977,8 @@ p <- ggplot(micro_sum, aes(x = LUZ, y = total, fill = LGA)) +
           direction = 2, aesthetics = "fill"
         ) + 
         # theme(axis.text.x = element_text(angle = 70)) +
-        ggtitle("Counts of microplastics (< 5mm) by Land Use") +
-        labs(y = "Microplastic counts (thousands)", x="") +
+        ggtitle("'Let's Strain the Drains' total microplastics (< 5mm)") +
+        labs(subtitle = "Count per land use and LGA from Oct 2019 - Oct 2020", y = "Microplastic items (thousands)", x="") +
         theme(axis.text.x=element_text(color = "black", size=11, 
                                  vjust=.8, angle=30, hjust=0.8))
 

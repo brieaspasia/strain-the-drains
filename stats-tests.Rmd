@@ -512,5 +512,569 @@ em_tot_lc$item = "Total"
 
 ```
 
+# Interaction model
+```{r model-verification-int}
+so_item_int = purrr::map_df(d_int_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ,
+                    "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ * covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              so <- simulateResiduals(fittedModel = m_temp, plot=T)
+              
+              return(so)
+              
+               })
+        
+```
+
+```{r summary-int}
+ gsum_int = purrr::map_df(d_int_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public   Transport Terminal", "Industrial Precinct")),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ * covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              g <- summary(m_temp)
+               g <- as.data.frame(g$coefficients$cond)
+              
+              g$item = x
+              g$model = "interaction"
+              
+              return(g)
+               })
+
+gsum_int
+write.csv(gsum_int,"gsum_int.csv", row.names = T)
+```
+
+```{r emmeans-cl-int}
+
+ ecl_int = purrr::map_df(d_int_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public   Transport Terminal", "Industrial Precinct")),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ * covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              e <- emmeans(m_temp, pairwise~covid|LUZ, type="response",level=0.95, infer=T)
+               
+              e <- summary(e$contrasts)
+              e$item = x
+              e$model = "interaction"
+          
+              
+              return(e)
+               })
+
+write.csv(ecl_int,"ecl_int.csv", row.names = T)
+
+```
+
+
+```{r emmeans-lc-int}
+
+ elc_int = purrr::map_df(d_int_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ * covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              e <- emmeans(m_temp, pairwise~LUZ|covid, type="response",level=0.95, infer=T)
+               
+              e <- summary(e$contrasts)
+              e$item = x
+              e$model = "interaction"
+          
+              
+              return(e)
+               })
+
+write.csv(elc_int,"elc_int.csv", row.names = T)
+
+```
+
+# Main effect model
+```{r model-verification-main}
+
+# foil debris
+          mod_foil = df %>% 
+            filter(item == "Foil (including bladders)") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_foil  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_foil)
+           
+          so_foil <- simulateResiduals(fittedModel = m_foil, plot=T)
+
+
+# hard plastic remnants debris
+          mod_hplasrem = df %>% 
+            filter(item == "Hard plastic remnants") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_hplasrem  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_hplasrem)
+           
+          so_hplasrem <- simulateResiduals(fittedModel = m_hplasrem, plot=T)
+```
+```{r summary-main}
+# foil debris
+          mod_foil = df %>% 
+            filter(item == "Foil (including bladders)") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_foil  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_foil)
+           
+           gsum_foil <- summary(m_foil)
+              gsum_foil <- as.data.frame(gsum_foil$coefficients$cond)
+              
+              gsum_foil$item = "Foil (including bladders)"
+              gsum_foil$model = "main"
+           
+          
+
+
+# hard plastic remnants debris
+          mod_hplasrem = df %>% 
+            filter(item == "Hard plastic remnants") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_hplasrem  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_hplasrem)
+           
+           gsum_hplasrem <- summary(m_hplasrem)
+              gsum_hplasrem <- as.data.frame(gsum_hplasrem$coefficients$cond)
+              
+              gsum_hplasrem$item = "Hard plastic remnants"
+              gsum_hplasrem$model = "main"
+              
+      gsum_main <- rbind(gsum_foil, gsum_hplasrem)
+      
+      gsum_main
+      write.csv(gsum_main,"gsum_main.csv", row.names = T)
+```
+
+```{r em-cl-main}
+# foil debris
+          mod_foil = df %>% 
+            filter(item == "Foil (including bladders)") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_foil  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_foil)
+           
+              e_cl_foil <- emmeans(m_foil, pairwise~covid|LUZ, type="response",level=0.95, infer=T)
+               
+              e_cl_foil <- summary(e_cl_foil$contrasts)
+              e_cl_foil$item = "Foil (including bladders)"
+              e_cl_foil$model = "main"
+           
+          
+
+
+# hard plastic remnants debris
+          mod_hplasrem = df %>% 
+            filter(item == "Hard plastic remnants") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_hplasrem  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_hplasrem)
+           
+              e_cl_hplasrem <- emmeans(m_hplasrem, pairwise~covid|LUZ, type="response",level=0.95, infer=T)
+               
+              e_cl_hplasrem <- summary(e_cl_hplasrem$contrasts)
+              e_cl_hplasrem$item = "Hard plastic remnants"
+              e_cl_hplasrem$model = "main"
+              
+      ecl_main <- rbind(e_cl_foil, e_cl_hplasrem)
+      
+      ecl_main
+      write.csv(ecl_main,"ecl_main.csv", row.names = T)
+```
+```{r em-lc-main}
+# foil debris
+          mod_foil = df %>% 
+            filter(item == "Foil (including bladders)") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_foil  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_foil)
+           
+              e_lc_foil <- emmeans(m_foil, pairwise~LUZ|covid, type="response",level=0.95, infer=T)
+               
+              e_lc_foil <- summary(e_lc_foil$contrasts)
+              e_lc_foil$item = "Foil (including bladders)"
+              e_lc_foil$model = "main"
+           
+          
+
+
+# hard plastic remnants debris
+          mod_hplasrem = df %>% 
+            filter(item == "Hard plastic remnants") %>%
+              group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+              summarise(sum=sum(sum)) %>%
+              ungroup() %>%
+              mutate(LGA = as.factor(LGA),
+                     LUZ = as.factor(
+                       fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                     covid = as.factor(covid),
+                     cycle = droplevels(as.factor(cycle)))
+           
+           #create model
+           m_hplasrem  <- glmmTMB(sum ~ #Debris count per survey event
+                             LUZ + covid + #predicted by land use effected by covid
+                             (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                             family=nbinom2(), #negative binomial to deal with count data and zeros
+                             data = mod_hplasrem)
+           
+              e_lc_hplasrem <- emmeans(m_hplasrem, pairwise~LUZ|covid, type="response",level=0.95, infer=T)
+               
+              e_lc_hplasrem <- summary(e_lc_hplasrem$contrasts)
+              e_lc_hplasrem$item = "Hard plastic remnants"
+              e_lc_hplasrem$model = "main"
+              
+      elc_main <- rbind(e_lc_foil, e_lc_hplasrem)
+      
+      elc_main
+      write.csv(elc_main,"elc_main.csv", row.names = T)
+```
+
+
+# Covid model
+
+```{r model-verification-cov}
+so_item_cov = purrr::map_df(d_cov_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              so <- simulateResiduals(fittedModel = m_temp, plot=T)
+              
+              return(so)
+              
+               })
+        
+```
+```{r summary-cov}
+ gsum_cov = purrr::map_df(d_cov_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+                g <- summary(m_temp)
+                g <- as.data.frame(g$coefficients$cond)
+              
+              g$item = x
+              g$model = "covid"
+              
+              return(g)
+               })
+
+gsum_cov
+write.csv(gsum_cov,"gsum_cov.csv", row.names = T)
+```
+
+
+```{r emmeans-cov}
+
+ ecov = purrr::map_df(d_cov_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              e <- emmeans(m_temp, pairwise~covid, type="response",level=0.95, infer=T)
+               
+              e <- summary(e$contrasts)
+              e$item = x
+              e$model = "covid"
+          
+              
+              return(e)
+               })
+
+write.csv(ecov,"ecov.csv", row.names = T)
+
+```
+
+# land use model
+```{r model-verification-luz}
+so_item_luz = purrr::map_df(d_luz_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ,
+                    "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              so <- simulateResiduals(fittedModel = m_temp, plot=T)
+              
+              return(so)
+              
+               })
+        
+```
+
+```{r summary-luz}
+ gsum_luz = purrr::map_df(d_luz_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public   Transport Terminal", "Industrial Precinct")),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              g <- summary(m_temp)
+               g <- as.data.frame(g$coefficients$cond)
+              
+              g$item = x
+              g$model = "luz"
+              
+              return(g)
+               })
+
+gsum_luz
+write.csv(gsum_luz,"gsum_luz.csv", row.names = T)
+```
+
+
+```{r emmeans-luz}
+
+ eluz = purrr::map_df(d_luz_vec, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public   Transport Terminal", "Industrial Precinct")),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              e <- emmeans(m_temp, pairwise~LUZ, type="response",level=0.95, infer=T)
+               
+              e <- summary(e$contrasts)
+              e$item = x
+              e$model = "luz"
+          
+              
+              return(e)
+               })
+
+write.csv(eluz,"eluz.csv", row.names = T)
+
+```
+
+
+
+
 
 

@@ -1,21 +1,13 @@
 ---
 title: "stats-tests"
 author: "Brie Sherow"
-date: "20/01/2021"
-output: 
-  html_document:
-    toc: yes
-    toc_float: yes
-    code_folding: hide
-    df_print: paged
-  pdf_document:
-    toc: yes
+date: "21/09/2021"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 
 ```{r load-libraries}
 library(ggplot2) #graphing
@@ -26,82 +18,365 @@ library(forcats) #working with factors
 library(tidyverse) #manipulating data
 library(knitr) #rmarkdown functions
 library(kableExtra) #table layouts
-library(magick) #image processing
-library(stats) #R stats functions
+library(stats) #base R stats
 library(broom) #create summaries from stats objects
 library(car) #lm regression
 library(MASS) #stats
 library(lme4) #glmer function
-library(DHARMa) #testing model diagnostics
+library(DHARMa) #model verification
 library(glmmTMB) #fit zero-inflated negative binomial
-library(lattice) #fourth corner heatmap
-library(corrplot) #co-occurrence matrix
-library(gclus) #co-occurrence matrix
-library(broom.mixed) #regression tables
+library(reshape2) #melt long to wide
+library(Rcpp)
+```
 
-library(sjPlot) #regression models as HTML table
-library(sjmisc) #regression models as HTML table
-library(sjlabelled) #regression models as HTML table
+# create df
+
+```{r create-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
+#create survey count  
+
+        #load item counts
+        item <- read.csv(file="Data/2101_item.csv", 
+                         header=T, sep=",") 
+
+#remove duplicate entries
+        item <- unique(item[!duplicated(item),])
+
+        #load item labels
+        item_label <- read.csv(file="Data/item_label.csv", 
+                         header=T, sep=",") 
+        
+        #load events
+        event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        survey_count <- left_join(item, event, by="event_id")
+        
+        survey_count <- survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -event_date, -note) %>%
+          filter(item!="Pollution Rating") 
+
+        #summarise duplicate survey entries (this will lose one set of notes....)
+        item_merge <- survey_count %>%
+          group_by(event_id, item) %>%
+          summarise(sum=sum(total)) %>%
+         ungroup()
+
+        #join survey count to the merged summaries
+        survey_count <- item_merge %>%
+          left_join(survey_count, by=c("event_id"="event_id", "item"="item")) %>%
+          dplyr::select(-total) %>%
+          unique()
+        
+#create abundance data with all possible debris items and zero values
+
+      # #count of items per unique event
+      # event_count <- survey_count %>%
+      #   group_by(event_id, item) %>%
+      #   summarise(sum=sum(sum)) %>%
+      #   ungroup()
+
+      #load AMDI code\
+      AMDI_code <- read.csv(file="Data/200101_AMDI_code.csv", 
+                       header=T, sep=",") 
+      
+      #create full list of possible items
+      AMDI <- AMDI_code %>%
+        filter(item_code_id != "LSTD1") %>% #remove pollution rating / microplastics
+        dplyr::select(item.ex, mat) #column of all possible item types
+      
+      
+      #create a df of all possible items at all survey events, complete with zeros
+      abund <- full_join(AMDI, survey_count, by=c("item.ex" = "item"))
+      
+      #data long to wide
+      abund_wide <- abund %>%
+        spread(item.ex, sum) %>%
+        dplyr::select(-Asset.ID, -Cycle, -covid, -date, -mat)
+      
+      #replace na values with 0
+      abund_wide[is.na(abund_wide)] <- 0
+        
+      #transform back to long but now with the full items list and zero data
+      abund_long <- melt(abund_wide, id.vars="event_id")
+      
+      #remove the zero event ID (how did that get there?)
+      abund_long <- abund_long[abund_long$event_id != 0, ]
+
+#join abundance data to survey notes and other columns
+      df <- left_join(abund_long, event, by="event_id")
+      
+        #load sites
+          site <- read.csv(file="Data/200619_site.csv", 
+                           header=T, sep=",") 
+      
+            #join LGA and luz to df
+          df <- left_join(df, site, by = "Asset.ID")
+          
+          #classify items correctly      
+           df <- df %>%
+        dplyr::select(-event_date, -event.tot, -event.wt, -vol, -hr, 
+                      -Site, -Latitude, -Longitude) %>% #remove duplicate columns
+        rename(item=variable, #rename columns
+               sum=value,
+               asset_id = Asset.ID,
+               cycle=Cycle,
+               LUZ = Land.use.zone) %>% 
+        mutate(asset_id=as.factor(asset_id), #classify columns correctly  
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ),
+             event_id=as.factor(event_id),
+             cycle=as.factor(cycle),
+             date=dmy(date)
+             )
+
+#resolve duplicates in MC01, C5    
+          dup <- df %>% 
+            group_by(asset_id, cycle, item) %>% #reconcile duplicates in MC01 Cycle 5
+            summarise(sum=sum(sum)) %>%
+            ungroup()
+           
+      # #check difference
+      #      subsetdf <- df %>%
+      #        dplyr::select(Asset.ID, Cycle, item, sum)
+      #      
+      #      setdiff(subsetdf, dup)
+           
+      #join C5 correction to df
+      df <- dup %>% left_join(df, by=c("asset_id"="asset_id", 
+                                       "cycle"="cycle", "item"="item")) %>%
+        dplyr::select(-sum.y) %>%
+        filter(event_id != "23097") %>%
+        rename(sum = sum.x) %>%
+        distinct()
+      
+      item_labelDF <- df %>%
+        distinct(item)
+      
+      df <- df %>%
+        left_join(item_label, by=c("item" = "item.type")) %>%
+        mutate(item = A3) %>%
+        dplyr::select(-A3)
+      
+#classify columns correctly    
+      df <- df %>%
+      mutate(item=as.factor(item),
+             covid=as.factor(covid),
+             material=as.factor(material))
+
+#Combine C8 and C9    
+     #isolate C8
+    C8 <- df %>%
+      filter(cycle == "C8")
+    
+    #isolate C9
+    C9 <- df %>%
+      filter(cycle == "C9")
+    
+    #join C8 and C9 by unique drain and item to capture double surveys
+    t <- left_join(C9, C8, by=c("asset_id"="asset_id", "item" = "item"))
+    t$sum.y[is.na(t$sum.y)] <- 0 #change na to 0
+    
+    t <- t %>%
+      mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+      dplyr::select(event_id.x, item, combined_sum)
+    
+    df <- df %>% 
+      left_join(t, by = c("event_id"="event_id.x", "item"="item")) %>%
+      filter(cycle != "C8") %>%
+      mutate(combined_sum = tidyr::replace_na(combined_sum, 0),
+              sum2 = ifelse(cycle != "C9", sum, 0),
+              final_sum = sum2 + combined_sum) %>%
+      dplyr::select(-sum2, -sum, -combined_sum) %>%
+      rename(sum = final_sum)
+    
+#find days since last survey at each asset
+diff <- df %>%
+  distinct(event_id, .keep_all = T) %>%
+  dplyr::select(-item,-sum) %>%
+  group_by(asset_id) %>% #looking at each event
+  arrange(date) %>%
+  mutate(days = date - lag(date)) %>% #days since last survey event
+  filter(days != "NA") %>% #remove first survey date
+  ungroup()
+
+unique(diff$days)
+
+diff_red <- diff %>% dplyr::select(event_id, asset_id, days)
+
+df <- df %>%
+  left_join(diff_red, by="event_id") %>%
+  dplyr::select(-asset_id.y) %>%
+  rename(asset_id = asset_id.x)
+    
+```
+
+# total
+
+```{r drop1-total}
+
+ mod = df %>% 
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)))
+ 
+ #create model
+ m  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = mod)
+ 
+ drop1_tot <- drop1(m, test="Chisq")
+ 
+ drop1_tot
+#           Df    AIC    LRT  Pr(>Chi)    
+# <none>       9079.4                     
+# LUZ:covid  3 9106.1 32.651 3.815e-07 ***
+ 
+```
+
+```{r model-verification-total}
+#create df
+ mod = df %>% 
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)))
+
+#create model
+ m  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = mod)
+ 
+so_tot <- simulateResiduals(fittedModel = m, plot=T)
+  
+plotResiduals(so_tot)
+testUniformity(so_tot) #tests if the overall distribution conforms to expectations
+testOutliers(so_tot) #tests if there are more simulation outliers than expected
+testDispersion(so_tot) #tests if the simulated dispersion is equal to the observed dispersion
+testQuantiles(so_tot) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
+testZeroInflation(so_tot) #tests if there are more zeros than expected
+```
+```{r temporal-autocorrelation-total}
+mod$resid = resid(m) #create a column for each survey event's residuals
+
+mod_temp <- mod %>%
+    group_by(date) %>%
+    summarise(sum=sum(resid))
+
+testTemporalAutocorrelation(mod_temp$sum, 
+                              time =  mod_temp$date) #test resid for temporal autocorrelation
+```
+```{r emmeans-total}
+#create model for total debris
+ mod = df %>% 
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)))
+ 
+ #create model
+ m  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = mod)
+
+em_tot_1 <- emmeans(m, pairwise~covid|LUZ, type="response",level=0.95, infer=T)
+em_tot_2 <- emmeans(m, pairwise~LUZ|covid, type="response",level=0.95, infer=T)
+
+em_tot_cl <- summary(em_tot_1$contrasts)
+em_tot_cl$Trait = "total"
+
+em_tot_lc <- summary(em_tot_2$contrasts)
+em_tot_lc$Trait = "total"
+
+em_tot_cl
+em_tot_lc
+```
+# items
+
+```{r drop-levels-item}
+#find top 15 items
+top15 <- df %>%
+  filter(item != "Metal scrap") %>% #removing outlier entry
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(15, sum)
+  
+#create vector from top 15 items
+top15 <- top15$item 
+top15 <- unlist(top15)
+
+#items of policy interest
+pol_items <- df %>% 
+  filter(item == "OH & S" | item=="Aluminium cans" | item == "Foam take-away")
+
+#create vector from policy items
+pol_items <- pol_items$item 
+pol_items <- unlist(pol_items)
+
+#vector of all items of interest due to abundance or policy relevance
+top_txt<- df %>%
+  filter(item %in% top15 | item %in% pol_items) %>%
+  distinct(item)%>%
+  pull(item) %>% 
+  droplevels()
+     
+    # Purrr to determine interaction between covid and luz
+    d1_item_int = purrr::map_df(top_txt, function(x){
+      
+      temp_df = df %>% 
+        filter(item == paste0(x)) %>%
+        group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+        summarise(sum=sum(sum)) %>%
+        ungroup() %>%
+        mutate(LGA = as.factor(LGA),
+              LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+              covid = as.factor(covid),
+              cycle = droplevels(as.factor(cycle)),
+              item = x)
+     
+     #create model
+     m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                       LUZ * covid + #predicted by land use effected by covid
+                       (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                       family=nbinom2(), #negative binomial to deal with count data and zeros
+                       data = temp_df)
+     
+    d <- drop1(m_temp, test="Chisq")
+    
+      #create dataframe to determine if interaction effect is significant
+    d <- d %>%
+      filter(LRT != "NA") %>%
+      rename(p.value = 'Pr(>Chi)')
+    
+    d$item = x
+    d$model = "interaction"
+    
+    return(d)
+    
+     })
+
+d1_item_int
+write.csv(d1_item_int,"d1_item_int.csv", row.names = T)
+
 ```
 
 
-```{r create-abundance-data}
-# 0.2 Load data
-load_codes = c("site", # contains site data 
-               "event", # events per site
-               "item",  # items per event
-               "code")  # AMDI item codes
-
-for(i in 1:length(load_codes)){
-  
-  fp = list.files(path = here::here("Data"), 
-                  pattern = paste0(load_codes[i],".csv$"),
-                  full.names = T)
-  
-  assign(paste0("df.",load_codes[i]), as.data.frame(read.csv(fp)))
-  
-}
-
-
-    # 1.2 merge event per site
-    df = left_join(df.site,df.event, by = "Asset.ID")
-    
-    # 1.3 merge item per event
-    df = left_join(df,df.item, by = "event_id")
-    
-    # 1.4 Add material and item type to df.final
-    col.ind = grep("item.ex", names(df.code))
-    df.final = left_join(df,df.code[,2:col.ind], by = c("item" = "item.ex"))
-    
-    df.final <- df.final %>%
-      filter(item!="Pollution Rating") %>% #recording this in micro
-      dplyr::select(LGA, Land.use.zone, Asset.ID, event_id, item, total) %>%
-      unique() 
-    
-      #convert to data wide
-    df.wide <- unite(df.final, "event", c("LGA", "Land.use.zone", "Asset.ID", "event_id"), sep=" ")
-    df.test <- spread(df.wide, item, total) 
-  
-  #replace na values with 0
-  abund[is.na(abund)] <- 0
-```
-
-```{r data-prep}
-mod <- df.final %>%
-  group_by(event_id, LGA, Land.use.zone, item) %>%
-  summarise(total =sum(total)) %>%
-  ungroup() %>%
-  mutate(LGA=as.factor(LGA),
-         Land.use.zone=as.factor(Land.use.zone),
-         event_id=as.factor(event_id),
-         item=as.factor(item))
-
-m <- glmmTMB(total~
-              Land.use.zone +
-               event_id +
-               item +
-               (LGA),
-             family=poisson(),
-             data=mod)
-```
 

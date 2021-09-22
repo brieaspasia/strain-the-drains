@@ -41,6 +41,8 @@ library(gclus) #co-occurrence matrix
 library(broom.mixed) #regression tables
 library(vegan) #ordination
 library(emmeans)
+library(Rcpp)
+library(reshape2)
 ```
 
 ```{r create-df}

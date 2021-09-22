@@ -26,7 +26,8 @@ library(lme4) #glmer function
 library(DHARMa) #model verification
 library(glmmTMB) #fit zero-inflated negative binomial
 library(reshape2) #melt long to wide
-library(Rcpp)
+library(Rcpp) #something to do with reshape
+library(emmeans) #pairwise comparisons
 ```
 
 # create df
@@ -238,7 +239,7 @@ df <- df %>%
 #           Df    AIC    LRT  Pr(>Chi)    
 # <none>       9079.4                     
 # LUZ:covid  3 9106.1 32.651 3.815e-07 ***
- 
+write.csv(drop1_tot,"d1_tot.csv", row.names = T)
 ```
 
 ```{r model-verification-total}
@@ -300,81 +301,214 @@ em_tot_1 <- emmeans(m, pairwise~covid|LUZ, type="response",level=0.95, infer=T)
 em_tot_2 <- emmeans(m, pairwise~LUZ|covid, type="response",level=0.95, infer=T)
 
 em_tot_cl <- summary(em_tot_1$contrasts)
-em_tot_cl$Trait = "total"
+em_tot_cl$item = "Total"
 
 em_tot_lc <- summary(em_tot_2$contrasts)
-em_tot_lc$Trait = "total"
+em_tot_lc$item = "Total"
 
-em_tot_cl
-em_tot_lc
 ```
 # items
 
 ```{r drop-levels-item}
-#find top 15 items
-top15 <- df %>%
-  filter(item != "Metal scrap") %>% #removing outlier entry
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  top_n(15, sum)
+
+#create vector of items to test
+          #find top 15 items
+          top15 <- df %>%
+            filter(item != "Metal scrap") %>% #removing outlier entry
+            group_by(item) %>%
+            summarise(sum=sum(sum)) %>%
+            arrange(desc(sum)) %>%
+            top_n(15, sum)
+            
+          #create vector from top 15 items
+          top15 <- top15$item 
+          top15 <- unlist(top15)
+          
+          #items of policy interest
+          pol_items <- df %>% 
+            filter(item == "OH & S" | item=="Aluminium cans" | item == "Foam take-away")
+          
+          #create vector from policy items
+          pol_items <- pol_items$item 
+          pol_items <- unlist(pol_items)
+          
+          #vector of all items of interest due to abundance or policy relevance
+          top_txt<- df %>%
+            filter(item %in% top15 | item %in% pol_items) %>%
+            distinct(item)%>%
+            pull(item) %>% 
+            droplevels()
   
-#create vector from top 15 items
-top15 <- top15$item 
-top15 <- unlist(top15)
-
-#items of policy interest
-pol_items <- df %>% 
-  filter(item == "OH & S" | item=="Aluminium cans" | item == "Foam take-away")
-
-#create vector from policy items
-pol_items <- pol_items$item 
-pol_items <- unlist(pol_items)
-
-#vector of all items of interest due to abundance or policy relevance
-top_txt<- df %>%
-  filter(item %in% top15 | item %in% pol_items) %>%
-  distinct(item)%>%
-  pull(item) %>% 
-  droplevels()
-     
-    # Purrr to determine interaction between covid and luz
-    d1_item_int = purrr::map_df(top_txt, function(x){
-      
-      temp_df = df %>% 
-        filter(item == paste0(x)) %>%
-        group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-        summarise(sum=sum(sum)) %>%
-        ungroup() %>%
-        mutate(LGA = as.factor(LGA),
-              LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
-              covid = as.factor(covid),
-              cycle = droplevels(as.factor(cycle)),
-              item = x)
-     
-     #create model
-     m_temp  <- glmmTMB(sum ~ #Debris count per survey event
-                       LUZ * covid + #predicted by land use effected by covid
-                       (1|LGA/asset_id) + (1|cycle), #suburb random effect
-                       family=nbinom2(), #negative binomial to deal with count data and zeros
-                       data = temp_df)
-     
-    d <- drop1(m_temp, test="Chisq")
+# Purrr to determine interaction between covid and luz
+              d1_item_int = purrr::map_df(top_txt, function(x){
+                
+                temp_df = df %>% 
+                  filter(item == paste0(x)) %>%
+                  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>%
+                  summarise(sum=sum(sum)) %>%
+                  ungroup() %>%
+                  mutate(LGA = as.factor(LGA),
+                        LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public   Transport Terminal", "Industrial Precinct")),
+                        covid = as.factor(covid),
+                        cycle = droplevels(as.factor(cycle)),
+                        item = x)
+               
+               #create model
+               m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                                 LUZ * covid + #predicted by land use effected by covid
+                                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                                 family=nbinom2(), #nbinom to deal with count data and zeros
+                                 data = temp_df)
+               
+              d <- drop1(m_temp, test="Chisq")
+              
+                #create dataframe to determine if interaction effect is significant
+              d <- d %>%
+                filter(LRT != "NA") %>%
+                rename(p.value = 'Pr(>Chi)')
+              
+              d$item = x
+              d$model = "interaction"
+              
+              return(d)
+              
+               })
+          
+          d1_item_int
+          write.csv(d1_item_int,"d1_item_int.csv", row.names = T)
+          
+#create vectors for items where interaction is significant or not
+          
+        #vector of items where covid and luz interaction is significant
+        d_int_vec <- d1_item_int %>%
+          filter(p.value < 0.05) %>%
+          distinct(item)%>%
+          pull(item) %>% 
+          droplevels()
     
-      #create dataframe to determine if interaction effect is significant
-    d <- d %>%
-      filter(LRT != "NA") %>%
-      rename(p.value = 'Pr(>Chi)')
+        #vector of items where covid * luz is not significant
+        d_main_vec <- d1_item_int %>%
+          filter(p.value>0.05) %>%
+          distinct(item)%>%
+          pull(item) %>% 
+          droplevels()
     
-    d$item = x
-    d$model = "interaction"
-    
-    return(d)
-    
-     })
-
-d1_item_int
-write.csv(d1_item_int,"d1_item_int.csv", row.names = T)
+# Purrr to determine main effects of covid and luz
+            d1_item_main = purrr::map_df(d_main_vec, function(x){
+              
+              temp_df = df %>% 
+                filter(item == paste0(x)) %>%
+                group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+                summarise(sum=sum(sum)) %>%
+                ungroup() %>%
+                mutate(LGA = as.factor(LGA),
+                       LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                       covid = as.factor(covid),
+                       cycle = droplevels(as.factor(cycle)),
+                       item = x)
+             
+             #create model
+             m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                               LUZ + covid + #predicted by land use effected by covid
+                               (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                               family=nbinom2(), #nbinom to deal with count data and zeros
+                               data = temp_df)
+             
+            d <- drop1(m_temp, test="Chisq")
+            d <- d %>%
+                filter(LRT != "NA") %>%
+                rename(p.value = 'Pr(>Chi)')
+            d$item = x
+            d$model = "main"
+            
+            return(d)
+            
+             })
+            
+            d1_item_main
+            write.csv(d1_item_main,"d1_item_main.csv", row.names = T)
+            
+# Purrr to determine main effect of covid
+            d1_item_cov = purrr::map_df(d_main_vec, function(x){
+              
+              temp_df = df %>% 
+                filter(item == paste0(x)) %>%
+                group_by(event_id, asset_id, cycle, date, covid, LGA) %>% #relevant variables
+                summarise(sum=sum(sum)) %>%
+                ungroup() %>%
+                mutate(LGA = as.factor(LGA),
+                       covid = as.factor(covid),
+                       cycle = droplevels(as.factor(cycle)),
+                       item = x)
+             
+             #create model
+             m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                               covid + #predicted by land use effected by covid
+                               (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                               family=nbinom2(), #nbinom to deal with count data and zeros
+                               data = temp_df)
+             
+            d <- drop1(m_temp, test="Chisq")
+            d <- d %>%
+                filter(LRT != "NA") %>%
+                rename(p.value = 'Pr(>Chi)')
+            d$item = x
+            d$model = "covid"
+            
+            return(d)
+            
+             })
+            
+            d1_item_cov
+            write.csv(d1_item_cov,"d1_item_cov.csv", row.names = T)
+            
+# Purrr to determine main effects of luz
+            d1_item_luz = purrr::map_df(d_main_vec, function(x){
+              
+              temp_df = df %>% 
+                filter(item == paste0(x)) %>%
+                group_by(event_id, asset_id, cycle, date, LGA, LUZ) %>% #relevant variables
+                summarise(sum=sum(sum)) %>%
+                ungroup() %>%
+                mutate(LGA = as.factor(LGA),
+                       LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+                       cycle = droplevels(as.factor(cycle)),
+                       item = x)
+             
+             #create model
+             m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                               LUZ + #predicted by land use effected by covid
+                               (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                               family=nbinom2(), #nbinom to deal with count data and zeros
+                               data = temp_df)
+             
+            d <- drop1(m_temp, test="Chisq")
+            d <- d %>%
+                filter(LRT != "NA") %>%
+                rename(p.value = 'Pr(>Chi)')
+            d$item = x
+            d$model = "luz"
+            
+            return(d)
+            
+             })
+            
+            d1_item_luz
+            write.csv(d1_item_luz,"d1_item_luz.csv", row.names = T)
+            
+#vector of items where covid is significant
+        d_cov_vec <- d1_item_cov %>%
+          filter(p.value<0.05) %>%
+          distinct(item)%>%
+          pull(item) %>% 
+          droplevels()
+        
+#vector of items where luz is significant
+        d_luz_vec <- d1_item_luz %>%
+          filter(p.value<0.05) %>%
+          distinct(item)%>%
+          pull(item) %>% 
+          droplevels()
 
 ```
 

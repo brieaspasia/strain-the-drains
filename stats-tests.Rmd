@@ -240,6 +240,7 @@ df <- df %>%
 # <none>       9079.4                     
 # LUZ:covid  3 9106.1 32.651 3.815e-07 ***
 write.csv(drop1_tot,"d1_tot.csv", row.names = T)
+
 ```
 
 ```{r model-verification-total}
@@ -268,6 +269,13 @@ testOutliers(so_tot) #tests if there are more simulation outliers than expected
 testDispersion(so_tot) #tests if the simulated dispersion is equal to the observed dispersion
 testQuantiles(so_tot) #fits a quantile regression or residuals against a predictor (default predicted value), and tests of this conforms to the expected quantile
 testZeroInflation(so_tot) #tests if there are more zeros than expected
+
+              gsum_tot <- summary(m)
+              gsum_tot <- as.data.frame(gsum_tot$coefficients$cond)
+              gsum_tot$item = "Total"
+              gsum_tot$model = "interaction"
+              
+write.csv(gsum_tot,"gsum_tot.csv", row.names = T)
 ```
 ```{r temporal-autocorrelation-total}
 mod$resid = resid(m) #create a column for each survey event's residuals
@@ -305,6 +313,9 @@ em_tot_cl$item = "Total"
 
 em_tot_lc <- summary(em_tot_2$contrasts)
 em_tot_lc$item = "Total"
+              
+write.csv(em_tot_lc,"elc_tot.csv", row.names = T)
+write.csv(em_tot_cl,"ecl_tot.csv", row.names = T)
 
 ```
 # items
@@ -564,7 +575,7 @@ so_item_int = purrr::map_df(d_int_vec, function(x){
                                  family=nbinom2(), #nbinom to deal with count data and zeros
                                  data = temp_df)
                
-              g <- summary(m_temp)
+               g <- summary(m_temp)
                g <- as.data.frame(g$coefficients$cond)
               
               g$item = x

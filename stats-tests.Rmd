@@ -1084,7 +1084,152 @@ write.csv(eluz,"eluz.csv", row.names = T)
 
 ```
 
+# Micro debris
 
+```{r create-micro-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
+#create survey count  
+
+        #load item counts
+        micro <- read.csv(file="Data/200630_micro.csv", 
+                         header=T, sep=",") 
+
+        #remove duplicate entries
+        micro <- unique(micro[!duplicated(micro),])
+        
+        micro$tot <- as.integer(micro$tot)
+        
+        micro <- micro %>%
+        group_by(event_id, item) %>%
+        summarise(sum=sum(tot)) %>%
+        ungroup()
+        
+        #load events
+        micro_event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        micro_survey_count <- left_join(micro_event, micro, by="event_id")
+        
+        micro_survey_count <- micro_survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, event_date)
+        
+#create abundance data with all possible debris items and zero values
+      
+      #create full list of possible items (only four micro categories)
+     micro_item <- as.data.frame(unique(micro$item))
+      
+      
+      #create a df of all possible items at all survey events, complete with zeros
+      micro_abund <- full_join(micro_survey_count, 
+                               micro_item, by=c("item" = "unique(micro$item)"))
+      
+      #data long to wide
+      micro_abund_wide <- spread(micro_abund, item, sum)
+      
+      micro_abund_wide <- micro_abund_wide %>%
+        dplyr::select(event_id, "Glass beads", "Secondary plastics", "Primary plastics", "Polystyrene balls")
+      
+      #replace na values with 0
+      micro_abund_wide[is.na(micro_abund_wide)] <- 0
+      
+      #transform back to long but now with the full items list and zero data
+      micro_abund_long <- melt(micro_abund_wide, id.vars="event_id")
+     
+      micro_df <- left_join(micro_abund_long, micro_event, by="event_id")
+      
+      #load sites
+          micro_site <- read.csv(file="Data/200619_site.csv", 
+                           header=T, sep=",") 
+      
+            #join LGA and luz to df
+          micro_df <- left_join(micro_df, micro_site, by = "Asset.ID")
+      
+      
+      mic_df <- micro_df %>%
+        dplyr::select(-event_date, -event.tot, -event.wt, -vol, -hr, -Site, -Latitude, -Longitude) %>% #remove duplicate columns
+        rename(item=variable, #rename columns
+               sum=value,
+               asset_id = Asset.ID,
+               cycle=Cycle,
+               LUZ = Land.use.zone) %>% 
+        mutate(asset_id=as.factor(asset_id), #classify columns correctly  
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ),
+             event_id=as.factor(event_id),
+             cycle=as.factor(cycle),
+             date=dmy(date)
+             )
+      
+      
+#Combine C8 and C9    
+     #isolate C8
+    micro_C8 <- mic_df %>%
+      filter(cycle == "C8")
+    
+    #isolate C9
+    micro_C9 <- mic_df %>%
+      filter(cycle == "C9")
+    
+    #join C8 and C9 by unique drain and item to capture double surveys
+    micro_t <- left_join(micro_C9, micro_C8, by=c("asset_id"="asset_id", "item" = "item"))
+    micro_t$sum.y[is.na(micro_t$sum.y)] <- 0 #change na to 0
+    
+    micro_t <- micro_t %>%
+      mutate(combined_sum = sum.y + sum.x) %>% #add C8 and C9 together
+      dplyr::select(event_id.x, item, combined_sum)
+    
+    micro_df <- mic_df %>% 
+      left_join(micro_t, by = c("event_id"="event_id.x", "item"="item")) %>%
+      filter(cycle != "C8") %>%
+      mutate(combined_sum = tidyr::replace_na(combined_sum, 0),
+              sum2 = ifelse(cycle != "C9", sum, 0),
+              final_sum = sum2 + combined_sum) %>%
+      dplyr::select(-sum2, -sum, -combined_sum) %>%
+      rename(sum = final_sum)
+    
+rm(mic_df, micro, micro_abund, micro_abund_long, micro_abund_wide, micro_C8, micro_C9, micro_event, micro_item, micro_site, micro_survey_count, micro_t)    
+```
+
+```{r micro-glmm, warning=FALSE, message=FALSE}
+#aggregate data
+micro_mod <- micro_df %>%
+  group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+  summarise(sum=sum(sum)) %>%
+  ungroup() %>%
+  # filter(cycle %in% paste0("C",1:7)) %>%
+  mutate(LGA = as.factor(LGA),
+         LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+         covid = as.factor(covid),
+         cycle = as.factor(cycle))
+       
+#create model
+micro_m  <- glmmTMB(sum ~ #Debris count per survey event
+                LUZ * covid + #predicted by land use effected by covid
+                 (1|LGA/asset_id) + (1|cycle), #suburb random effect
+               family=nbinom2(), #negative binomial to deal with count data and zeros
+               data = micro_mod)
+
+micro_d1 <- drop1(micro_m, test="Chisq")
+
+micro_d1
+
+micro_so <- simulateResiduals(fittedModel = micro_m, plot=T)
+micro_so
+
+micro_gsum <- summary(micro_m)
+micro_gsum <- as.data.frame(micro_gsum$coefficients$cond)
+write.csv(micro_gsum,"micro_gsum.csv", row.names = T)
+
+micro_ecl <- emmeans(micro_m, pairwise~covid|LUZ, type="response",level=0.95, infer=T)
+micro_ecl <- summary(micro_ecl$contrasts)
+write.csv(micro_ecl,"micro_ecl.csv", row.names = T)
+
+micro_elc <- emmeans(micro_m, pairwise~LUZ|covid, type="response",level=0.95, infer=T)
+micro_elc <- summary(micro_elc$contrasts)
+write.csv(micro_elc,"micro_elc.csv", row.names = T)
+
+```
 
 
 

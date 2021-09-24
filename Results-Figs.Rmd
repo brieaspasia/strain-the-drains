@@ -240,6 +240,8 @@ df <- df %>%
 #       group_by(item) %>%
 #       summarise(total=sum(sum)) %>%
 #       mutate(pct = total/87406 * 100) #cigarettes >25% of macro debris
+
+rm("abund", "abund_long", "abund_wide", "AMDI","AMDI_code", "C8", "C9", "diff", "diff_red", "dup", "event", "item", "item_label", "item_labelDF", "item_merge", "site", "survey_count", "t")
     
 ```
 
@@ -557,13 +559,26 @@ options(scipen = 999)
 #vector of items where covid is significant
         dcov_vec <- d1_item_cov %>%
           filter(p.value<0.05) %>%
+          filter(item != "Foil (including bladders)") %>%
+          filter(item != "Hard plastic remnants") %>%
           distinct(item)%>%
           pull(item) %>% 
           droplevels()
         
+        dcov_vec
+        
 #vector of items where luz is significant
         dluz_vec <- d1_item_luz %>%
           filter(p.value<0.05) %>%
+          filter(item != "Foil (including bladders)") %>%
+          filter(item != "Hard plastic remnants") %>%
+          distinct(item)%>%
+          pull(item) %>% 
+          droplevels()
+        
+#vector of items where covid and luz interaction or both individually are significant
+        dint_vec <- d1_item_int %>%
+          filter(p.value < 0.05 | item == "Foil (including bladders)" | item == "Hard plastic remnants") %>%
           distinct(item)%>%
           pull(item) %>% 
           droplevels()
@@ -583,7 +598,6 @@ nd_int = purrr::map_df(dint_vec, function(x){
     group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
     summarise(sum=sum(sum)) %>%
     ungroup() %>%
-    # filter(cycle %in% paste0("C",1:7)) %>%
     mutate(LGA = as.factor(LGA),
            LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
            covid = as.factor(covid),
@@ -603,7 +617,7 @@ nd_int = purrr::map_df(dint_vec, function(x){
                        asset_id = NA,
                        cycle = NA)
  
- #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
+ #predict function uses the model and the new df to predict mean values of the response variable. 
  pred_temp <- predict(object=m_temp,
                      newdata=nd_temp,
                      se.fit=T,
@@ -621,10 +635,11 @@ nd_int = purrr::map_df(dint_vec, function(x){
  })
 
 
-# New facet label names for covid variable
-nd_int$covid <- factor(nd_int$covid, levels = c("1", "2"), 
-                        labels = c("Before Covid", "During Covid"), ordered = T)
+# New label names for covid variable
+nd_int$covid <- factor(nd_int$covid, levels = c("2", "1"), 
+                        labels = c("During Covid", "Before Covid"), ordered = T)
 
+# Order items by sum for faceting
 pred_int_order <- nd_int %>%
   group_by(item) %>%
   mutate(total=sum(Total)) %>%
@@ -636,35 +651,25 @@ pred_int_order <- nd_int %>%
 pred_int_order <- pred_int_order$item
 pred_int_order <- unlist(pred_int_order)
 nd_int$item <- factor(nd_int$item, levels = pred_int_order)
-# 
-#  #create plot
-# p_all <- ggplot(pred_df, aes(y=Total, x=LUZ, fill=covid)) + 
-#   geom_bar(position="dodge", stat="identity") +
-#   geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width=0.2), position=position_dodge(width=0.90)) +
-#   labs(title="Debris count (every 6 weeks)",
-#        subtitle="By land use and covid restriction",
-#        x="", y="Total debris items per asset", tag="") +
-#   facet_wrap(~item, scales="free_y") +
-#   guides(x =  guide_axis(angle = 45)) 
-# p_all
 
 
 # scale_fill_manual(values=c('#18BDC3','#F3756E'))
 
-#Reorder within interaction items
-# pred_int_items <- pred_int_items %>% 
-#   mutate(LUZ = as.factor(LUZ),
-#   item=as.factor(item),
-#   item=reorder_within(LUZ, Total, item))
+nd_int <- nd_int %>%
+  mutate(item = as.factor(item),
+         LUZ = as.factor(LUZ),
+         LUZ = reorder_within(LUZ, Total, item))
 
+#Debris count every 6 weeks (per LGA?)
 p_pred_int_items <- 
-  ggplot(nd_int, aes(x=LUZ, y=Total, fill=covid)) +
+  ggplot(nd_int, aes(x=Total, y=LUZ, fill=covid)) +
   geom_bar(position = "dodge", stat="identity") +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width = 0.9),
-                position = "dodge", width = 0.9) +
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
+                size = 0.5, width = 0.5, position = position_dodge(0.9)) +
   scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
-  facet_wrap(~item, scales = "free")
-  # scale_y_reordered()
+  scale_x_continuous(breaks=seq(0, 60, 5)) + # remove this line for straws scale +
+  facet_wrap(~item, scales = "free") +
+  scale_y_reordered()
     # guides(x =  guide_axis(angle = 45))
       # theme(legend.position = "none",
       #   panel.grid = element_blank(),
@@ -682,7 +687,6 @@ p_pred_int_items
 ```
 
 ```{r items-covid-effect, warning=FALSE, message=FALSE}
-# ***NOTES create one graph here, no facets, but dodge covid with items on y and total on x***
 ### Run chunk 8 first to get vector of main effect items ###
  
 # Purrr Covid
@@ -728,10 +732,9 @@ pred_cov_items = purrr::map_df(dcov_vec, function(x){
  
  })
 
-
 # New facet label names for covid variable
-pred_cov_items$covid <- factor(pred_cov_items$covid, levels = c("1", "2"), 
-                        labels = c("Before Covid", "During Covid"), ordered = T)
+pred_cov_items$covid <- factor(pred_cov_items$covid, levels = c("2", "1"), 
+                        labels = c("During Covid", "Before Covid"), ordered = T)
 
 pred_cov_order <- pred_cov_items %>%
   group_by(item) %>%
@@ -747,14 +750,14 @@ pred_cov_items$item <- factor(pred_cov_items$item, levels = pred_cov_order)
 
 # scale_fill_manual(values=c('#18BDC3','#F3756E'))
 
+# ***NOTES create one graph here, no facets, but dodge covid with items on y and total on x***
 
 p_pred_cov_items <- 
-  ggplot(pred_cov_items, aes(x=covid, y=Total, fill=covid)) +
+  ggplot(pred_cov_items, aes(x=Total, y=reorder(item, Total), fill=covid)) +
   geom_bar(position = "dodge", stat="identity") +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width = 0.9),
-                position = "dodge", width = 0.9) +
-  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
-  facet_wrap(~item, scales = "free")
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
+                size = 0.5, width = 0.5, position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E"))
   # scale_y_reordered()
     # guides(x =  guide_axis(angle = 45))
       # theme(legend.position = "none",
@@ -762,6 +765,14 @@ p_pred_cov_items <-
       #   axis.title = element_blank(),
       #   axis.text = element_blank(),
       #   panel.background = element_blank())
+  
+  # p_pred_int_items <- 
+  # ggplot(nd_int, aes(x=Total, y=LUZ, fill=covid)) +
+  # geom_bar(position = "dodge", stat="identity") +
+  # geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
+  #               size = 0.5, width = 0.5, position = position_dodge(0.9)) +
+  # scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
+  # scale_x_continuous(breaks=seq(0, 60, 5)) + # remove this line for straws scale
 
 
 p_pred_cov_items
@@ -773,7 +784,6 @@ p_pred_cov_items
 ```
 
 ```{r luz-graph, warning=FALSE, message=FALSE}
-# ***NOTES create one graph here, no facets, but dodge luz with items on y and total on x***
 ### Run chunk 8 first to get vector of main effect items ###
  
 # Purrr Land Use
@@ -834,15 +844,22 @@ pred_luz_items$item <- factor(pred_luz_items$item, levels = pred_luz_order)
 
 # scale_fill_manual(values=c('#18BDC3','#F3756E'))
 
+# ***NOTES create one graph here, no facets, but dodge luz with items on y and total on x***
+# 
+# pred_luz_items$LUZ <- with(pred_luz_items, reorder(LUZ, item, FUN = mean))
+# 
+# pred_luz_items <- with(pred_luz_items, pred_luz_items[order(item, -as.numeric(LUZ)), ])
 
 p_pred_luz_items <- 
-  ggplot(pred_luz_items, aes(x=LUZ, y=Total, fill=LUZ)) +
+  ggplot(pred_luz_items, aes(x=Total, y=reorder(item, Total), fill=LUZ)) +
   geom_bar(position = "dodge", stat="identity") +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width = 0.9),
-                position = "dodge", width = 0.9) +
-  # scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
-  facet_wrap(~item, scales = "free")
-  # scale_y_reordered()
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
+                size = 0.5, width = 0.5, position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("CBD" = "#BDD9BF", 
+                               "Shopping Centre" = "#FFC857", 
+                               "Public Transport Terminal" = "#A997DF", 
+                               "Industrial Precinct" = "#929084"))
+  # scale_fill_manual(values = wes_palette("Moonrise3", n = 4)) 
     # guides(x =  guide_axis(angle = 45))
       # theme(legend.position = "none",
       #   panel.grid = element_blank(),
@@ -856,121 +873,11 @@ p_pred_luz_items
 # svg("images/p_heatmap-replace.svg", height=7, width=12)
 # plot(p_pred_df_hm)
 # dev.off()
+
+# colourblind friendly palettes https://medium.com/cafe-pixo/inclusive-color-palettes-for-the-web-bbfe8cf2410e
+# and another one https://personal.sron.nl/~pault/#sec:qualitative
  
 ```
-
-
-```{r covid-graph}
-#find top 15 items
-top15 <- df %>%
-  filter(item != "Metal scrap") %>% #removing outlier entry
-  group_by(item) %>%
-  summarise(sum=sum(sum)) %>%
-  arrange(desc(sum)) %>%
-  top_n(15, sum)
-  
-#create vector from top 15 items
-top15 <- top15$item 
-top15 <- unlist(top15)
-
-pol_items <- df %>%
-  filter(item == "OH & S" | item=="Aluminium cans" | item=="Beer bottles (and similar)" | item == "Foam take-away")
-
-#create vector from policy items
-pol_items <- pol_items$item 
-pol_items <- unlist(pol_items)
-
-top_txt<- df %>%
-  filter(item %in% top15 | item %in% pol_items) %>%
-  distinct(item)%>%
-  pull(item) %>% 
-  droplevels()
-# Purrr
-pred_main_df = purrr::map_df(top_txt, function(x){
-  
-  temp_df = df %>% 
-    filter(item == paste0(x)) %>%
-    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
-    summarise(sum=sum(sum)) %>%
-    ungroup() %>%
-    # filter(cycle %in% paste0("C",1:7)) %>%
-    mutate(LGA = as.factor(LGA),
-           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
-           covid = as.factor(covid),
-           cycle = droplevels(as.factor(cycle)),
-           item = x)
- 
- #create model
- m_temp  <- glmmTMB(sum ~ #Debris count per survey event
-                   LUZ + covid + #predicted by land use effected by covid
-                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
-                   family=nbinom2(), #negative binomial to deal with count data and zeros
-                   data = temp_df)
- 
- nd_temp <- expand.grid(covid = unique(temp_df$covid),
-                       LUZ = unique(temp_df$LUZ),
-                       LGA = NA,
-                       asset_id = NA,
-                       cycle = NA)
- 
- #predict function uses the model and the new df to predict mean values of the response variable.  It predicts a value for each row in the new df.
- pred_temp <- predict(object=m_temp,
-                     newdata=nd_temp,
-                     se.fit=T,
-                     re.form=NA,
-                     type="response")
- 
- #creating standard error for graphing
- nd_temp$Total <- pred_temp$fit
- nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
- nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
- nd_temp$item = x
- 
- return(nd_temp)
- 
- })
-
-covid_effect_vec <- df %>%
-  filter(item %in% c("Paper  packaging", "OH & S", "Glass / ceramic scrap", "Hard plastic lids", "Hard plastic remnants", "Aluminium cans", "Foil (including bladders)")) %>%
-  distinct(item)%>%
-  pull(item) %>% 
-  droplevels()
-
-luz_effect_vec <- df %>%
-  filter(item %in% c("Hard plastic remnants", "Foil (including bladders)", "Sanitary items", "Plastic bags")) %>%
-  distinct(item)%>%
-  pull(item) %>% 
-  droplevels()
-
-# New facet label names for covid variable
-pred_main_df$covid <- factor(pred_main_df$covid, levels = c("2", "1"), 
-                        labels = c("During Covid", "Before Covid"), ordered = T)
-
-covid_effect_df <- pred_main_df %>%
-  filter(item %in% covid_effect_vec) %>%
-  group_by(item, covid) %>%
-  mutate(Total = mean(Total),
-      covid = as.factor(covid),
-      item=as.factor(item),
-      item=reorder(item, Total))
-
-p_pred_covid_df <- 
-  ggplot(covid_effect_df, aes(x=item, y=Total, fill=covid)) +
-  geom_bar(position = "dodge", stat="identity") +
-  geom_errorbar(aes(ymin=SE_lower, ymax=SE_upper, width = 0.9),
-                position = "dodge", width = 0.9) +
-  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E"))
-    # guides(x =  guide_axis(angle = 45))
-      # theme(legend.position = "none",
-      #   panel.grid = element_blank(),
-      #   axis.title = element_blank(),
-      #   axis.text = element_blank(),
-      #   panel.background = element_blank()
-
-
-p_pred_covid_df
-```
-
 
 # Percent change
 
@@ -1062,7 +969,7 @@ top10 <- df %>%
   top_n(10, sum)
 
   
-#create vector from top 15 items
+#create vector from top 10 items
 top10 <- top10$item 
 top10 <- unlist(top10)
 
@@ -1099,30 +1006,6 @@ df_top10 <- df %>%
   
   species.scores <- as.data.frame(scores(ord, "species"))
   species.scores$item <- rownames(species.scores) #create item id column
-  
-  
-# #Hull data LUZ
-# CBD <- data.scores[data.scores$LUZ == "CBD", ][chull(data.scores[data.scores$LUZ ==
-#     "CBD", c("NMDS1", "NMDS2")]), ]  # hull values for CBD
-# Transport <- data.scores[data.scores$LUZ == "Public Transport Terminal", ][chull(data.scores[data.scores$LUZ ==
-#     "Public Transport Terminal", c("NMDS1", "NMDS2")]), ]  # hull values for Transport
-# Indus <- data.scores[data.scores$LUZ == "Industrial Precinct", ][chull(data.scores[data.scores$LUZ == "Industrial Precinct", c("NMDS1", "NMDS2")]), ]  # hull values for Industry
-# Shop <- data.scores[data.scores$LUZ == "Shopping Centre", ][chull(data.scores[data.scores$LUZ ==
-#     "Shopping Centre", c("NMDS1", "NMDS2")]), ]  # hull values for shopping
-# 
-# #create polygons
-# LUZ.hull.data <- rbind(CBD, Transport, Indus, Shop)  #combine groups
-# LUZ.hull.data
-# 
-# #Hull data covid
-# covid1 <- data.scores[data.scores$covid == "1", ][chull(data.scores[data.scores$covid ==
-#     "1", c("NMDS1", "NMDS2")]), ]  # hull values for Pre-Covid
-# covid2 <- data.scores[data.scores$covid == "2", ][chull(data.scores[data.scores$covid ==
-#     "2", c("NMDS1", "NMDS2")]), ]  # hull values for During Covid
-# 
-# #create polygons
-# cov.hull.data <- rbind(covid1,covid2)  #combine groups
-# cov.hull.data
 
 # New facet label names for covid variable
 data.scores$covid <- factor(data.scores$covid, levels = c("1", "2"),
@@ -1148,23 +1031,6 @@ NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.sco
     
 
   }
-# #ellipses for covid  
-#   #add group column to data.scores
-# cov_NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.scores$covid)
-# 
-#  veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
-#   {
-#     theta <- (0:npoints) * 2 * pi/npoints
-#     Circle <- cbind(cos(theta), sin(theta))
-#     t(center + scale * t(Circle %*% chol(cov)))
-#   }
-# 
-#   df_ell_cov <- data.frame()
-#   for(g in levels(cov_NMDS$group)){
-#     df_ell_cov <- rbind(df_ell_cov, cbind(as.data.frame(with(cov_NMDS[cov_NMDS$group==g,],
-#                     veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
-#                     ,group=g))
-#   }
   
   #The first method is calculating the ellipse paths using standard deviation and no scaling. The second method is using standard error and is also scaling the data. Thus, the plot produced with the first method can also be achieved with the second method by making the necessary changes to the ordiellipse function (kind='sd', not 'se'), and removing the scale (ord[[g]]$scale) from the veganCovEllipse function.
   #https://stackoverflow.com/questions/42799838/follow-up-plotting-ordiellipse-function-from-vegan-package-onto-nmds-plot-creat
@@ -1182,9 +1048,9 @@ p_mds <- ggplot() +
 
 p_mds
 
-svg("images/p_mds10.svg", height=7, width=7)
-plot(p_mds)
-dev.off()
+# svg("images/p_mds10.svg", height=7, width=7)
+# plot(p_mds)
+# dev.off()
 
 p_mds_txt <- ggplot() +
   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
@@ -1195,9 +1061,9 @@ p_mds_txt <- ggplot() +
   coord_equal() +
   theme_bw()
 
-svg("images/p_mds_txt10.svg", height=7, width=7)
-plot(p_mds_txt)
-dev.off()
+# svg("images/p_mds_txt10.svg", height=7, width=7)
+# plot(p_mds_txt)
+# dev.off()
 
 p_mds
 p_mds_txt

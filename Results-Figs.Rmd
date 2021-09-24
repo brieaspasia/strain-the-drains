@@ -820,32 +820,16 @@ pred_luz_items = purrr::map_df(dluz_vec, function(x){
  })
 
 
-pred_luz_order <- pred_luz_items %>%
-  group_by(item) %>%
-  mutate(total=sum(Total)) %>%
-  arrange(desc(total)) %>%
-  dplyr::select(item, total) %>%
-  distinct
-
-#create vector from order items
-pred_luz_order <- pred_luz_order$item
-pred_luz_order <- unlist(pred_luz_order)
-pred_luz_items$item <- factor(pred_luz_items$item, levels = pred_luz_order)
-
-# pred_luz_items <- pred_luz_items %>%
-#   mutate(item=reorder_within(item, Total, LUZ))
-
-
 p_pred_luz_items <- 
-  ggplot(pred_luz_items, aes(x=Total, y=reorder(LUZ, Total), fill=LUZ)) +
-  geom_bar( aes(group = LUZ), position = "dodge", stat="identity") +
+  ggplot(pred_luz_items, aes(x=Total, y=reorder(item, Total), fill=reorder_within(LUZ, Total, item))) +
+  geom_bar(position = "dodge", stat="identity") +
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
                 size = 0.5, width = 0.5, position = position_dodge(0.9)) +
-  scale_fill_manual(values = c("CBD" = "#BDD9BF", 
-                               "Shopping Centre" = "#FFC857", 
-                               "Public Transport Terminal" = "#A997DF", 
-                               "Industrial Precinct" = "#929084")) +
-  facet_wrap(~item) +
+  xlim(0, 2) +
+  # scale_fill_manual(values = c("CBD" = "#BDD9BF", 
+  #                              "Shopping Centre" = "#FFC857", 
+  #                              "Public Transport Terminal" = "#A997DF", 
+  #                              "Industrial Precinct" = "#929084")) +
   scale_y_reordered()
   # scale_fill_manual(values = wes_palette("Moonrise3", n = 4)) 
     # guides(x =  guide_axis(angle = 45))

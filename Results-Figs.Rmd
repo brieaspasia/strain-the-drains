@@ -850,23 +850,6 @@ p_pred_luz_items
 # and another one https://personal.sron.nl/~pault/#sec:qualitative
  
 ```
-```{r}
-library(data.table)
-
-
-set.seed(123)
-dat <- expand.grid(group=LETTERS[1:3],
-                   subgroup=LETTERS[1:3])
-dat$value <- runif(nrow(dat))
-setDT(dat)
-
-dat[,order:=order(value),by=group]
-
-p1 <- ggplot(dat, aes(x=group,y=value, fill=subgroup,group=order))+
-  geom_bar(aes(group=order),position="dodge", stat="identity") +
-  coord_flip()
-p1
-```
 
 # Percent change
 
@@ -944,7 +927,124 @@ getwd()
 
 ```
 
+```{r percent-change-delta-INT}
+#refer to delta method
+#https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
 
+# Purrr
+nd_int = purrr::map_df(top_txt, function(x){
+  
+  temp_df = df %>% 
+    filter(item == paste0(x)) %>%
+    group_by(event_id, asset_id, cycle, date, covid, LGA, LUZ) %>% #relevant variables
+    summarise(sum=sum(sum)) %>%
+    ungroup() %>%
+    mutate(LGA = as.factor(LGA),
+           LUZ = as.factor(fct_relevel(LUZ, "CBD", "Shopping Centre", "Public Transport Terminal", "Industrial Precinct")),
+           covid = as.factor(covid),
+           cycle = droplevels(as.factor(cycle)),
+           item = x)
+ 
+ #create model
+ m_temp  <- glmmTMB(sum ~ #Debris count per survey event
+                   LUZ * covid + #predicted by land use effected by covid
+                   (1|LGA/asset_id) + (1|cycle), #suburb random effect
+                   family=nbinom2(), #negative binomial to deal with count data and zeros
+                   data = temp_df)
+ 
+ nd_temp <- expand.grid(covid = unique(temp_df$covid),
+                       LUZ = unique(temp_df$LUZ),
+                       LGA = NA,
+                       asset_id = NA,
+                       cycle = NA)
+ 
+ #predict function uses the model and the new df to predict mean values of the response variable. 
+ pred_temp <- predict(object=m_temp,
+                     newdata=nd_temp,
+                     se.fit=T,
+                     re.form=NA,
+                     type="response")
+ 
+ #creating standard error for graphing
+ nd_temp$Total <- pred_temp$fit
+ nd_temp$SE_upper <- pred_temp$fit + pred_temp$se.fit
+ nd_temp$SE_lower <- pred_temp$fit - pred_temp$se.fit
+ nd_temp$item = x
+ 
+ return(nd_temp)
+ 
+ })
+
+
+# New label names for covid variable
+nd_int$covid <- factor(nd_int$covid, levels = c("2", "1"), 
+                        labels = c("During Covid", "Before Covid"), ordered = T)
+
+pct_change <- nd_int %>%
+  mutate(luzMean=Total) %>% #mean of item btwn 8 cycles at each asset per covid level
+  dplyr::select(covid, LUZ, item, luzMean) %>% #select vars
+  unique() #remove duplicates from survey cycle
+  
+# Split data into each item
+pct_change <- droplevels(pct_change)
+ls.data_split <- split(pct_change, f = pct_change$item)
+
+
+luz_delta = purrr::map_df(ls.data_split, function(x){
+
+x1 = x %>% filter(covid == "Before Covid")
+
+x2 = x %>% filter(covid == "During Covid") %>% dplyr::select(LUZ, luzMean)
+
+xV = var(x1$luzMean)
+x_mean = mean(x1$luzMean)
+
+yV = var(x2$luzMean)
+y_mean = mean(x2$luzMean)
+
+num = (yV*x_mean^2) - 2*cov(x1$luzMean, x2$luzMean)*x_mean*y_mean + (xV*y_mean^2)
+denom = x_mean^4
+
+se_pcc = 100*sqrt(num/denom)
+
+pcc = ((y_mean - x_mean)/x_mean) *100
+
+# Output array
+item = unique(x$item) %>% droplevels()
+avg = pcc
+se = se_pcc
+
+out = data.frame(item, avg, se)
+
+return(out)
+
+})
+
+luz_delta <- luz_delta %>%
+  mutate(pos = avg >= 0,
+         SE_lower = avg-se,
+         SE_upper = avg+se) %>%
+  filter(item == "OH & S" | item %in% dint_vec)
+
+p_change_delta <- luz_delta %>%
+  mutate(item=as.factor(item),
+         item=fct_reorder(item, avg)) %>%
+  ggplot( aes(x=avg, y=item, fill=pos)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width=0.2)) 
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())
+  
+
+p_change_delta
+
+svg("images/p_change_delta.svg", height=7, width=12)
+plot(p_change_delta)
+dev.off()
+```
 # MDS plot
 
 

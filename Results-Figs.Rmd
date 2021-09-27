@@ -1024,7 +1024,7 @@ luz_delta <- luz_delta %>%
   mutate(pos = avg >= 0,
          SE_lower = avg-se,
          SE_upper = avg+se) %>%
-  filter(item == "OH & S" | item %in% dint_vec)
+  filter(item %in% dcov_vec | item %in% dint_vec)
 
 p_change_delta <- luz_delta %>%
   mutate(item=as.factor(item),

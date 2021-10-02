@@ -559,8 +559,8 @@ options(scipen = 999)
 #vector of items where covid is significant
         dcov_vec <- d1_item_cov %>%
           filter(p.value<0.05) %>%
-          filter(item != "Foil (including bladders)") %>%
-          filter(item != "Hard plastic remnants") %>%
+          # filter(item != "Foil (including bladders)") %>%
+          # filter(item != "Hard plastic remnants") %>%
           distinct(item)%>%
           pull(item) %>% 
           droplevels()
@@ -932,7 +932,7 @@ getwd()
 #https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
 
 # Purrr
-nd_int = purrr::map_df(top_txt, function(x){
+nd_int = purrr::map_df(dint_vec, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -974,6 +974,7 @@ nd_int = purrr::map_df(top_txt, function(x){
  return(nd_temp)
  
  })
+
 
 
 # New label names for covid variable

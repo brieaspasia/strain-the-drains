@@ -1,0 +1,194 @@
+---
+title: "drains-brands"
+author: "Brie Sherow"
+date: "02/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, warning=FALSE, message=FALSE, results='hide', include=FALSE}
+library(ggplot2) #graphing
+library(ggthemes) #graphing templates
+library(hrbrthemes) #graphing templates
+library(lubridate) #date manipulation
+library(forcats) #working with factors
+library(tidyverse) #manipulating data
+library(knitr) #rmarkdown functions
+library(tidyr) #long & wide formats
+library(reshape2) #melt function for wide and long formats
+library(stats) #R stats functions
+library(broom) #create summaries from stats objects
+library(car) #lm regression
+library(MASS) #stats
+library(lme4) #glmer function
+library(DHARMa) #testing model diagnostics
+library(glmmTMB) #fit zero-inflated negative binomial
+# library(lattice) #fourth corner heatmap
+# library(corrplot) #co-occurrence matrix
+library(gclus) #co-occurrence matrix
+library(broom.mixed) #regression tables
+library(vegan) #ordination
+library(emmeans)
+# library(ComplexHeatmap)
+library(RColorBrewer)
+library(cowplot) #minimal backgrounds for ggplot
+library(purrr) #looping
+library(tidytext) # reordering
+library(sjPlot) #glmm tables
+library(sjmisc) #glmm tables
+library(sjlabelled) #glmm tables
+library(wesanderson)
+library(here)
+```
+
+```{r create-coffee}
+
+#load coffee counts wide
+        coffee_wide <- read.csv(file="Data/coffee-item.csv", 
+                         header=T, sep=",")
+
+cup <- coffee_wide %>%
+  filter(coffee.item == "coffee cup") 
+
+cup <- aggregate(cup['total'], by = cup['event_id'], sum)
+cup$coffee_item <- "cup"
+
+lid <- coffee_wide %>%
+  filter(coffee.item == "coffee lid") 
+
+lid <- aggregate(lid['total'], by = lid['event_id'], sum)
+lid$coffee_item <- "lid"
+
+coffee <- rbind(cup, lid)
+
+rm(coffee_wide, cup, lid)
+
+```
+
+```{r coffee-df}
+ #load events
+        event <- read.csv(file="Data/2101_event.csv", 
+                         header=T, sep=",") 
+        
+        #join event info to item count
+        survey_count <- left_join(coffee, event, by="event_id")
+        
+        survey_count <- survey_count %>%
+          dplyr::select(-event.tot, -event.wt, -vol, -hr, -event_date) 
+        
+        #load sites
+          site <- read.csv(file="Data/200619_site.csv", 
+                           header=T, sep=",") 
+      
+            #join LGA and luz to df
+          df <- left_join(survey_count, site, by = "Asset.ID")
+          
+          #classify items correctly      
+           df <- df %>%
+        dplyr::select(-Site, -Latitude, -Longitude) %>% #remove duplicate columns
+        rename(item=coffee_item, #rename columns
+               sum=total,
+               asset_id = Asset.ID,
+               cycle=Cycle,
+               LUZ = Land.use.zone) %>% 
+        mutate(asset_id=as.factor(asset_id), #classify columns correctly  
+             item=as.factor(item),
+             LGA=as.factor(LGA),
+             LUZ=as.factor(LUZ),
+             event_id=as.factor(event_id),
+             cycle=as.factor(cycle),
+             date=dmy(date)
+             )
+
+```
+
+```{r coffee-timeseries}
+covid_lvl <- data.frame(name = c("1", "2"),
+                   start = as.Date(c("2019-10-29", "2020-03-15")),
+                   end = as.Date(c("2020-03-15", "2020-05-30")),
+                   level = c("Pre-Covid", "During Covid"),
+                   stringsAsFactors = FALSE) %>%
+  mutate(median_x = start + floor((end-start)/2))
+
+item_per_cycle <- df %>%
+  group_by(date, covid, LUZ, item) %>%
+  summarise(cycle_sum = sum(sum))
+
+
+p_timeseries <- ggplot() +
+  geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
+                                ymin= -Inf, ymax=Inf), alpha=0.1) +
+  labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
+       x="Date", y="Debris count per LGA") +
+  geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
+  theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+  facet_wrap(~item, scales="free_y") +
+  # geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4) +
+  theme(panel.grid = element_blank(),
+        # legend.position = "none",
+      axis.title = element_blank(),
+      panel.background = element_blank())
+  
+  p_timeseries
+  
+  p_timeseries <- ggplot() +
+  geom_line(data=item_per_cycle, aes(cycle, cycle_sum, color=LUZ, group=1)) +
+  # theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+  facet_wrap(~item)
+```
+```{r coffee-plot-item}
+coffee_sum = df %>% group_by(LUZ, item) %>% summarise(total = sum(sum), sd = sd(sum))
+
+
+p <- ggplot(coffee_sum, aes(x = LUZ, y = total, fill = item)) +
+        geom_bar(stat="identity", position="dodge") +
+        geom_text(aes(y = total + sd, label = round(total,2)), 
+                  position = position_dodge(width =0.9), 
+                  vjust = -0.5, color = "black", size = 3) +
+        geom_errorbar(aes(ymin = total - sd, ymax = total + sd), 
+                      width = .2, position = position_dodge(.9)) +
+        theme_hc() + 
+        scale_fill_brewer(
+          type = "qual", palette = 8,
+          direction = 2, aesthetics = "fill"
+        ) + 
+        # theme(axis.text.x = element_text(angle = 70)) +
+        ggtitle("'Let's Strain the Drains' coffee debris") +
+        labs(subtitle = "Count per item type and land use from Oct 2019 - May 2020", y = "Coffee-related item count", x="") +
+        theme(axis.text.x=element_text(color = "black", size=11, 
+                                 vjust=.8, angle=30, hjust=0.8))
+
+p
+```
+
+
+```{r coffee-plot-LGA}
+coffee_sum = df %>% group_by(LUZ, LGA) %>% summarise(total = sum(sum), sd = sd(sum))
+
+# df_item = df_item %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
+
+p <- ggplot(coffee_sum, aes(x = LUZ, y = total, fill = LGA)) +
+        geom_bar(stat="identity", position="dodge") +
+        geom_text(aes(y = total + sd, label = round(total,2)), 
+                  position = position_dodge(width =0.9), 
+                  vjust = -0.5, color = "black", size = 3) +
+        geom_errorbar(aes(ymin = total - sd, ymax = total + sd), 
+                      width = .2, position = position_dodge(.9)) +
+        theme_hc() + 
+        scale_fill_brewer(
+          type = "qual", palette = 8,
+          direction = 2, aesthetics = "fill"
+        ) + 
+        # theme(axis.text.x = element_text(angle = 70)) +
+        ggtitle("'Let's Strain the Drains' coffee debris (cups and lids)") +
+        labs(subtitle = "Count per land use and LGA from Oct 2019 - May 2020", y = "Item count", x="") +
+        theme(axis.text.x=element_text(color = "black", size=11, 
+                                 vjust=.8, angle=30, hjust=0.8))
+
+p
+```
+
+

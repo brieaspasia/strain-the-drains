@@ -826,7 +826,8 @@ pred_luz_items = purrr::map_df(dluz_vec, function(x){
 
 
 p_pred_luz_items <- 
-  ggplot(pred_luz_items, aes(x=Total, y=reorder(item, Total), fill=reorder_within(LUZ, Total, item))) +
+  # ggplot(pred_luz_items, aes(x=Total, y=reorder(item, Total), fill=reorder_within(LUZ, Total, item))) +
+  ggplot(pred_luz_items, aes(x=Total, y=reorder(item, Total), fill=LUZ)) +
   geom_bar(position = "dodge", stat="identity") +
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
                 size = 0.5, width = 0.5, position = position_dodge(0.9)) +

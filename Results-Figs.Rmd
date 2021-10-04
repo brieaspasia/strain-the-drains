@@ -242,6 +242,11 @@ df <- df %>%
 #       mutate(pct = total/87406 * 100) #cigarettes >25% of macro debris
 
 rm("abund", "abund_long", "abund_wide", "AMDI","AMDI_code", "C8", "C9", "diff", "diff_red", "dup", "event", "item", "item_label", "item_labelDF", "item_merge", "site", "survey_count", "t")
+
+# Why is C5 missing from MC02?  missing in raw data from Heidi too.
+diff <- df %>%
+  dplyr::select(cycle, days) %>%
+  unique() 
     
 ```
 

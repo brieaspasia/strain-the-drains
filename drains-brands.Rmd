@@ -103,6 +103,7 @@ rm(coffee_wide, cup, lid)
              date=dmy(date)
              )
 
+write.csv(df,"coffee/LSTDcoffee.csv", row.names = T)
 ```
 
 ```{r coffee-timeseries}
@@ -114,36 +115,40 @@ covid_lvl <- data.frame(name = c("1", "2"),
   mutate(median_x = start + floor((end-start)/2))
 
 item_per_cycle <- df %>%
-  group_by(date, covid, LUZ, item) %>%
-  summarise(cycle_sum = sum(sum))
+  group_by(date, covid, LUZ, cycle, item) %>%
+  summarise(cycle_sum = sum(sum)) %>%
+  mutate(cycle = as.numeric(cycle),
+         date = as.Date(date))
 
 
 p_timeseries <- ggplot() +
   geom_rect(data=covid_lvl, aes(NULL, NULL, xmin=start, xmax=end, fill=level, 
                                 ymin= -Inf, ymax=Inf), alpha=0.1) +
+  ggtitle(label = "Coffee cups and lids per LGA", subtitle="at each of 6 survey cycles between Dec 2019 - May 2020") +
   labs(fill="Covid-19 lockdown", linetype="Land Use Zones", colour="Land Use Zones",
-       x="Date", y="Debris count per LGA") +
+       x="Date", y="Debris count per 20 drains") +
   geom_line(data=item_per_cycle, aes(date, cycle_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
-  facet_wrap(~item, scales="free_y") +
-  # geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4) +
-  theme(panel.grid = element_blank(),
-        # legend.position = "none",
-      axis.title = element_blank(),
-      panel.background = element_blank())
+  facet_wrap(~item) 
+  # theme(panel.grid = element_blank(),
+  #       # legend.position = "none",
+  #     axis.title = element_blank(),
+  #     panel.background = element_blank())
   
   p_timeseries
   
-  p_timeseries <- ggplot() +
-  geom_line(data=item_per_cycle, aes(cycle, cycle_sum, color=LUZ, group=1)) +
-  # theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
-  facet_wrap(~item)
+  ggsave(filename = paste0(here("coffee"),"/", "coffee_timeseries.png"), plot = p_timeseries, dpi = 600)
+
 ```
 ```{r coffee-plot-item}
-coffee_sum = df %>% group_by(LUZ, item) %>% summarise(total = sum(sum), sd = sd(sum))
+
+# LUZ 
+coffee_item = df %>% 
+  filter(covid == "1") %>%
+  group_by(LUZ, item) %>% summarise(total = sum(sum), sd = sd(sum))
 
 
-p <- ggplot(coffee_sum, aes(x = LUZ, y = total, fill = item)) +
+p_item <- ggplot(coffee_item, aes(x = LUZ, y = total, fill = item)) +
         geom_bar(stat="identity", position="dodge") +
         geom_text(aes(y = total + sd, label = round(total,2)), 
                   position = position_dodge(width =0.9), 
@@ -157,20 +162,24 @@ p <- ggplot(coffee_sum, aes(x = LUZ, y = total, fill = item)) +
         ) + 
         # theme(axis.text.x = element_text(angle = 70)) +
         ggtitle("'Let's Strain the Drains' coffee debris") +
-        labs(subtitle = "Count per item type and land use from Oct 2019 - May 2020", y = "Coffee-related item count", x="") +
+        labs(subtitle = "Count per item type and land use from Oct 2019 - March 2020", y = "Item count", x="") +
         theme(axis.text.x=element_text(color = "black", size=11, 
                                  vjust=.8, angle=30, hjust=0.8))
 
-p
+p_item
+
+ggsave(filename = paste0(here("coffee"),"/", "coffee_item.png"), plot = p_item, dpi = 600)
 ```
 
 
 ```{r coffee-plot-LGA}
-coffee_sum = df %>% group_by(LUZ, LGA) %>% summarise(total = sum(sum), sd = sd(sum))
+coffee_lga = df %>% 
+  filter(covid == 1) %>%
+  group_by(LUZ, LGA) %>% summarise(total = sum(sum), sd = sd(sum))
 
 # df_item = df_item %>% mutate(sum = sum*10^-3, sd = sd*10^-3) %>% filter(sum >0.2)
 
-p <- ggplot(coffee_sum, aes(x = LUZ, y = total, fill = LGA)) +
+p_lga <- ggplot(coffee_lga, aes(x = LUZ, y = total, fill = LGA)) +
         geom_bar(stat="identity", position="dodge") +
         geom_text(aes(y = total + sd, label = round(total,2)), 
                   position = position_dodge(width =0.9), 
@@ -184,11 +193,13 @@ p <- ggplot(coffee_sum, aes(x = LUZ, y = total, fill = LGA)) +
         ) + 
         # theme(axis.text.x = element_text(angle = 70)) +
         ggtitle("'Let's Strain the Drains' coffee debris (cups and lids)") +
-        labs(subtitle = "Count per land use and LGA from Oct 2019 - May 2020", y = "Item count", x="") +
+        labs(subtitle = "Count per land use and LGA from Oct 2019 - March 2020", y = "Item count", x="") +
         theme(axis.text.x=element_text(color = "black", size=11, 
                                  vjust=.8, angle=30, hjust=0.8))
 
-p
+p_lga
+
+ggsave(filename = paste0(here("coffee"),"/", "coffee_lga.png"), plot = p_lga, dpi = 600)
 ```
 
 

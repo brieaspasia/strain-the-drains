@@ -644,6 +644,8 @@ nd_int = purrr::map_df(dint_vec, function(x){
 nd_int$covid <- factor(nd_int$covid, levels = c("2", "1"), 
                         labels = c("During Covid", "Before Covid"), ordered = T)
 
+# write.csv(nd_int, "fig6.csv", row.names=T)
+
 # Order items by sum for faceting
 pred_int_order <- nd_int %>%
   group_by(item) %>%
@@ -739,6 +741,8 @@ pred_cov_items = purrr::map_df(dcov_vec, function(x){
 # New facet label names for covid variable
 pred_cov_items$covid <- factor(pred_cov_items$covid, levels = c("2", "1"), 
                         labels = c("During Covid", "Before Covid"), ordered = T)
+
+write.csv(pred_cov_items, "cov-chg.csv", row.names=T)
 
 pred_cov_order <- pred_cov_items %>%
   group_by(item) %>%
@@ -938,7 +942,7 @@ getwd()
 #https://stats.stackexchange.com/questions/64652/calculating-standard-deviation-associated-with-percentage-change
 
 # Purrr
-nd_int = purrr::map_df(dint_vec, function(x){
+nd_int = purrr::map_df(top_txt, function(x){
   
   temp_df = df %>% 
     filter(item == paste0(x)) %>%
@@ -991,6 +995,8 @@ pct_change <- nd_int %>%
   mutate(luzMean=Total) %>% #mean of item btwn 8 cycles at each asset per covid level
   dplyr::select(covid, LUZ, item, luzMean) %>% #select vars
   unique() #remove duplicates from survey cycle
+
+unique(pct_change$item)
   
 # Split data into each item
 pct_change <- droplevels(pct_change)
@@ -1030,8 +1036,10 @@ return(out)
 luz_delta <- luz_delta %>%
   mutate(pos = avg >= 0,
          SE_lower = avg-se,
-         SE_upper = avg+se) %>%
-  filter(item %in% dcov_vec | item %in% dint_vec)
+         SE_upper = avg+se)
+  # filter(item %in% dcov_vec | item %in% dint_vec)
+
+write.csv(luz_delta, "delta.csv", row.names=T)
 
 p_change_delta <- luz_delta %>%
   mutate(item=as.factor(item),

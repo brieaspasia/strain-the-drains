@@ -1194,15 +1194,29 @@ df.adonis
 df.dis <- vegdist(com, method = "bray") # make a distance matrix
 df.betadisper.luz <- betadisper(df.dis, data.scores$LUZ) # test dispersion
 df.betadisper.luz
-permutest(df.betadisper.luz) #dispersion not significant
+perm.luz <- permutest(df.betadisper.luz) #dispersion not significant
 
 #testing covid dispersion
 df.dis <- vegdist(com, method = "bray") # make a distance matrix
 df.betadisper.cov <- betadisper(df.dis, data.scores$covid) # test dispersion
 df.betadisper.cov
-permutest(df.betadisper.cov) #dispersion not significant
+perm.cov <- permutest(df.betadisper.cov) #dispersion not significant
 
-citation("pairwiseAdonis")
+## Tukey's Honest Significant Differences
+TKluz <- TukeyHSD(df.betadisper.luz)
+plot(TKluz)
+TKcov <- TukeyHSD(df.betadisper.cov)
+plot(TKcov)
+
+
+pstat.luz <- permustats(perm.luz)
+densityplot(pstat.luz, scales = list(x = list(relation = "free")))
+qqmath(pstat.luz, scales = list(relation = "free"))
+pstat.cov <- permustats(perm.cov)
+densityplot(pstat.cov, scales = list(x = list(relation = "free")))
+qqmath(pstat.cov, scales = list(relation = "free"))
+
+
 ```
 
 # Micro debris

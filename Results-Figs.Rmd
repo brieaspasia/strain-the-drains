@@ -646,26 +646,26 @@ nd_int$covid <- factor(nd_int$covid, levels = c("2", "1"),
 
 # write.csv(nd_int, "fig6.csv", row.names=T)
 
-# Order items by sum for faceting
-pred_int_order <- nd_int %>%
-  group_by(item) %>%
-  mutate(total=sum(Total)) %>%
-  arrange(desc(total)) %>%
-  dplyr::select(item, total) %>%
-  distinct
+# # Order items by sum for faceting
+# pred_int_order <- nd_int %>%
+#   group_by(item) %>%
+#   mutate(total=sum(Total)) %>%
+#   arrange(desc(total)) %>%
+#   dplyr::select(item, total) %>%
+#   distinct
 
-#create vector from order items
-pred_int_order <- pred_int_order$item
-pred_int_order <- unlist(pred_int_order)
-nd_int$item <- factor(nd_int$item, levels = pred_int_order)
+# #create vector from order items
+# pred_int_order <- pred_int_order$item
+# pred_int_order <- unlist(pred_int_order)
+# nd_int$item <- factor(nd_int$item, levels = pred_int_order)
 
 
 # scale_fill_manual(values=c('#18BDC3','#F3756E'))
 
-nd_int <- nd_int %>%
-  mutate(item = as.factor(item),
-         LUZ = as.factor(LUZ),
-         LUZ = reorder_within(LUZ, Total, item))
+# nd_int <- nd_int %>%
+#   mutate(item = as.factor(item),
+#          LUZ = as.factor(LUZ),
+#          LUZ = reorder_within(LUZ, Total, item))
 
 #Debris count every 6 weeks (per LGA?)
 p_pred_int_items <- 
@@ -676,7 +676,7 @@ p_pred_int_items <-
   scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
   scale_x_continuous(breaks=seq(0, 60, 5)) + # remove this line for straws scale +
   facet_wrap(~item, scales = "free") +
-  scale_y_reordered() 
+  scale_y_discrete(limits = rev(levels(nd_int$LUZ)))
     # theme(legend.position = "none",
     #   panel.grid = element_blank(),
     #   axis.title = element_blank(),
@@ -686,9 +686,9 @@ p_pred_int_items <-
 
 p_pred_int_items
 
-# svg("images/dint.svg", height=7, width=12)
-# plot(p_pred_int_items)
-# dev.off()
+svg("images/dint.svg", height=7, width=12)
+plot(p_pred_int_items)
+dev.off()
  
 ```
 

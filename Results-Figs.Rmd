@@ -59,10 +59,6 @@ library(wesanderson)
 
 #remove duplicate entries
         item <- unique(item[!duplicated(item),])
-
-        #load item labels
-        item_label <- read.csv(file="Data/item_label.csv", 
-                         header=T, sep=",") 
         
         #load events
         event <- read.csv(file="Data/2101_event.csv", 
@@ -122,7 +118,7 @@ library(wesanderson)
       #remove the zero event ID (how did that get there?)
       abund_long <- abund_long[abund_long$event_id != 0, ]
 
-#join abundance data to survey notes and other columns
+#join abundance data to survey notes and sites
       df <- left_join(abund_long, event, by="event_id")
       
         #load sites
@@ -149,40 +145,28 @@ library(wesanderson)
              cycle=as.factor(cycle),
              date=dmy(date)
              )
+           
+# Item labels
+           
+        #load item labels
+        item_label <- read.csv(file="Data/item_label.csv", 
+                         header=T, sep=",") 
 
-#resolve duplicates in MC01, C5    
-          dup <- df %>% 
-            group_by(asset_id, cycle, item) %>% #reconcile duplicates in MC01 Cycle 5
-            summarise(sum=sum(sum)) %>%
-            ungroup()
-           
-      # #check difference
-      #      subsetdf <- df %>%
-      #        dplyr::select(Asset.ID, Cycle, item, sum)
-      #      
-      #      setdiff(subsetdf, dup)
-           
-      #join C5 correction to df
-      df <- dup %>% left_join(df, by=c("asset_id"="asset_id", 
-                                       "cycle"="cycle", "item"="item")) %>%
-        dplyr::select(-sum.y) %>%
-        filter(event_id != "23097") %>%
-        rename(sum = sum.x) %>%
-        distinct()
+        # join item labels
+              item_labelDF <- df %>%
+                distinct(item)
+        
+              df <- df %>%
+                left_join(item_label, by=c("item" = "item.type")) %>%
+                mutate(item = A3) %>%
+                dplyr::select(-A3)
+
       
-      item_labelDF <- df %>%
-        distinct(item)
-      
-      df <- df %>%
-        left_join(item_label, by=c("item" = "item.type")) %>%
-        mutate(item = A3) %>%
-        dplyr::select(-A3)
-      
-#classify columns correctly    
-      df <- df %>%
-      mutate(item=as.factor(item),
-             covid=as.factor(covid),
-             material=as.factor(material))
+        #classify columns correctly    
+              df <- df %>%
+              mutate(item=as.factor(item),
+                     covid=as.factor(covid),
+                     material=as.factor(material))
 
 #Combine C8 and C9    
      #isolate C8
@@ -227,7 +211,8 @@ diff_red <- diff %>% dplyr::select(event_id, asset_id, days)
 df <- df %>%
   left_join(diff_red, by="event_id") %>%
   dplyr::select(-asset_id.y) %>%
-  rename(asset_id = asset_id.x)
+  rename(asset_id = asset_id.x) %>%
+  distinct()
 
 # #overview numbers
 #     t <- df %>%
@@ -242,11 +227,6 @@ df <- df %>%
 #       mutate(pct = total/87406 * 100) #cigarettes >25% of macro debris
 
 rm("abund", "abund_long", "abund_wide", "AMDI","AMDI_code", "C8", "C9", "diff", "diff_red", "dup", "event", "item", "item_label", "item_labelDF", "item_merge", "site", "survey_count", "t")
-
-# Why is C5 missing from MC02?  missing in raw data from Heidi too.
-diff <- df %>%
-  dplyr::select(cycle, days) %>%
-  unique() 
     
 ```
 
@@ -1078,12 +1058,8 @@ top10 <- top10$item
 top10 <- unlist(top10)
 
 
-df_top10 <- df %>%
-  filter(item %in% top10)
-
-
 #create abundance long format
- abund_long <- df_top10 %>%
+ abund_long <- df %>%
     group_by(LGA, LUZ, covid, item) %>% 
     summarise(sum=sum(sum)) %>% #total of each item type per survey event
   ungroup()
@@ -1092,7 +1068,7 @@ df_top10 <- df %>%
   abund <- spread(abund_long, item, sum) 
 
   
-  com <- abund[4:13]
+  com <- abund[4:138]
   
   #removing debris items that are zero across all surveys
   com <- com[, which(colSums(com) != 0)]
@@ -1100,6 +1076,7 @@ df_top10 <- df %>%
   ord <- metaMDS(com)
   
   ord$stress
+  0.2490129
   
   data.scores <- as.data.frame(scores(ord)) #create df of ord points
   data.scores$LUZ <- abund$LUZ
@@ -1152,12 +1129,15 @@ p_mds <- ggplot() +
 
 p_mds
 
-# svg("images/p_mds10.svg", height=7, width=7)
-# plot(p_mds)
-# dev.off()
+svg("images/p_mds.svg", height=7, width=7)
+plot(p_mds)
+dev.off()
+
+species.scores10 <- species.scores %>%
+  filter(item %in% top10)
 
 p_mds_txt <- ggplot() +
-  geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_text(data=species.scores10,aes(x=NMDS1,y=NMDS2, label=item)) +
   geom_point(data=data.scores, 
              aes(x=NMDS1, y=NMDS2, colour=LUZ, shape=covid), alpha=0.8) + 
   geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group), 
@@ -1165,7 +1145,7 @@ p_mds_txt <- ggplot() +
   coord_equal() +
   theme_bw()
 
-# svg("images/p_mds_txt10.svg", height=7, width=7)
+# svg("images/p_mds_txt.svg", height=7, width=7)
 # plot(p_mds_txt)
 # dev.off()
 
@@ -1189,6 +1169,8 @@ p_mds_txt
 #Both land use and covid have significant scores, but there is not a significant interaction between them
 df.adonis <- adonis(com ~ data.scores$LUZ*data.scores$covid, permutations=999, method="bray")
 df.adonis
+
+
 
 #testing land use dispersion
 df.dis <- vegdist(com, method = "bray") # make a distance matrix

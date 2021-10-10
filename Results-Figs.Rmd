@@ -215,23 +215,30 @@ df <- df %>%
   distinct()
 
 # #overview numbers
-#     t <- df %>%
-#       group_by(material) %>%
-#       summarise(total=sum(sum)) %>%
-#       ungroup() %>%
-#       mutate(pct = total/87406 * 100) #plastics ~70% of macro debris
-# 
-    tpre <- df %>%
-      filter(covid == 1 & LUZ == "Industrial Precinct") %>%
+    t <- df %>%
+      filter(LUZ == "Industrial Precinct") %>%
+      group_by(material) %>%
+      summarise(total=sum(sum)) %>%
+      ungroup() %>%
+      mutate(pct = total/12723 * 100) #plastics 71% of macro debris
+
+    t <- df %>%
       group_by(item) %>%
       summarise(total=sum(sum)) %>%
-      mutate(pct = total/22901 * 100) #cigarettes >25% of macro debris pre-covid CBD
-    
-    tcov <- df %>%
-      filter(covid == 2 & LUZ == "Industrial Precinct") %>%
-      group_by(item) %>%
-      summarise(total=sum(sum)) %>%
-      mutate(pct = total/7374 * 100) #cigarettes >25% of macro debris during covid CBD
+      ungroup() %>%
+      mutate(pct = total/87406 * 100) #cigarettes 27% of macro debris
+
+    # tpre <- df %>%
+    #   filter(covid == 1 & LUZ == "Industrial Precinct") %>%
+    #   group_by(item) %>%
+    #   summarise(total=sum(sum)) %>%
+    #   mutate(pct = total/22901 * 100) #cigarettes >25% of macro debris pre-covid CBD
+    # 
+    # tcov <- df %>%
+    #   filter(covid == 2 & LUZ == "Industrial Precinct") %>%
+    #   group_by(item) %>%
+    #   summarise(total=sum(sum)) %>%
+    #   mutate(pct = total/7374 * 100) #cigarettes >25% of macro debris during covid CBD
 
 rm("abund", "abund_long", "abund_wide", "AMDI","AMDI_code", "C8", "C9", "diff", "diff_red", "dup", "event", "item", "item_label", "item_labelDF", "item_merge", "site", "survey_count", "t")
     
@@ -575,13 +582,19 @@ options(scipen = 999)
           distinct(item)%>%
           pull(item) %>% 
           droplevels()
+        
+# save vectors
+save(dcov_vec, file = "./data/dcov_vec.RData") #save this data frame as a RData file (object)
+save(dluz_vec, file = "./data/dluz_vec.RData") #save this data frame as a RData file (object)
+save(dint_vec, file = "./data/dint_vec.RData") #save this data frame as a RData file (object)
 
 ```
 
 # GLMM summaries for interaction items and figure 6 graph
 
 ```{r interaction-predictions, warning=FALSE, message=FALSE}
-### Run chunk 6 'drop-levels-item' first to get vector of interaction items ###
+
+load(file = "./data/dint_vec.RData") #to load this data frame from a RData file
  
 # Purrr
 nd_int = purrr::map_df(dint_vec, function(x){
@@ -634,18 +647,18 @@ nd_int$covid <- factor(nd_int$covid, levels = c("2", "1"),
 
 # write.csv(nd_int, "fig6.csv", row.names=T)
 
-# # Order items by sum for faceting
-# pred_int_order <- nd_int %>%
-#   group_by(item) %>%
-#   mutate(total=sum(Total)) %>%
-#   arrange(desc(total)) %>%
-#   dplyr::select(item, total) %>%
-#   distinct
+# Order items by sum for faceting
+pred_int_order <- nd_int %>%
+  group_by(item) %>%
+  mutate(total=sum(Total)) %>%
+  arrange(desc(total)) %>%
+  dplyr::select(item, total) %>%
+  distinct
 
-# #create vector from order items
-# pred_int_order <- pred_int_order$item
-# pred_int_order <- unlist(pred_int_order)
-# nd_int$item <- factor(nd_int$item, levels = pred_int_order)
+# create vector from order items
+pred_int_order <- pred_int_order$item
+pred_int_order <- unlist(pred_int_order)
+nd_int$item <- factor(nd_int$item, levels = pred_int_order)
 
 
 # scale_fill_manual(values=c('#18BDC3','#F3756E'))
@@ -662,7 +675,7 @@ p_pred_int_items <-
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
                 size = 0.5, width = 0.5, position = position_dodge(0.9)) +
   scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
-  scale_x_continuous(breaks=seq(0, 60, 5)) + # remove this line for straws scale +
+  # scale_x_continuous(breaks=seq(0, 60, 5)) + # remove this line for straws scale +
   facet_wrap(~item, scales = "free") +
   scale_y_discrete(limits = rev(levels(nd_int$LUZ)))
     # theme(legend.position = "none",
@@ -674,15 +687,16 @@ p_pred_int_items <-
 
 p_pred_int_items
 
-svg("images/dint.svg", height=7, width=12)
+svg("images/dint-straws.svg", height=7, width=12)
 plot(p_pred_int_items)
 dev.off()
  
 ```
 
 ```{r items-covid-effect, warning=FALSE, message=FALSE}
-### Run chunk 8 first to get vector of main effect items ###
- 
+
+load(file = "./data/dcov_vec.RData") #to load this data frame from a RData file
+
 # Purrr Covid
 pred_cov_items = purrr::map_df(dcov_vec, function(x){
   
@@ -771,7 +785,8 @@ p_pred_cov_items
 ```
 
 ```{r luz-graph, warning=FALSE, message=FALSE}
-### Run chunk 8 first to get vector of main effect items ###
+
+load(file = "./data/dluz_vec.RData") #to load this data frame from a RData file
  
 # Purrr Land Use
 pred_luz_items = purrr::map_df(dluz_vec, function(x){

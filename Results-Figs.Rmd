@@ -221,10 +221,17 @@ df <- df %>%
 #       ungroup() %>%
 #       mutate(pct = total/87406 * 100) #plastics ~70% of macro debris
 # 
-#     t <- df %>%
-#       group_by(item) %>%
-#       summarise(total=sum(sum)) %>%
-#       mutate(pct = total/87406 * 100) #cigarettes >25% of macro debris
+    tpre <- df %>%
+      filter(covid == 1 & LUZ == "Industrial Precinct") %>%
+      group_by(item) %>%
+      summarise(total=sum(sum)) %>%
+      mutate(pct = total/22901 * 100) #cigarettes >25% of macro debris pre-covid CBD
+    
+    tcov <- df %>%
+      filter(covid == 2 & LUZ == "Industrial Precinct") %>%
+      group_by(item) %>%
+      summarise(total=sum(sum)) %>%
+      mutate(pct = total/7374 * 100) #cigarettes >25% of macro debris during covid CBD
 
 rm("abund", "abund_long", "abund_wide", "AMDI","AMDI_code", "C8", "C9", "diff", "diff_red", "dup", "event", "item", "item_label", "item_labelDF", "item_merge", "site", "survey_count", "t")
     
@@ -305,6 +312,7 @@ p_timeseries <- ggplot() +
        x="Date", y="Debris count per LGA") +
   geom_line(data=item_per_cycle, aes(date, LGA_final_sum, linetype=LUZ, color=LUZ)) +
   theme(axis.text.x=element_text(angle=45, vjust=0.75, hjust=0.8)) +
+  # scale_y_continuous(breaks=seq(0, 325, 5)) + 
   facet_wrap(~item, scales="free_y") +
   # geom_vline(xintercept = as.numeric(as.Date("2020-06-30")), linetype=4) +
   theme(panel.grid = element_blank(),

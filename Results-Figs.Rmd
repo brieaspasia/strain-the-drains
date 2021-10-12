@@ -1066,7 +1066,7 @@ dev.off()
 # MDS plot
 
 
-```{r MDS-LGA-top10, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
+```{r MDS, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
 #find top 10 items
 top10 <- df %>%
   filter(item!="Metal scrap") %>%
@@ -1185,12 +1185,126 @@ p_mds_txt
 #   coord_equal() +
 #   theme_bw()
 ```
+```{r MDS-pre-covid, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
+#find top 10 items
+top10pre <- df %>%
+  filter(covid == 1 & item!="Metal scrap") %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(10, sum)
+
+  
+#create vector from top 10 items
+top10pre <- top10pre$item 
+top10pre <- unlist(top10pre)
+
+
+#create abundance long format
+ abund_long <- df %>%
+   filter(covid == 1) %>%
+    group_by(LGA, LUZ, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  
+  com <- abund[3:137]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+  
+  ord <- metaMDS(com)
+  
+  ord$stress
+  # 0.2135998
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$LUZ <- abund$LUZ
+  data.scores <- data.scores %>%
+    mutate(LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+
+#creating ellipses
+
+#add group column to data.scores
+NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.scores$LUZ)
+
+ veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+  {
+    theta <- (0:npoints) * 2 * pi/npoints
+    Circle <- cbind(cos(theta), sin(theta))
+    t(center + scale * t(Circle %*% chol(cov)))
+  }
+
+  df_ell <- data.frame()
+  for(g in levels(NMDS$group)){
+    df_ell <- rbind(df_ell, cbind(as.data.frame(with(NMDS[NMDS$group==g,],
+                    veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+                    ,group=g))
+    
+
+  }
+  
+  #The first method is calculating the ellipse paths using standard deviation and no scaling. The second method is using standard error and is also scaling the data. Thus, the plot produced with the first method can also be achieved with the second method by making the necessary changes to the ordiellipse function (kind='sd', not 'se'), and removing the scale (ord[[g]]$scale) from the veganCovEllipse function.
+  #https://stackoverflow.com/questions/42799838/follow-up-plotting-ordiellipse-function-from-vegan-package-onto-nmds-plot-creat
+```
+
+```{r MDS-plot-pre-covid, warning=FALSE, message=FALSE}
+#MDS plot LUZ
+p_mds <- ggplot() +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group),
+            size=1, linetype=2) +
+  coord_equal() +
+  theme_bw()
+
+p_mds
+
+# svg("images/p_mds.svg", height=7, width=7)
+# plot(p_mds)
+# dev.off()
+
+species.scores10pre <- species.scores %>%
+  filter(item %in% top10pre)
+
+p_mds_txt <- ggplot() +
+  geom_text(data=species.scores10pre,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group), 
+            size=1, linetype=2) +
+  coord_equal() +
+  theme_bw()
+
+# svg("images/p_mds_txt.svg", height=7, width=7)
+# plot(p_mds_txt)
+# dev.off()
+
+p_mds
+p_mds_txt
+
+## MDS plot covid
+# ggplot() +
+#   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+#   geom_point(data=data.scores,
+#              aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ), alpha=0.8) +
+#     geom_path(data=df_ell_cov, aes(x=NMDS1, y=NMDS2,colour=group), 
+#             size=1, linetype=2) +
+#   coord_equal() +
+#   theme_bw()
+```
 # Testing community data
 
 ```{r adonis-pairwise, warning=FALSE, message=FALSE}
 
 #Both land use and covid have significant scores, but there is not a significant interaction between them
-df.adonis <- adonis(com ~ data.scores$LUZ*data.scores$covid, permutations=999, method="bray")
+df.adonis <- adonis(com ~ data.scores$LUZ, permutations=999, method="bray")
 df.adonis
 
 
@@ -1222,6 +1336,121 @@ densityplot(pstat.cov, scales = list(x = list(relation = "free")))
 qqmath(pstat.cov, scales = list(relation = "free"))
 
 
+```
+
+```{r MDS-covid, warning=FALSE, message=FALSE, include=FALSE, results='hide'}
+#find top 10 items
+top10cov <- df %>%
+  filter(covid == 2 & item!="Metal scrap") %>%
+  group_by(item) %>%
+  summarise(sum=sum(sum)) %>%
+  arrange(desc(sum)) %>%
+  top_n(10, sum)
+
+  
+#create vector from top 10 items
+top10cov <- top10cov$item 
+top10cov <- unlist(top10cov)
+
+
+#create abundance long format
+ abund_long <- df %>%
+   filter(covid == 2) %>%
+    group_by(LGA, LUZ, item) %>% 
+    summarise(sum=sum(sum)) %>% #total of each item type per survey event
+  ungroup()
+
+#convert to data wide
+  abund <- spread(abund_long, item, sum) 
+
+  
+  com <- abund[3:137]
+  
+  #removing debris items that are zero across all surveys
+  com <- com[, which(colSums(com) != 0)]
+  
+  ord <- metaMDS(com)
+  
+  ord$stress
+  # 0.21039
+  
+  data.scores <- as.data.frame(scores(ord)) #create df of ord points
+  data.scores$LUZ <- abund$LUZ
+  data.scores <- data.scores %>%
+    mutate(LUZ = as.factor(LUZ))
+  
+  species.scores <- as.data.frame(scores(ord, "species"))
+  species.scores$item <- rownames(species.scores) #create item id column
+
+#creating ellipses
+
+#add group column to data.scores
+NMDS <- data.frame(NMDS1 = ord$points[,1], NMDS2 = ord$points[,2],group=data.scores$LUZ)
+
+ veganCovEllipse<-function (cov, center = c(0, 0), scale = 1, npoints = 100) 
+  {
+    theta <- (0:npoints) * 2 * pi/npoints
+    Circle <- cbind(cos(theta), sin(theta))
+    t(center + scale * t(Circle %*% chol(cov)))
+  }
+
+  df_ell <- data.frame()
+  for(g in levels(NMDS$group)){
+    df_ell <- rbind(df_ell, cbind(as.data.frame(with(NMDS[NMDS$group==g,],
+                    veganCovEllipse(cov.wt(cbind(NMDS1,NMDS2),wt=rep(1/length(NMDS1),length(NMDS1)))$cov,center=c(mean(NMDS1),mean(NMDS2)))))
+                    ,group=g))
+    
+
+  }
+  
+  #The first method is calculating the ellipse paths using standard deviation and no scaling. The second method is using standard error and is also scaling the data. Thus, the plot produced with the first method can also be achieved with the second method by making the necessary changes to the ordiellipse function (kind='sd', not 'se'), and removing the scale (ord[[g]]$scale) from the veganCovEllipse function.
+  #https://stackoverflow.com/questions/42799838/follow-up-plotting-ordiellipse-function-from-vegan-package-onto-nmds-plot-creat
+```
+
+```{r MDS-plot-pre-covid, warning=FALSE, message=FALSE}
+#MDS plot LUZ
+p_mds <- ggplot() +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group),
+            size=1, linetype=2) +
+  coord_equal() +
+  theme_bw()
+
+p_mds
+
+# svg("images/p_mds.svg", height=7, width=7)
+# plot(p_mds)
+# dev.off()
+
+species.scores10cov <- species.scores %>%
+  filter(item %in% top10cov)
+
+p_mds_txt <- ggplot() +
+  geom_text(data=species.scores10cov,aes(x=NMDS1,y=NMDS2, label=item)) +
+  geom_point(data=data.scores, 
+             aes(x=NMDS1, y=NMDS2, colour=LUZ), alpha=0.8) + 
+  geom_path(data=df_ell, aes(x=NMDS1, y=NMDS2,colour=group), 
+            size=1, linetype=2) +
+  coord_equal() +
+  theme_bw()
+
+# svg("images/p_mds_txt.svg", height=7, width=7)
+# plot(p_mds_txt)
+# dev.off()
+
+p_mds
+p_mds_txt
+
+## MDS plot covid
+# ggplot() +
+#   geom_text(data=species.scores,aes(x=NMDS1,y=NMDS2, label=item)) +
+#   geom_point(data=data.scores,
+#              aes(x=NMDS1, y=NMDS2, colour=covid, shape=LUZ), alpha=0.8) +
+#     geom_path(data=df_ell_cov, aes(x=NMDS1, y=NMDS2,colour=group), 
+#             size=1, linetype=2) +
+#   coord_equal() +
+#   theme_bw()
 ```
 
 # Micro debris

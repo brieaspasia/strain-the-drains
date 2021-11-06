@@ -675,14 +675,14 @@ p_pred_int_items <-
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
                 size = 0.5, width = 0.5, position = position_dodge(0.9)) +
   scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
-  # scale_x_continuous(breaks=seq(0, 60, 5)) + # remove this line for straws scale +
+  # scale_x_continuous(breaks=seq(0, 60, 5)) + # remove this line for straws scale
   facet_wrap(~item, scales = "free") +
-  scale_y_discrete(limits = rev(levels(nd_int$LUZ)))
-    # theme(legend.position = "none",
-    #   panel.grid = element_blank(),
-    #   axis.title = element_blank(),
-    #   axis.text = element_blank(),
-    #   panel.background = element_blank())
+  scale_y_discrete(limits = rev(levels(nd_int$LUZ))) +
+    theme(legend.position = "none",
+      panel.grid = element_blank(),
+      axis.title = element_blank(),
+      # axis.text = element_blank(),
+      panel.background = element_blank())
 
 
 p_pred_int_items
@@ -744,7 +744,7 @@ pred_cov_items = purrr::map_df(dcov_vec, function(x){
 pred_cov_items$covid <- factor(pred_cov_items$covid, levels = c("2", "1"), 
                         labels = c("During Covid", "Before Covid"), ordered = T)
 
-write.csv(pred_cov_items, "cov-chg.csv", row.names=T)
+# write.csv(pred_cov_items, "cov-chg.csv", row.names=T)
 
 pred_cov_order <- pred_cov_items %>%
   group_by(item) %>%
@@ -767,20 +767,20 @@ p_pred_cov_items <-
   geom_bar(position = "dodge", stat="identity") +
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
                 size = 0.5, width = 0.5, position = position_dodge(0.9)) +
-  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E"))
-  # scale_y_reordered()
-    # guides(x =  guide_axis(angle = 45))
-      # theme(legend.position = "none",
-      #   panel.grid = element_blank(),
-      #   axis.title = element_blank(),
-      #   axis.text = element_blank(),
-      #   panel.background = element_blank())
+  scale_fill_manual(values = c("Before Covid" = "#18BDC3", "During Covid" = "#F3756E")) +
+  scale_y_reordered() +
+  guides(x =  guide_axis(angle = 45)) +
+  theme(legend.position = "none",
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    # axis.text = element_blank(),
+    panel.background = element_blank())
 
 p_pred_cov_items
 
-# svg("images/dcov.svg", height=7, width=12)
-# plot(p_pred_cov_items)
-# dev.off()
+svg("images/dcov.svg", height=7, width=12)
+plot(p_pred_cov_items)
+dev.off()
  
 ```
 
@@ -839,25 +839,24 @@ p_pred_luz_items <-
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
                 size = 0.5, width = 0.5, position = position_dodge(0.9)) +
   xlim(0, 2) +
-  # scale_fill_manual(values = c("CBD" = "#BDD9BF", 
-  #                              "Shopping Centre" = "#FFC857", 
-  #                              "Public Transport Terminal" = "#A997DF", 
+  # scale_fill_manual(values = c("CBD" = "#BDD9BF",
+  #                              "Shopping Centre" = "#FFC857",
+  #                              "Public Transport Terminal" = "#A997DF",
   #                              "Industrial Precinct" = "#929084")) +
-  scale_y_reordered()
-  # scale_fill_manual(values = wes_palette("Moonrise3", n = 4)) 
+  scale_y_reordered() +
+  # scale_fill_manual(values = wes_palette("Moonrise3", n = 4)) +
     # guides(x =  guide_axis(angle = 45))
-      # theme(legend.position = "none",
-      #   panel.grid = element_blank(),
-      #   axis.title = element_blank(),
-      #   axis.text = element_blank(),
-      #   panel.background = element_blank())
+      theme(panel.grid = element_blank(),
+        axis.title = element_blank(),
+        # axis.text = element_blank(),
+        panel.background = element_blank())
 
 
 p_pred_luz_items
 
-# svg("images/dluz.svg", height=7, width=12)
-# plot(p_pred_luz_items)
-# dev.off()
+svg("images/dluz.svg", height=7, width=12)
+plot(p_pred_luz_items)
+dev.off()
 
 # colourblind friendly palettes https://medium.com/cafe-pixo/inclusive-color-palettes-for-the-web-bbfe8cf2410e
 # and another one https://personal.sron.nl/~pault/#sec:qualitative

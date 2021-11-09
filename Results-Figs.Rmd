@@ -70,6 +70,8 @@ library(wesanderson)
         survey_count <- survey_count %>%
           dplyr::select(-event.tot, -event.wt, -vol, -hr, -event_date, -note) %>%
           filter(item!="Pollution Rating") 
+        
+     
 
         #summarise duplicate survey entries (this will lose one set of notes....)
         item_merge <- survey_count %>%
@@ -243,6 +245,21 @@ df <- df %>%
 rm("abund", "abund_long", "abund_wide", "AMDI","AMDI_code", "C8", "C9", "diff", "diff_red", "dup", "event", "item", "item_label", "item_labelDF", "item_merge", "site", "survey_count", "t")
     
 ```
+
+```{r cig-wrap}
+
+cig_wrap <- read.csv(file="Data/item_cig_wrap.csv", 
+                         header=T, sep=",")
+
+cig_wrap <- cig_wrap %>%
+  mutate(item = as.factor(item),
+         event_id = as.factor(event_id))
+
+t <- df %>%
+  left_join(cig_wrap, by = c("item" = "item", "event_id" = "event_id"))
+
+```
+
 
 ## Timeseries
 

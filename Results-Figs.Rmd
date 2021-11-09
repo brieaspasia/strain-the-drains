@@ -253,10 +253,26 @@ cig_wrap <- read.csv(file="Data/item_cig_wrap.csv",
 
 cig_wrap <- cig_wrap %>%
   mutate(item = as.factor(item),
-         event_id = as.factor(event_id))
+         event_id = as.factor(event_id)) %>%
+  summarise(total = sum(total))
 
-t <- df %>%
-  left_join(cig_wrap, by = c("item" = "item", "event_id" = "event_id"))
+# 8839 total cig packets
+#23668 cigarette butts
+
+plastic_wrap_tot <- df %>%
+  filter(item == "Plastic wrap (non-food)") %>%
+  summarise(total = sum(sum))
+
+# 9995 total items
+
+8839*100/9995
+# 88% of plastic wraps were cigarette packs
+
+32507/87406 * 100
+#37% of all debris was related to cigarettes
+
+# t <- df %>%
+#   left_join(cig_wrap, by = c("item" = "item", "event_id" = "event_id"))
 
 ```
 

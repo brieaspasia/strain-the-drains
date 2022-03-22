@@ -48,6 +48,7 @@ library(sjPlot) #glmm tables
 library(sjmisc) #glmm tables
 library(sjlabelled) #glmm tables
 library(wesanderson)
+library(multcompView) #emmeans letter groups
 ```
 
 ```{r create-df, warning=FALSE, message=FALSE, results='hide', include=FALSE}
@@ -244,6 +245,39 @@ df <- df %>%
 
 rm("abund", "abund_long", "abund_wide", "AMDI","AMDI_code", "C8", "C9", "diff", "diff_red", "dup", "event", "item", "item_label", "item_labelDF", "item_merge", "site", "survey_count", "t")
     
+```
+
+```{r coffee}
+
+coffee <- read.csv(file="Data/LSTDcoffee.csv", 
+                         header=T, sep=",")
+
+t <- df %>%
+  filter(item == "Plastic packaging (food)") %>%
+  summarise(total = sum(sum))
+# 13633 in both coffee related categories
+# 10776 total plastic packaging food
+# 2857 total paper packaging
+
+coffee <- coffee %>%
+  mutate(item = as.factor(item),
+         event_id = as.factor(event_id)) %>%
+  filter(item == "lid") %>%
+  summarise(total = sum(sum))
+
+# 556 total
+# 252 cups
+# 304 lids
+
+556*100 / 13633
+# 4% of paper packaging and food plastics were coffee related
+
+252 * 100 / 2857
+#9% of all paper packaging was related to coffee
+
+304*100/10776
+#3% of all plastic food packaging was coffee lids
+
 ```
 
 ```{r cig-wrap}
@@ -603,8 +637,8 @@ options(scipen = 999)
 #vector of items where luz is significant
         dluz_vec <- d1_item_luz %>%
           filter(p.value<0.05) %>%
-          filter(item != "Foil (including bladders)") %>%
-          filter(item != "Hard plastic remnants") %>%
+          # filter(item != "Foil (including bladders)") %>%
+          # filter(item != "Hard plastic remnants") %>%
           distinct(item)%>%
           pull(item) %>% 
           droplevels()
@@ -871,11 +905,11 @@ p_pred_luz_items <-
   geom_bar(position = "dodge", stat="identity") +
   geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper),
                 size = 0.5, width = 0.5, position = position_dodge(0.9)) +
-  xlim(0, 2) +
-  # scale_fill_manual(values = c("CBD" = "#BDD9BF",
-  #                              "Shopping Centre" = "#FFC857",
-  #                              "Public Transport Terminal" = "#A997DF",
-  #                              "Industrial Precinct" = "#929084")) +
+  # xlim(0, 2) +
+  scale_fill_manual(values = c("CBD" = "#F3766E",
+                               "Shopping Centre" = "#A781BA",
+                               "Public Transport Terminal" = "#1CBDC2",
+                               "Industrial Precinct" = "#7CAF42")) +
   scale_y_reordered() +
   # scale_fill_manual(values = wes_palette("Moonrise3", n = 4)) +
     # guides(x =  guide_axis(angle = 45))
@@ -1069,6 +1103,7 @@ return(out)
 })
 
 luz_delta <- luz_delta %>%
+  filter(item != "Plastic bags") %>%
   mutate(pos = avg >= 0,
          SE_lower = avg-se,
          SE_upper = avg+se)
@@ -1081,11 +1116,13 @@ p_change_delta <- luz_delta %>%
          item=fct_reorder(item, avg)) %>%
   ggplot( aes(x=avg, y=item, fill=pos)) +
   geom_bar(stat="identity") +
-  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width=0.2)) 
+  geom_errorbar(aes(xmin=SE_lower, xmax=SE_upper, width=0.2)) +
+  labs(x = "Percent change (averaged between 4 land use types)") +
   theme(legend.position = "none",
         panel.grid = element_blank(),
-        axis.title = element_blank(),
-        axis.text = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.title = element_blank(),
+        # axis.text = element_blank(),
         panel.background = element_blank())
   
 
